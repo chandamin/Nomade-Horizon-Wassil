@@ -86,180 +86,30 @@ router.get('/auth', async (req, res) => {
 router.get('/load', (req, res) => {
     const { signed_payload_jwt } = req.query;
 
+    if(!signed_payload_jwt){
+        return res.status(400).send("Mising signed_payload_jwt");
+    }
+
+    console.log("LOAD", signed_payload_jwt);
+
     try {
         const decoded = jwt.verify(
             signed_payload_jwt,
             process.env.BIGCOMMERCE_CLIENT_SECRET,
-            { algorithms: ['HS256'] }
+            { algorithms: ['HS256'], clockTolerance: 300 }
         );
+
+        // console.log("DECODE", decoded);
 
         return res.redirect(
             `${process.env.FRONTEND_URL}?store_hash=${decoded.store_hash}`
         );
 
-    } catch {
+    } catch (err){
+        // console.log("JWT error", err.message)
         return res.status(401).send('Invalid signed payload');
     }
 });
-
-
-
-
-// const { URL } = require('url');
-
-
-
-// router.get('/load', (req, res) => {
-//     const url = new URL(req.originalUrl, `http://${req.headers.host}`);
-//     const signed_payload = url.searchParams.get('signed_payload');
-
-//     if (!signed_payload) {
-//         return res.status(401).send('Missing signed payload');
-//     }
-
-//     const parts = signed_payload.split('.');
-//     if (parts.length !== 2) {
-//         return res.status(401).send('Malformed signed payload');
-//     }
-
-//     const [encodedData, encodedSignature] = parts;
-
-//     // ✅ BigCommerce uses HEX for signature
-//     const receivedSignature = Buffer.from(encodedSignature, 'hex');
-
-//     const expectedSignature = crypto
-//         .createHmac('sha256', process.env.BIGCOMMERCE_CLIENT_SECRET)
-//         .update(encodedData)
-//         .digest(); // Buffer (32 bytes)
-
-//     if (receivedSignature.length !== expectedSignature.length) {
-//         return res.status(401).send('Invalid signed payload');
-//     }
-
-//     if (!crypto.timingSafeEqual(receivedSignature, expectedSignature)) {
-//         return res.status(401).send('Invalid signed payload');
-//     }
-
-//     const payload = JSON.parse(
-//         Buffer.from(encodedData, 'base64').toString('utf8')
-//     );
-
-//     const storeHash = payload.context.split('/')[1];
-
-//     res.send(`
-//         <!DOCTYPE html>
-//         <html>
-//           <head><title>Dashboard</title></head>
-//           <body>
-//             <h1>App Dashboard</h1>
-//             <p>Store: ${storeHash}</p>
-//             <p>User: ${payload.user.email}</p>
-//           </body>
-//         </html>
-//     `);
-// });
-
-
-
-
-
-// const { URL } = require('url');
-
-// router.get('/load', (req, res) => {
-//     const debug = {};
-
-//     try {
-//         // 1️⃣ RAW URL INSPECTION
-//         debug.originalUrl = req.originalUrl;
-
-//         const url = new URL(req.originalUrl, `http://${req.headers.host}`);
-//         const signed_payload = url.searchParams.get('signed_payload');
-
-//         debug.hasSignedPayload = !!signed_payload;
-//         debug.signedPayloadLength = signed_payload?.length;
-
-//         if (!signed_payload) {
-//             return res.status(401).json({ error: 'Missing signed payload', debug });
-//         }
-
-//         // 2️⃣ SPLIT PAYLOAD
-//         const parts = signed_payload.split('.');
-//         debug.partsCount = parts.length;
-
-//         if (parts.length !== 2) {
-//             return res.status(401).json({ error: 'Malformed signed payload', debug });
-//         }
-
-//         const [encodedData, encodedSignature] = parts;
-
-//         debug.encodedDataLength = encodedData.length;
-//         debug.encodedSignatureLength = encodedSignature.length;
-
-//         // 3️⃣ BASE64URL → BUFFER
-//         const base64UrlToBuffer = (str) =>
-//             Buffer.from(str.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
-
-//         const receivedSignature = base64UrlToBuffer(encodedSignature);
-//         debug.receivedSignatureBytes = receivedSignature.length;
-
-//         // 4️⃣ HMAC GENERATION
-//         const expectedSignature = crypto
-//             .createHmac('sha256', process.env.BIGCOMMERCE_CLIENT_SECRET)
-//             .update(encodedData)
-//             .digest();
-
-//         debug.expectedSignatureBytes = expectedSignature.length;
-
-//         // 5️⃣ LENGTH CHECK
-//         debug.lengthsMatch =
-//             receivedSignature.length === expectedSignature.length;
-
-//         if (!debug.lengthsMatch) {
-//             return res.status(401).json({
-//                 error: 'Signature length mismatch',
-//                 debug,
-//             });
-//         }
-
-//         // 6️⃣ TIMING SAFE COMPARE
-//         debug.signatureMatch = crypto.timingSafeEqual(
-//             receivedSignature,
-//             expectedSignature
-//         );
-
-//         if (!debug.signatureMatch) {
-//             return res.status(401).json({
-//                 error: 'Signature mismatch',
-//                 debug,
-//             });
-//         }
-
-//         // 7️⃣ PAYLOAD DECODE
-//         const payloadJson = Buffer.from(encodedData, 'base64').toString('utf8');
-//         debug.payloadJsonPreview = payloadJson.slice(0, 100);
-
-//         const payload = JSON.parse(payloadJson);
-//         debug.hasContext = !!payload.context;
-//         debug.hasUser = !!payload.user;
-
-//         return res.json({
-//             success: true,
-//             debug,
-//             payloadSummary: {
-//                 context: payload.context,
-//                 userEmail: payload.user?.email,
-//             },
-//         });
-//     } catch (err) {
-//         return res.status(500).json({
-//             error: 'Exception thrown',
-//             message: err.message,
-//             debug,
-//         });
-//     }
-// });
-
-
 
 /**
  * ---------------------------------------

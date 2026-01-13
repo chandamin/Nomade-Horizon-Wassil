@@ -23,8 +23,6 @@ app.use(cors({
     credentials: true,
 }));
 
-
-
 app.use('/api/webhooks', require('./routes/webhooks'));
 /**
  * ---------------------------------------
@@ -40,6 +38,7 @@ app.use('/api/subscriptions', require('./routes/subscriptions'));
 app.use('/api/sync-orders', require('./routes/syncOrders'));
 app.use('/api/airwallex', require('./routes/airwallexTest'));
 app.use('/api/selling-plans', require('./routes/sellingPlans'));
+app.use('/api/subscription-plans', require('./routes/airwallexTestPlan'));
 
 /**
  * Health check
