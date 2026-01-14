@@ -19,7 +19,7 @@ const connectDB = require('./db/mongo');
  * ---------------------------------------
  */
 app.use(cors({
-    origin: [process.env.FRONTEND_URL, 'https://unpenciled-unhumored-thora.ngrok-free.dev'],
+    origin: [process.env.FRONTEND_URL, 'https://unpenciled-unhumored-thora.ngrok-free.dev', 'https://airwall.kaswebtechsolutions.com'],
     credentials: true,
 }));
 
