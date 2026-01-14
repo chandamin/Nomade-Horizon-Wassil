@@ -6,7 +6,11 @@ export default function Subscriptions() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/subscriptions`)
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/subscriptions`, {
+    headers: {
+      'ngrok-skip-browser-warning': 'true',
+    },
+    })
       .then(res => res.json())
       .then(data => {
         setSubs(data)
