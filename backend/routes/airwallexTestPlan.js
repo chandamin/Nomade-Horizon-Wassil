@@ -2,6 +2,7 @@ const express = require('express')
 const axios = require('axios');
 const router = express.Router()
 const SubscriptionPlan = require('../models/SubscriptionPlan.js');
+const dayjs = require('dayjs');
 
 
 
@@ -9,15 +10,23 @@ async function getAirwallexToken() {
   try {
     const res = await axios.post(
       'https://api-demo.airwallex.com/api/v1/authentication/login',
+      {}, //  EMPTY BODY
       {
-        client_id: process.env.AIRWALLEX_CLIENT_ID,
-        api_key: process.env.AIRWALLEX_API_KEY,
-      },
-      { headers: { 'Content-Type': 'application/json' } }
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.AIRWALLEX_API_KEY,
+          'x-client-id': process.env.AIRWALLEX_CLIENT_ID,
+        },
+      }
     );
-    return res.data.token; // use this token for subsequent API calls
+
+    return res.data.token;
   } catch (err) {
-    console.error('Airwallex auth error:', err.response?.data || err.message);
+    console.error(
+      'Airwallex auth error:',
+      err.response?.status,
+      err.response?.data || err.message
+    );
     throw new Error('Failed to authenticate with Airwallex');
   }
 }
@@ -66,7 +75,11 @@ router.post('/plans', async (req, res) => {
           period_unit: interval,
         },
       },
-      { headers: { Authorization: `Bearer ${token}` } }
+      { 
+        headers: { 
+          Authorization: `Bearer ${token}` 
+        } 
+      }
     );
 
     // 4️⃣ Save to MongoDB
@@ -87,5 +100,64 @@ router.post('/plans', async (req, res) => {
     res.status(500).json({ error: 'Failed to create plan' });
   }
 });
+
+
+
+/**
+ * CREATE CHECKOUT (used by Checkout.jsx)
+ */
+router.post('/create-checkout', async (req, res) => {
+  try {
+    const { email, priceId, requestId } = req.body;
+
+    if (!email || !priceId || !requestId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const token = await getAirwallexToken();
+
+    // Trial end (14 days)
+    const trialEndsAt = dayjs()
+      .add(30, 'days')
+      .format('YYYY-MM-DDTHH:mm:ssZZ');
+
+    const checkoutRes = await axios.post(
+      'https://api-demo.airwallex.com/api/v1/billing_checkouts/create',
+      {
+        request_id: requestId,
+        mode: 'SUBSCRIPTION',
+        customer_data: { email },
+        line_items: [
+          {
+            price_id: priceId,
+            quantity: 1,
+          },
+        ],
+        subscription_data: {
+          trial_ends_at: trialEndsAt,
+        },
+        legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
+        linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
+        success_url: 'https://yoursite.com/success',
+        cancel_url: 'https://yoursite.com/cancel',
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    res.json({ url: checkoutRes.data.url });
+  } catch (err) {
+    console.error(
+      'Checkout error:',
+      err.response?.data || err.message
+    );
+    res.status(500).json({ error: 'Failed to create checkout' });
+  }
+});
+
 
 module.exports = router;

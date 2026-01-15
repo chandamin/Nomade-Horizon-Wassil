@@ -62,7 +62,8 @@ import Dashboard from './pages/Dashboard'
 import Subscriptions from './pages/Subscriptions'
 import Customers from './pages/Customers'
 import SellingPlans from './pages/SellingPlans'
-import CreatePlan from './pages/CreatePlan'
+import CreatePlan from './pages/CreatePlan';
+import Checkout from './pages/Checkout';
 
 function App() {
   return (
@@ -80,6 +81,8 @@ function App() {
             <Route path="/customers" element={<Customers />} />
             <Route path="/selling-plans" element={<SellingPlans />} />
             <Route path='/subscription-plan' element={<CreatePlan/>} />
+            <Route path='/checkout' element={<Checkout/>} />
+            {/* <Route path='/checkout' element={<Checkout/>}/> */}
           </Routes>
         </main>
       </div>

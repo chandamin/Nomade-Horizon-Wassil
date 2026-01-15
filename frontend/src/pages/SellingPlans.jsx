@@ -18,7 +18,8 @@ export default function SellingPlans() {
   }, [])
 
   return (
-    <div className="space-y-6">
+    // <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-800">
@@ -92,116 +93,232 @@ export default function SellingPlans() {
 
 /* ---------- Create Plan Form ---------- */
 
+// function CreatePlanForm({ onClose, onCreated }) {
+//   const [form, setForm] = useState({
+//     name: '',
+//     chargeAmount: '',
+//     chargeShipping: 'yes',
+//     chargeSalesTax: true,
+//     enableCustomerPortal: true,
+//     billingCycleStartDayUTC: '',
+//     billingCycleStartTimeUTC: '',
+//     freeTrialDays: 0,
+//     installments: '',
+//     customerCancellationBehaviour: 'cancel_at_period_end',
+//     setupCharge: 0,
+//   })
+
+//   const handleChange = e => {
+//     const { name, value, type, checked } = e.target
+//     setForm(prev => ({
+//       ...prev,
+//       [name]: type === 'checkbox' ? checked : value,
+//     }))
+//   }
+
+//   const submit = async e => {
+//     e.preventDefault()
+
+//     const res = await fetch(API, {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({
+//         ...form,
+//         chargeAmount: Number(form.chargeAmount),
+//         freeTrialDays: Number(form.freeTrialDays),
+//         setupCharge: Number(form.setupCharge),
+//         installments:
+//           form.installments === ''
+//             ? null
+//             : Number(form.installments),
+//         // this tells backend to create Airwallex objects
+//         syncToAirwallex: true,
+//       }),
+//     })
+
+//     const created = await res.json()
+//     onCreated(created)
+//     onClose()
+//   }
+
+//   return (
+//     <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center px-4">
+//       <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-6 overflow-y-auto max-h-[90vh]">
+//         <h2 className="text-2xl font-bold mb-6">
+//           Create Selling Plan
+//         </h2>
+
+//         <form
+//           onSubmit={submit}
+//           className="grid grid-cols-1 md:grid-cols-2 gap-4"
+//         >
+//           <Input label="Plan Name" name="name" onChange={handleChange} required />
+//           <Input label="Charge Amount" name="chargeAmount" type="number" onChange={handleChange} required />
+
+//           <Select
+//             label="Charge Shipping"
+//             name="chargeShipping"
+//             onChange={handleChange}
+//             options={[
+//               { label: 'Yes', value: 'yes' },
+//               { label: 'No', value: 'no' },
+//               { label: 'Only on first invoice', value: 'first_invoice_only' },
+//             ]}
+//           />
+
+//           <Checkbox
+//             label="Charge Sales Tax"
+//             name="chargeSalesTax"
+//             checked={form.chargeSalesTax}
+//             onChange={handleChange}
+//           />
+
+//           <Checkbox
+//             label="Enable in Customer Portal"
+//             name="enableCustomerPortal"
+//             checked={form.enableCustomerPortal}
+//             onChange={handleChange}
+//           />
+
+//           <Input label="Billing Cycle Start Day (UTC)" name="billingCycleStartDayUTC" type="number" onChange={handleChange} />
+//           <Input label="Billing Cycle Start Time (UTC)" name="billingCycleStartTimeUTC" type="time" onChange={handleChange} />
+//           <Input label="Free Trial Days" name="freeTrialDays" type="number" onChange={handleChange} />
+//           <Input label="Installments" name="installments" type="number" onChange={handleChange} />
+
+//           <Select
+//             label="Customer Cancellation Behaviour"
+//             name="customerCancellationBehaviour"
+//             onChange={handleChange}
+//             options={[
+//               { label: 'Cancel immediately', value: 'cancel_immediately' },
+//               { label: 'Cancel at end of billing period', value: 'cancel_at_period_end' },
+//               { label: 'Do not allow cancellation', value: 'do_not_allow' },
+//             ]}
+//           />
+
+//           <Input label="Setup Charge" name="setupCharge" type="number" onChange={handleChange} />
+
+//           <div className="md:col-span-2 flex justify-end gap-3 mt-6">
+//             <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">
+//               Cancel
+//             </button>
+//             <button type="submit" className="px-4 py-2 bg-gray-900 text-white rounded-lg">
+//               Create Plan
+//             </button>
+//           </div>
+//         </form>
+//       </div>
+//     </div>
+//   )
+// }
+
+
+const APS = `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans`
+
 function CreatePlanForm({ onClose, onCreated }) {
   const [form, setForm] = useState({
     name: '',
-    chargeAmount: '',
-    chargeShipping: 'yes',
-    chargeSalesTax: true,
-    enableCustomerPortal: true,
-    billingCycleStartDayUTC: '',
-    billingCycleStartTimeUTC: '',
-    freeTrialDays: 0,
-    installments: '',
-    customerCancellationBehaviour: 'cancel_at_period_end',
-    setupCharge: 0,
+    description: '',
+    amount: '',
+    interval: 'MONTH',
+    trialDays: 30,
   })
 
   const handleChange = e => {
-    const { name, value, type, checked } = e.target
-    setForm(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
+    const { name, value } = e.target
+    setForm(prev => ({ ...prev, [name]: value }))
   }
 
   const submit = async e => {
     e.preventDefault()
 
-    const res = await fetch(API, {
+    const res = await fetch(APS, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
-        chargeAmount: Number(form.chargeAmount),
-        freeTrialDays: Number(form.freeTrialDays),
-        setupCharge: Number(form.setupCharge),
-        installments:
-          form.installments === ''
-            ? null
-            : Number(form.installments),
-        // this tells backend to create Airwallex objects
-        syncToAirwallex: true,
+        amount: Number(form.amount),
+        trialDays: Number(form.trialDays),
       }),
     })
 
     const created = await res.json()
-    onCreated(created)
+    if (!res.ok) {
+      alert(created.error)
+      return
+    }
+
+    onCreated?.(created)
     onClose()
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center px-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-6 overflow-y-auto max-h-[90vh]">
-        <h2 className="text-2xl font-bold mb-6">
-          Create Selling Plan
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-white/80 via-gray-100/80 to-gray-200/80 backdrop-blur px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+          Create Subscription Plan
         </h2>
 
-        <form
-          onSubmit={submit}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
-        >
-          <Input label="Plan Name" name="name" onChange={handleChange} required />
-          <Input label="Charge Amount" name="chargeAmount" type="number" onChange={handleChange} required />
-
-          <Select
-            label="Charge Shipping"
-            name="chargeShipping"
+        <form onSubmit={submit} className="space-y-4">
+          <input
+            name="name"
+            placeholder="Plan name"
+            value={form.name}
             onChange={handleChange}
-            options={[
-              { label: 'Yes', value: 'yes' },
-              { label: 'No', value: 'no' },
-              { label: 'Only on first invoice', value: 'first_invoice_only' },
-            ]}
+            required
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-400 outline-none"
           />
 
-          <Checkbox
-            label="Charge Sales Tax"
-            name="chargeSalesTax"
-            checked={form.chargeSalesTax}
+          <input
+            name="description"
+            placeholder="Description"
+            value={form.description}
             onChange={handleChange}
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-400 outline-none"
           />
 
-          <Checkbox
-            label="Enable in Customer Portal"
-            name="enableCustomerPortal"
-            checked={form.enableCustomerPortal}
+          <input
+            name="amount"
+            type="number"
+            placeholder="Amount (USD)"
+            value={form.amount}
             onChange={handleChange}
+            required
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-400 outline-none"
           />
 
-          <Input label="Billing Cycle Start Day (UTC)" name="billingCycleStartDayUTC" type="number" onChange={handleChange} />
-          <Input label="Billing Cycle Start Time (UTC)" name="billingCycleStartTimeUTC" type="time" onChange={handleChange} />
-          <Input label="Free Trial Days" name="freeTrialDays" type="number" onChange={handleChange} />
-          <Input label="Installments" name="installments" type="number" onChange={handleChange} />
-
-          <Select
-            label="Customer Cancellation Behaviour"
-            name="customerCancellationBehaviour"
+          <select
+            name="interval"
+            value={form.interval}
             onChange={handleChange}
-            options={[
-              { label: 'Cancel immediately', value: 'cancel_immediately' },
-              { label: 'Cancel at end of billing period', value: 'cancel_at_period_end' },
-              { label: 'Do not allow cancellation', value: 'do_not_allow' },
-            ]}
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-gray-400 outline-none"
+          >
+            <option value="MONTH">Monthly</option>
+            <option value="YEAR">Yearly</option>
+          </select>
+
+          <input
+            name="trialDays"
+            type="number"
+            placeholder="Trial days"
+            value={form.trialDays}
+            onChange={handleChange}
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-400 outline-none"
           />
 
-          <Input label="Setup Charge" name="setupCharge" type="number" onChange={handleChange} />
-
-          <div className="md:col-span-2 flex justify-end gap-3 mt-6">
-            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+            >
               Cancel
             </button>
-            <button type="submit" className="px-4 py-2 bg-gray-900 text-white rounded-lg">
+
+            <button
+              type="submit"
+              className="px-5 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition"
+            >
               Create Plan
             </button>
           </div>
@@ -210,6 +327,8 @@ function CreatePlanForm({ onClose, onCreated }) {
     </div>
   )
 }
+
+
 
 /* ---------- UI Helpers ---------- */
 
