@@ -31,6 +31,26 @@ async function getAirwallexToken() {
   }
 }
 
+
+router.get('/plans', async (req, res) => {
+  try {
+    const { interval, currency } = req.query;
+
+    const query = {};
+    if (interval) query.interval = interval;
+    if (currency) query.currency = currency;
+
+    const plans = await SubscriptionPlan
+      .find(query)
+      .sort({ createdAt: -1 });
+
+    res.json(plans);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: 'Failed to fetch plans' });
+  }
+});
+
 router.post('/plans', async (req, res) => {
   try {
     const {
@@ -40,6 +60,7 @@ router.post('/plans', async (req, res) => {
       currency = 'USD',
       interval = 'MONTH',
       trialDays = 14,
+      active,
     } = req.body;
 
     // 1️⃣ Prevent duplicates
@@ -60,6 +81,7 @@ router.post('/plans', async (req, res) => {
       },
       { headers: { Authorization: `Bearer ${token}` } }
     );
+
 
     // 3️⃣ Create Price
     const priceRes = await axios.post(
@@ -100,6 +122,67 @@ router.post('/plans', async (req, res) => {
     res.status(500).json({ error: 'Failed to create plan' });
   }
 });
+
+
+/**
+ * UPDATE AIRWALLEX PRODUCT
+ */
+
+
+router.put('/plans/:id', async (req, res) => {
+  try {
+    const {
+      name,
+      description,
+      active,
+      metadata,
+      unit,
+    } = req.body;
+
+    // 1️⃣ Find plan
+    const plan = await SubscriptionPlan.findById(req.params.id);
+    if (!plan) {
+      return res.status(404).json({ error: 'Plan not found' });
+    }
+
+    const token = await getAirwallexToken();
+
+    // 2️⃣ Update Airwallex Product
+    await axios.post(
+      `https://api-demo.airwallex.com/api/v1/products/${plan.airwallexProductId}/update`,
+      {
+        request_id: crypto.randomUUID(),
+        ...(name && { name }),
+        ...(description && { description }),
+        ...(typeof active === 'boolean' && { active }),
+        ...(unit && { unit }),
+        ...(metadata && { metadata }),
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    // 3️⃣ Update MongoDB (mirror only)
+    if (name !== undefined) plan.name = name;
+    if (description !== undefined) plan.description = description;
+    // if (active !== undefined) plan.status = active ? 'enabled' : 'disabled';
+    if (typeof active === 'boolean') {
+      plan.status = active ? 'enabled' : 'disabled';
+    }
+
+    await plan.save();
+
+    res.json(plan);
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    res.status(500).json({ error: 'Failed to update plan' });
+  }
+});
+
 
 
 

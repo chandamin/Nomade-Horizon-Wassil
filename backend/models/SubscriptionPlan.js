@@ -40,9 +40,10 @@ const SubscriptionPlanSchema = new mongoose.Schema(
       required: true,
     },
 
-    isActive: {
-      type: Boolean,
-      default: true,
+    status: {
+      type: String,
+      enum: ['enabled', 'disabled', 'archived'],
+      default: 'enabled',
     },
   },
   { timestamps: true }

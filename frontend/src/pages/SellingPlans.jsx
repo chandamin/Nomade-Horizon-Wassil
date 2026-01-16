@@ -1,21 +1,56 @@
 import { useEffect, useState } from 'react'
 
-const API = `${import.meta.env.VITE_BACKEND_URL}/api/selling-plans`
+// const API = `${import.meta.env.VITE_BACKEND_URL}/api/selling-plans`
+const API = `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans`
+
 
 export default function SellingPlans() {
   const [plans, setPlans] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(true)
 
+  // useEffect(() => {
+  //   fetch(API)
+  //     .then(res => res.json())
+  //     .then(data => {
+  //       setPlans(data)
+  //       setLoading(false)
+  //     })
+  //     .catch(() => setLoading(false))
+  // }, [])
+
   useEffect(() => {
-    fetch(API)
-      .then(res => res.json())
-      .then(data => {
-        setPlans(data)
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
-  }, [])
+  let mounted = true;
+
+  async function loadPlans() {
+    try {
+      const res = await fetch(API, {
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          Accept: "application/json",
+        },
+      });
+      console.log("API: ", API);
+
+      const text = await res.text();
+      console.log("RAW RESPONSE:", text);
+
+      if (!res.ok) throw new Error(text);
+
+      const data = JSON.parse(text);
+      if (mounted) setPlans(data);
+    } catch (err) {
+      console.error("Failed to load plans:", err);
+    } finally {
+      if (mounted) setLoading(false);
+    }
+  }
+
+  loadPlans();
+  return () => (mounted = false);
+}, []);
+
+
 
   return (
     // <div className="space-y-6">
@@ -44,6 +79,7 @@ export default function SellingPlans() {
               <tr>
                 <TableHead>Name</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Interval</TableHead>
                 <TableHead>Free Trial</TableHead>
                 <TableHead>Status</TableHead>
               </tr>
@@ -53,15 +89,37 @@ export default function SellingPlans() {
                 plans.map(plan => (
                   <tr key={plan._id} className="hover:bg-gray-50">
                     <TableCell>{plan.name}</TableCell>
-                    <TableCell>£{plan.chargeAmount}</TableCell>
+                    <TableCell>£{plan.amount}</TableCell>
+                    <TableCell>{plan.interval}</TableCell>
                     <TableCell>
-                      {plan.freeTrialDays > 0
-                        ? `${plan.freeTrialDays} days`
+                      {plan.trialDays > 0
+                        ? `${plan.trialDays} days`
                         : 'None'}
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={plan.status} />
+                      <button
+                        onClick={async () => {
+                          const updated = await updatePlan(plan._id, {
+                            active: plan.status !== 'enabled',
+                          });
+
+                          setPlans(prev =>
+                            prev.map(p =>
+                              p._id === updated._id ? updated : p
+                            )
+                          );
+                        }}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          plan.status === 'enabled'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-200 text-gray-700'
+                        }`}
+                      >
+                        {plan.status === 'enabled' ? 'Enabled' : 'Disabled'}
+                      </button>
                     </TableCell>
+
+
                   </tr>
                 ))
               ) : (
@@ -92,125 +150,6 @@ export default function SellingPlans() {
 }
 
 /* ---------- Create Plan Form ---------- */
-
-// function CreatePlanForm({ onClose, onCreated }) {
-//   const [form, setForm] = useState({
-//     name: '',
-//     chargeAmount: '',
-//     chargeShipping: 'yes',
-//     chargeSalesTax: true,
-//     enableCustomerPortal: true,
-//     billingCycleStartDayUTC: '',
-//     billingCycleStartTimeUTC: '',
-//     freeTrialDays: 0,
-//     installments: '',
-//     customerCancellationBehaviour: 'cancel_at_period_end',
-//     setupCharge: 0,
-//   })
-
-//   const handleChange = e => {
-//     const { name, value, type, checked } = e.target
-//     setForm(prev => ({
-//       ...prev,
-//       [name]: type === 'checkbox' ? checked : value,
-//     }))
-//   }
-
-//   const submit = async e => {
-//     e.preventDefault()
-
-//     const res = await fetch(API, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({
-//         ...form,
-//         chargeAmount: Number(form.chargeAmount),
-//         freeTrialDays: Number(form.freeTrialDays),
-//         setupCharge: Number(form.setupCharge),
-//         installments:
-//           form.installments === ''
-//             ? null
-//             : Number(form.installments),
-//         // this tells backend to create Airwallex objects
-//         syncToAirwallex: true,
-//       }),
-//     })
-
-//     const created = await res.json()
-//     onCreated(created)
-//     onClose()
-//   }
-
-//   return (
-//     <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center px-4">
-//       <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-6 overflow-y-auto max-h-[90vh]">
-//         <h2 className="text-2xl font-bold mb-6">
-//           Create Selling Plan
-//         </h2>
-
-//         <form
-//           onSubmit={submit}
-//           className="grid grid-cols-1 md:grid-cols-2 gap-4"
-//         >
-//           <Input label="Plan Name" name="name" onChange={handleChange} required />
-//           <Input label="Charge Amount" name="chargeAmount" type="number" onChange={handleChange} required />
-
-//           <Select
-//             label="Charge Shipping"
-//             name="chargeShipping"
-//             onChange={handleChange}
-//             options={[
-//               { label: 'Yes', value: 'yes' },
-//               { label: 'No', value: 'no' },
-//               { label: 'Only on first invoice', value: 'first_invoice_only' },
-//             ]}
-//           />
-
-//           <Checkbox
-//             label="Charge Sales Tax"
-//             name="chargeSalesTax"
-//             checked={form.chargeSalesTax}
-//             onChange={handleChange}
-//           />
-
-//           <Checkbox
-//             label="Enable in Customer Portal"
-//             name="enableCustomerPortal"
-//             checked={form.enableCustomerPortal}
-//             onChange={handleChange}
-//           />
-
-//           <Input label="Billing Cycle Start Day (UTC)" name="billingCycleStartDayUTC" type="number" onChange={handleChange} />
-//           <Input label="Billing Cycle Start Time (UTC)" name="billingCycleStartTimeUTC" type="time" onChange={handleChange} />
-//           <Input label="Free Trial Days" name="freeTrialDays" type="number" onChange={handleChange} />
-//           <Input label="Installments" name="installments" type="number" onChange={handleChange} />
-
-//           <Select
-//             label="Customer Cancellation Behaviour"
-//             name="customerCancellationBehaviour"
-//             onChange={handleChange}
-//             options={[
-//               { label: 'Cancel immediately', value: 'cancel_immediately' },
-//               { label: 'Cancel at end of billing period', value: 'cancel_at_period_end' },
-//               { label: 'Do not allow cancellation', value: 'do_not_allow' },
-//             ]}
-//           />
-
-//           <Input label="Setup Charge" name="setupCharge" type="number" onChange={handleChange} />
-
-//           <div className="md:col-span-2 flex justify-end gap-3 mt-6">
-//             <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg">
-//               Cancel
-//             </button>
-//             <button type="submit" className="px-4 py-2 bg-gray-900 text-white rounded-lg">
-//               Create Plan
-//             </button>
-//           </div>
-//         </form>
-//       </div>
-//     </div>
-//   )
-// }
 
 
 const APS = `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans`
@@ -331,6 +270,37 @@ function CreatePlanForm({ onClose, onCreated }) {
 
 
 /* ---------- UI Helpers ---------- */
+
+async function updatePlan(id, payload) {
+  const res = await fetch(`${API}/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error);
+  return data;
+}
+
+function StatusToggle({ enabled, onToggle }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+        enabled
+          ? 'bg-green-100 text-green-800'
+          : 'bg-gray-200 text-gray-700'
+      }`}
+    >
+      {enabled ? 'Enabled' : 'Disabled'}
+    </button>
+  );
+}
+
 
 function Input({ label, ...props }) {
   return (
