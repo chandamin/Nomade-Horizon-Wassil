@@ -2,7 +2,10 @@ const express = require('express')
 const axios = require('axios');
 const router = express.Router()
 const SubscriptionPlan = require('../models/SubscriptionPlan.js');
+const BillingCustomer = require('../models/BillingCustomer.js');
 const dayjs = require('dayjs');
+const crypto = require('crypto');
+
 
 
 
@@ -51,6 +54,11 @@ router.get('/plans', async (req, res) => {
   }
 });
 
+
+
+/**
+ * CREATE AIRWALLEX PRODUCT and PRICE
+ */
 router.post('/plans', async (req, res) => {
   try {
     const {
@@ -184,6 +192,106 @@ router.put('/plans/:id', async (req, res) => {
 });
 
 
+/**
+ * CREATE AIRWALLEX BILLING CUSTOMER + SAVE TO DB
+ */
+router.post('/billing-customers', async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      type = 'INDIVIDUAL',
+      phone_number,
+      tax_identification_number,
+      default_billing_currency,
+      default_legal_entity_id,
+      description,
+      nickname,
+      address,
+      metadata,
+    } = req.body;
+
+    // 1️⃣ Prevent duplicate (by email)
+    if (email) {
+      const exists = await BillingCustomer.findOne({ email });
+      if (exists) {
+        return res.status(400).json({
+          error: 'Billing customer already exists',
+          customer: exists,
+        });
+      }
+    }
+
+    if (type && !['BUSINESS', 'INDIVIDUAL'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid customer type' });
+    }
+
+    if (address && !address.country_code) {
+      return res.status(400).json({
+        error: 'address.country_code is required',
+      });
+    }
+
+    const token = await getAirwallexToken();
+
+    // 2️⃣ Create in Airwallex
+    const airwallexRes = await axios.post(
+      'https://api-demo.airwallex.com/api/v1/billing_customers/create',
+      {
+        request_id: crypto.randomUUID(),
+        ...(name && { name }),
+        ...(email && { email }),
+        ...(type && { type }),
+        ...(phone_number && { phone_number }),
+        ...(tax_identification_number && { tax_identification_number }),
+        ...(default_billing_currency && { default_billing_currency }),
+        ...(default_legal_entity_id && { default_legal_entity_id }),
+        ...(description && { description }),
+        ...(nickname && { nickname }),
+        ...(address && { address }),
+        ...(metadata && { metadata }),
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const awCustomer = airwallexRes.data;
+
+    // 3️⃣ Save to MongoDB
+    const customer = await BillingCustomer.create({
+      airwallexCustomerId: awCustomer.id,
+      name: awCustomer.name,
+      email: awCustomer.email,
+      type: awCustomer.type,
+      phone_number: awCustomer.phone_number,
+      tax_identification_number: awCustomer.tax_identification_number,
+      default_billing_currency: awCustomer.default_billing_currency,
+      default_legal_entity_id: awCustomer.default_legal_entity_id,
+      description: awCustomer.description,
+      nickname: awCustomer.nickname,
+      address: awCustomer.address,
+      metadata: awCustomer.metadata,
+      createdAt: dayjs(awCustomer.created_at).toDate(),
+      updatedAt: dayjs(awCustomer.updated_at).toDate(),
+    });
+
+    res.status(201).json(customer);
+  } catch (err) {
+    console.error(
+      'Create billing customer error:',
+      err.response?.status,
+      err.response?.data || err.message
+    );
+
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || 'Failed to create billing customer',
+    });
+  }
+});
 
 
 /**

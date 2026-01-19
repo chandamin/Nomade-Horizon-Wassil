@@ -27,6 +27,7 @@ export default function Dashboard() {
   // }, [])
   useEffect(() => {
   fetch(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard`, {
+  // fetch("/api/dashboard", {
     headers: {
       'ngrok-skip-browser-warning': 'true',
     },
