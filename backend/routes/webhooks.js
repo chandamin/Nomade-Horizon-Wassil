@@ -31,22 +31,4 @@ router.post(
     res.status(200).send('OK');
   }
 );
-
-// router.post('/order-created', verifyWebhook, async (req, res) => {
-//     const payload = JSON.parse(req.rawBody.toString());
-
-//     const orderId = payload.data.id;
-//     const storeHash = payload.producer.split('/')[1];
-//     console.log(JSON.stringify(req.body, null, 2));
-
-//     console.log('Order created webhook received');
-
-//     await Subscriber.create({
-//         storeHash,
-//         orderId,
-//     });
-
-//     res.sendStatus(200);
-// });
-
 module.exports = router;

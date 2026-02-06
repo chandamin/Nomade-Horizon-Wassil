@@ -5,26 +5,6 @@ export default function Dashboard() {
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
 
-  // useEffect(() => {
-  //   fetch(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard`)
-  //     .then((res) => {
-  //       if (!res.ok) throw new Error(`Error: ${res.status} ${res.statusText}`)
-  //       return res.text()
-  //     })
-  //     .then((text) => {
-  //       try {
-  //         const jsonData = JSON.parse(text)
-  //         setData(jsonData)
-  //       } catch (e) {
-  //         console.error('Error parsing JSON:', e)
-  //         setError(`Invalid JSON response. Raw response: ${text}`)
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       console.error('Error fetching data:', err)
-  //       setError(`Failed to fetch data. ${err.message}`)
-  //     })
-  // }, [])
   useEffect(() => {
   fetch(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard`, {
   // fetch("/api/dashboard", {

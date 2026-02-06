@@ -1,25 +1,3 @@
-// const express = require('express');
-// const router = express.Router();
-
-// const Subscription = require('../models/Subscription');
-// const fetchOrders = require('../services/bigcommerceOrders');
-
-// router.post('/:id', async (req, res) => {
-//     const sub = await Subscription.findById(req.params.id);
-//     if (!sub) {
-//         return res.status(404).json({ error: 'Subscription not found' });
-//     }
-
-//     const orders = await fetchOrders(sub.storeHash, sub.customerEmail);
-
-//     sub.orders = orders;
-//     await sub.save();
-
-//     res.json(sub);
-// });
-
-// module.exports = router;
-
 const express = require('express');
 const router = express.Router();
 const Subscription = require('../models/Subscription');

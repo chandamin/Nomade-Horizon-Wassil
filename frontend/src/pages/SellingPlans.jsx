@@ -1,54 +1,52 @@
 import { useEffect, useState } from 'react'
 
 // const API = `${import.meta.env.VITE_BACKEND_URL}/api/selling-plans`
-const API = `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans`
+// const API = `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans`
 
 
-export default function SellingPlans() {
+
+
+export default function SellingPlans({ environment }) {
   const [plans, setPlans] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(true)
-
-  // useEffect(() => {
-  //   fetch(API)
-  //     .then(res => res.json())
-  //     .then(data => {
-  //       setPlans(data)
-  //       setLoading(false)
-  //     })
-  //     .catch(() => setLoading(false))
-  // }, [])
-
+  
+  // Set the API endpoint dynamically based on the environment
+  
+  const API = environment === 'live'
+  ? `${import.meta.env.VITE_BACKEND_URL}/api/selling-plans/plans`
+  : `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans`;
+  
   useEffect(() => {
-  let mounted = true;
+    let mounted = true;
 
-  async function loadPlans() {
-    try {
-      const res = await fetch(API, {
-        headers: {
-          "ngrok-skip-browser-warning": "true",
-          Accept: "application/json",
-        },
-      });
-      console.log("API: ", API);
+    async function loadPlans() {
+      try {
+        const res = await fetch(API, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+            Accept: "application/json",
+          },
+        });
+        console.log("API: ", API);
 
-      const text = await res.text();
-      console.log("RAW RESPONSE:", text);
+        const text = await res.text();
+        console.log("RAW RESPONSE:", text);
 
-      if (!res.ok) throw new Error(text);
+        if (!res.ok) throw new Error(text);
 
-      const data = JSON.parse(text);
-      if (mounted) setPlans(data);
-    } catch (err) {
-      console.error("Failed to load plans:", err);
-    } finally {
-      if (mounted) setLoading(false);
+        const data = JSON.parse(text);
+        if (mounted) setPlans(data);
+      } catch (err) {
+        console.error("Failed to load plans:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     }
-  }
 
-  loadPlans();
-  return () => (mounted = false);
-}, []);
+    loadPlans();
+    return () => (mounted = false);
+  }, []);
 
 
 
@@ -114,6 +112,8 @@ export default function SellingPlans() {
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-200 text-gray-700'
                         }`}
+
+                        environment={environment}
                       >
                         {plan.status === 'enabled' ? 'Enabled' : 'Disabled'}
                       </button>
@@ -143,6 +143,7 @@ export default function SellingPlans() {
           onCreated={plan =>
             setPlans(prev => [plan, ...prev])
           }
+          environment={environment}
         />
       )}
     </div>
@@ -152,9 +153,16 @@ export default function SellingPlans() {
 /* ---------- Create Plan Form ---------- */
 
 
-const APS = `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans`
+// const APS = `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans`
 
-function CreatePlanForm({ onClose, onCreated }) {
+function CreatePlanForm({ onClose, onCreated, environment }) {
+
+  const API = environment === 'live'
+  ? `${import.meta.env.VITE_BACKEND_URL}/api/selling-plans/plans`
+  : `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans`;
+
+  // Set the API endpoint dynamically based on the environment
+
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -171,7 +179,7 @@ function CreatePlanForm({ onClose, onCreated }) {
   const submit = async e => {
     e.preventDefault()
 
-    const res = await fetch(APS, {
+    const res = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -271,7 +279,13 @@ function CreatePlanForm({ onClose, onCreated }) {
 
 /* ---------- UI Helpers ---------- */
 
-async function updatePlan(id, payload) {
+async function updatePlan(id, payload, environment) {
+
+  const API = environment === 'live'
+  ? `${import.meta.env.VITE_BACKEND_URL}/api/selling-plans/plans`
+  : `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans`;
+
+  console.log("APILive Or not: ", API);
   const res = await fetch(`${API}/${id}`, {
     method: 'PUT',
     headers: {
@@ -286,79 +300,79 @@ async function updatePlan(id, payload) {
   return data;
 }
 
-function StatusToggle({ enabled, onToggle }) {
-  return (
-    <button
-      onClick={onToggle}
-      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-        enabled
-          ? 'bg-green-100 text-green-800'
-          : 'bg-gray-200 text-gray-700'
-      }`}
-    >
-      {enabled ? 'Enabled' : 'Disabled'}
-    </button>
-  );
-}
+// function StatusToggle({ enabled, onToggle }) {
+//   return (
+//     <button
+//       onClick={onToggle}
+//       className={`px-3 py-1 rounded-full text-xs font-semibold ${
+//         enabled
+//           ? 'bg-green-100 text-green-800'
+//           : 'bg-gray-200 text-gray-700'
+//       }`}
+//     >
+//       {enabled ? 'Enabled' : 'Disabled'}
+//     </button>
+//   );
+// }
 
 
-function Input({ label, ...props }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-600 mb-1">
-        {label}
-      </label>
-      <input
-        {...props}
-        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-gray-400"
-      />
-    </div>
-  )
-}
+// function Input({ label, ...props }) {
+//   return (
+//     <div>
+//       <label className="block text-sm font-medium text-gray-600 mb-1">
+//         {label}
+//       </label>
+//       <input
+//         {...props}
+//         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-gray-400"
+//       />
+//     </div>
+//   )
+// }
 
-function Select({ label, name, options, onChange }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-600 mb-1">
-        {label}
-      </label>
-      <select
-        name={name}
-        onChange={onChange}
-        className="w-full px-3 py-2 border rounded-lg"
-      >
-        {options.map(o => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  )
-}
+// function Select({ label, name, options, onChange }) {
+//   return (
+//     <div>
+//       <label className="block text-sm font-medium text-gray-600 mb-1">
+//         {label}
+//       </label>
+//       <select
+//         name={name}
+//         onChange={onChange}
+//         className="w-full px-3 py-2 border rounded-lg"
+//       >
+//         {options.map(o => (
+//           <option key={o.value} value={o.value}>
+//             {o.label}
+//           </option>
+//         ))}
+//       </select>
+//     </div>
+//   )
+// }
 
-function Checkbox({ label, ...props }) {
-  return (
-    <label className="flex items-center gap-2 text-sm text-gray-700">
-      <input type="checkbox" {...props} />
-      {label}
-    </label>
-  )
-}
+// function Checkbox({ label, ...props }) {
+//   return (
+//     <label className="flex items-center gap-2 text-sm text-gray-700">
+//       <input type="checkbox" {...props} />
+//       {label}
+//     </label>
+//   )
+// }
 
-function StatusBadge({ status }) {
-  return (
-    <span
-      className={`px-2 py-1 rounded-full text-xs font-semibold ${
-        status === 'enabled'
-          ? 'bg-green-100 text-green-800'
-          : 'bg-gray-200 text-gray-700'
-      }`}
-    >
-      {status}
-    </span>
-  )
-}
+// function StatusBadge({ status }) {
+//   return (
+//     <span
+//       className={`px-2 py-1 rounded-full text-xs font-semibold ${
+//         status === 'enabled'
+//           ? 'bg-green-100 text-green-800'
+//           : 'bg-gray-200 text-gray-700'
+//       }`}
+//     >
+//       {status}
+//     </span>
+//   )
+// }
 
 function TableHead({ children }) {
   return (

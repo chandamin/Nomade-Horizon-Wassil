@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   LayoutDashboard,
   Users,
@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
+import Switch from 'react-switch'
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -16,8 +17,25 @@ const navItems = [
   { name: 'Subscriptions', path: '/subscriptions', icon: Repeat },
 ]
 
-function Sidebar() {
+function Sidebar({ setEnvironment }) {
   const [collapsed, setCollapsed] = useState(false)
+  const [isLive, setIsLive] = useState(false)
+  // const [isLive, setIsLive] = useState(false)
+
+  // Load environment from locatStorage
+  useEffect(() => {
+    const savedEnv = localStorage.getItem('environment') || 'sandbox';
+    setIsLive(savedEnv === 'live')
+  }, [])
+
+  const handleEnvironmentToggle = (checked) => {
+    const newEnv = checked ? 'live' : 'sandbox';
+    setIsLive(checked);
+    localStorage.setItem('environment', newEnv);
+    setEnvironment(newEnv);
+  }
+
+
 
   return (
     <aside
@@ -47,6 +65,25 @@ function Sidebar() {
             A
           </h1>
         )}
+      </div>
+
+
+      {/* Environment Toggle */}
+      <div className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          <span className="text-white text-sm">Environment</span>
+          <Switch
+            checked={isLive}
+            onChange={handleEnvironmentToggle}
+            offColor="#888"  // Customize colors for the off state
+            onColor="#4CAF50" // Customize colors for the on state
+            onHandleColor="#fff" // Handle color
+            offHandleColor="#fff" // Handle color
+            height={20} // Height of the switch
+            width={40}  // Width of the switch
+          />
+          <span className="text-white text-sm">{isLive ? 'Live' : 'Sandbox'}</span>
+        </div>
       </div>
 
       {/* Navigation */}
