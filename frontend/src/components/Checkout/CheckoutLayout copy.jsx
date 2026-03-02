@@ -65,7 +65,7 @@ export default function CheckoutLayout({cart}) {
       <header className="bg-white border-b">
         <div className="max-w-[1180px] mx-auto py-4 text-center">
           <img
-            src="https://images.unsplash.com/photo-1607082349566-1870e33f43d1?w=200"
+            src="../images/logo_final_1764933550__59613.original (1).png"
             alt="Flashventes"
             className="h-7 mx-auto object-contain"
           />

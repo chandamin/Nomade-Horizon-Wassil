@@ -377,7 +377,7 @@ export default function ShippingStep({
 
         {/* ADDRESS FORM */}
         <div className="nr-sec-st-cntnt-wr">
-          <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+          <div className="mt-4 grid grid-cols-2 gap-[8px] text-sm">
             <div className="col-span-2">
               <div className="nr-input-field flex flex-col-reverse w-full nr-select-field">
                 <select
@@ -498,11 +498,11 @@ export default function ShippingStep({
               <label htmlFor="phone" className="nr-input-label text-[14px] text-[#666] top-[unset]">
                 Telephone (if the postman needs to contact you)
               </label>
-              {customerData?.email && !form.phone && (
+              {/* {customerData?.email && !form.phone && (
                 <div className="text-xs text-gray-500 mt-1">
                   Consider adding a phone number for delivery updates
                 </div>
-              )}
+              )} */}
             </div>
           </div>
 
@@ -570,7 +570,7 @@ export default function ShippingStep({
                 Saving address...
               </span>
             ) : (
-              'CONTINUE'
+              'CONTINUER'
             )}
           </button>
           
@@ -667,7 +667,7 @@ function Header({ step, title, onEdit }) {
   return (
     <div className="flex items-center justify-between">
       <h2 className="nr-step-hed-wr flex items-center gap-2 font-[700] text-[25px] text-[#333]">
-        <span className="flex items-center justify-center rounded-full border text-[20px] font-[400] border-[#333] h-[35px] w-[35px]">
+        <span className="flex items-center justify-center rounded-full border-[2px] text-[20px] font-[400] border-[#333] h-[35px] w-[35px]">
           {step}
         </span>
         {title}

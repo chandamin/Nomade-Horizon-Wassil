@@ -495,33 +495,33 @@ export default function CheckoutLayout({
   return (
     <div className="min-h-screen bg-[#fff]">
       {/* ================= HEADER ================= */}
-      <header className="bg-white border-b">
-        <div className="max-w-[1200px] mx-auto py-4 text-center px-[20px]">
+      <header className="bg-white">
+        <div className="max-w-[1200px] mx-auto md:py-[39px] text-center p-[20px]">
           <img
-            src="https://images.unsplash.com/photo-1607082349566-1870e33f43d1?w=200"
-            alt="Flashventes"
-            className="h-7 mx-auto object-contain"
+            src="../images/logo_final_1764933550__59613.original (1).png"
+            alt="logo"
+            className="h-[50px] mx-auto object-contain nr-logo"
           />
         </div>
       </header>
 
-      {/* ================= PROMO BANNER (using old styles but new logic) ================= */}
-      <div className="max-w-[1200px] mx-auto px-[20px] mb-6">
-        <div className="nr-date-time-wr text-white bg-[#3b4450] rounded-[5px] py-[8px] px-[10px] text-center">
-          <p className="nr-date-time-txt-fir text-[14px] md:text-[16px]">
-            Félicitations, votre promo a été appliquée.
-          </p>
-          <p className="nr-date-time-txt-sec text-[13px] md:text-[16px]">
-            Il vous reste <span className="text-[#f4d54c] font-[600]">{minutes}:{seconds}</span> pour en bénéficier. 
-            Valable ce <b>{formattedDate}</b>
-          </p>
-        </div>
-      </div>
 
       {/* ================= MAIN CONTENT ================= */}
-      <main className="max-w-[1200px] mx-auto gap-8 py-8 px-[20px] grid grid-cols-1 sm:grid-cols-12 md:grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 2xl:grid-cols-12">
+      <main className="max-w-[1200px] mx-auto py-8 px-[28px] md:px-[35px] flex pt-0 flex-col md:flex-row">
         {/* ================= LEFT COLUMN ================= */}
-        <section className="col-span-7">
+        <section className="nr-lft-prt w-[100%] lg:w-[66.6666666667%] lg:pr-[78px] pr-0 md:w-[58.3333333333%]">
+          {/* ================= PROMO BANNER (using old styles but new logic) ================= */}
+          <div className="max-w-[1200px] mx-auto">
+            <div className="nr-date-time-wr text-white bg-[#3b4450] rounded-[5px] py-[8px] px-[10px] text-center">
+              <p className="nr-date-time-txt-fir text-[14px] md:text-[16px]">
+                Félicitations, votre promo a été appliquée.
+              </p>
+              <p className="nr-date-time-txt-sec text-[13px] md:text-[16px] mt-[5px]">
+                Il vous reste <span className="text-[#f4d54c] font-[600]">{minutes}:{seconds}</span> pour en bénéficier. 
+                Valable ce <b>{formattedDate}</b>
+              </p>
+            </div>
+          </div>
           <div className="bg-white rounded pt-[24px] space-y-6">
             {/* CLIENT STEP with updated onContinue handler */}
             <ClientStep
@@ -628,26 +628,32 @@ export default function CheckoutLayout({
                   PLACE AN ORDER
                 </button> */}
 
-                <div className="text-xs text-gray-600 text-center mt-3">
-                  🔒 Secure 256-bit SSL encryption
+                <div className="text-xs text-gray-600 text-center mt-3 flex items-center gap-[5px] justify-center">
+                  <img src="../images/ssl.webp" alt="lock" className="h-[15px]"/>
+                   Secure 256-bit SSL encryption
                 </div>
 
                 <div className="flex justify-center gap-6 mt-4">
                   <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/3/3a/McAfee_logo.png"
+                    src="../images/payment-icon-new.webp"
                     alt="McAfee"
-                    className="h-6"
+                    className="h-[50px]"
                   />
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/6/6b/Norton_logo.svg"
-                    alt="Norton"
-                    className="h-6"
-                  />
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/5/5b/TRUSTe_logo.png"
-                    alt="TRUSTe"
-                    className="h-6"
-                  />
+                </div>
+                <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc]">
+                  <div className="nr-wrranty-img-outer w-100 flex justify-center">
+                    <img className="h-[100px]" src="../images/one-yr-warranty.webp" alt="wrranty-img" />
+                  </div>
+                  <div className="nr-checkbox-wr bg-[#3b4450] gap-[10px] p-[10px] rounded-[4px] flex items-center my-[10px]">
+                    <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="26px" height="auto" viewBox="0 0 1200.000000 1100.000000" preserveAspectRatio="xMidYMid meet"><g transform="translate(0.000000,1280.000000) scale(0.100000,-0.100000)" fill="#FFF" stroke="none"><path d="M7318 10295 l-3 -1090 -2817 -3 -2818 -2 0 -2430 0 -2430 2820 0 2820 0 2 -1088 3 -1088 2175 2303 c1196 1266 2174 2305 2173 2308 -1 4 -107 117 -235 253 -129 136 -1081 1145 -2117 2242 -1036 1097 -1910 2022 -1942 2055 l-59 60 -2 -1090z"></path></g></svg>
+                    <div className="nr-checkbox-wr-cntnt flex gap-[10px] items-center">
+                      <input type="checkbox" id="warranty" name="warranty" className="nr-checkbox" />
+                      <label htmlFor="warranty" className="text-[16px] text-white">OUI ! JE SOUHAITE EN BÉNÉFICIER !</label>
+                    </div>
+                  </div>
+                  <div className="nr-wrranty-text pt-[15px]">
+                    <p className="text-[13px]">EXTENSION GARANTIE 1 AN ! Si cette case est cochée, le montant de 3.97€ sera chargé dans les 24h en tant que transaction additionnelle. Vous bénéficierez d'une extension de garantie de 1 an via notre partenaire AssurPremium. Vous avez 24h pour changer d'avis si vous ne souhaitez plus en bénéficier. Après chargement de la transaction, vous pouvez obtenir un remboursement intégral dans les 90 jours en nous contactant à support@flashventes.com</p>
+                  </div>
                 </div>
               </>
             )}
@@ -655,17 +661,80 @@ export default function CheckoutLayout({
         </section>
 
         {/* ================= RIGHT COLUMN ================= */}
-        <aside className="col-span-5">
+        <aside className="nr-rght-prt w-100 lg:w-[33.3333333333%] md:w-[41.6666666667%] mt-[38px] md:pl-[15px] pl-0">
           {/* Pass cart prop to OrderSummary */}
           <OrderSummary 
             deliveryPrice={deliveryData?.price ?? 0} 
             cart={cart} 
           />
+          {/* first-part */}
+          <div className="nr-rght-bottom-info-cntnt pt-[30px] pb-[30px] border-b ">
+            <div className="nr-info-hed-prt flex gap-[8px] items-center text-[18px] font-[600] pb-[8px]">
+              <img src="../images/shield-2.webp" alt="shield" className="h-[40px] w-[40px] object-contain"/>
+              <h3>Service Client</h3>
+            </div>
+            <p className="pb-[20px] text-[15px] text-[#747474]">Nous répondons à vos questions du lundi au vendredi de 9h à 18h.</p>
+            <div className="nr-contact-info">
+              <div className="nr-info-item flex gap-[8px] align-middle pb-[16px]">
+                <img src="../images/phone-icon.webp" alt="phone" className="h-[24px] w-[24px] object-contain" />
+                <p className="text-[15px] text-[#747474]">+44 330 054 5774</p>
+              </div>
+              <div className="nr-info-item flex gap-[8px] align-middle">
+                <img src="../images/email-icon.webp" alt="email" className="h-[24px] w-[24px] object-contain" />
+                <p className="text-[15px] text-[#747474]">help@nomade-horizon.com</p>
+              </div>
+            </div>
+          </div>
+          {/* second-part */}
+          <div className="nr-rght-bottom-info-cntnt py-[30px] border-b">
+            <div className="nr-info-hed-prt flex gap-[8px] items-center text-[18px] font-[600] pb-[8px]">
+              <img src="../images/calendar-2.webp" alt="shield" className="h-[40px] w-[40px] object-contain"/>
+              <h3>Satisfait ou remboursé 30 jours</h3>
+            </div>
+            <p className="text-[15px] text-[#747474]">Insatisfait ? Remboursement facile et sans condition. Votre satisfaction est notre priorité.</p>
+          </div>
+          {/* third-part */}
+          <div className="nr-rght-bottom-info-cntnt py-[30px] border-b">
+            <div className="nr-info-hed-prt flex gap-[8px] items-center text-[18px] font-[600] pb-[8px]">
+              <img src="../images/delivery-truck-icon.webp" alt="shield" className="h-[40px] w-[40px] object-contain"/>
+              <h3>Expédition en 48h</h3>
+            </div>
+            <p className="text-[15px] text-[#747474]">Bénéficiez d'une expédition ultra-rapide avec suivi en seulement 48 heures.</p>
+          </div>
+          <div className="nr-review-prt py-[30px]">
+            <h2 className="text-[18px] font-[600]">Ce que disent nos clients</h2>
+            {/* First Review */}
+            <div className="nr-review-outer-wr">
+              <div className="nr-review-wr bg-[#f4f4f4] p-[15px] rounded-[12px] mt-[17px] relative before:absolute before:content-[''] before:w-[30px] before:h-[30px] before:bg-[#f4f4f4] before:left-[35px] before:bottom-[-5px] before:rotate-[45deg]">
+                <p className="text-[14px] text-center">"Flashventes est mon magasin en ligne favoris. Il y a beaucoup de produits innovants à très bon prix. J'achète régulièrement sur ce site et en suis très satisfait. Je le recommande totalement"</p>
+              </div>
+              <div className="flex justify-between w-100 mt-[13px] mb-[26px]">
+                <p className="text-[14px] font-[600]">Nicolas D. - Paris</p>
+                <img src="../images/star.webp" alt="star" className="object-contain"/>
+              </div>
+            </div>
+            {/* Second Review */}
+            <div className="nr-review-outer-wr border-b">
+              <div className="nr-review-wr bg-[#f4f4f4] p-[15px] rounded-[12px] mt-[17px] relative before:absolute before:content-[''] before:w-[30px] before:h-[30px] before:bg-[#f4f4f4] before:left-[35px] before:bottom-[-5px] before:rotate-[45deg]">
+                <p className="text-[14px] text-center">"Très bonne boutique, large choix, on y trouve tout à tout petit prix. Je recommande totalement Flashventes pour son sérieux."</p>
+              </div>
+              <div className="flex justify-between w-100 mt-[13px] mb-[26px]">
+                <p className="text-[14px] font-[600]">Marie P. - Marseille</p>
+                <img src="../images/star.webp" alt="star" className="object-contain"/>
+              </div>
+            </div>
+          </div>
+          <div className="nr-footer-links flex flex-col gap-[10px] items-center">
+            <a href="" className="liks text-[12px] text-[#656565]">Conditions Générales</a>
+            <a href="" className="liks text-[12px] text-[#656565]">Politiques et Tarifs D'expédition</a>
+            <a href="" className="liks text-[12px] text-[#656565]">Politique de confidentialité</a>
+            <a href="" className="liks text-[12px] text-[#656565]">Echange et Retour</a>
+          </div>
         </aside>
       </main>
 
       {/* ================= FOOTER ================= */}
-      <footer className="text-xs text-gray-500 text-center py-6 space-y-2">
+      {/* <footer className="text-xs text-gray-500 text-center py-6 space-y-2">
         <div className="space-x-3">
           <a href="#" className="hover:underline">
             General Terms and Conditions
@@ -682,7 +751,7 @@ export default function CheckoutLayout({
             Exchanges and Returns
           </a>
         </div>
-      </footer>
+      </footer> */}
     </div>
   );
 }

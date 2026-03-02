@@ -135,10 +135,10 @@ export default function ClientStep({
 
   /* ================= ACTIVE VIEW ================= */
   return (
-    <section className="border-b pb-4">
+    <section className="border-b pb-[25px] iyuktykty">
       <Header step={1} title="Client"/>
 
-      <div className="mt-4 grid grid-cols-2 gap-4">
+      <div className="mt-4 grid grid-cols-2 gap-x-[8px] gap-y-[10px]">
         <div className="nr-input-field flex flex-col-reverse col-span-2 md:col-span-1">
           <input
             type="text"
@@ -148,7 +148,7 @@ export default function ClientStep({
               setForm({ ...form, firstName: e.target.value })
             }
             id="prénom"
-            className="outline-none text-[#333] border rounded px-3 py-2 text-sm pb-0 h-[48px]"
+            className="outline-none text-[#333] border rounded px-[13px] py-2 text-sm pb-0 h-[48px]"
             disabled={loading || isDisabled}
           />
           <label htmlFor="prénom" className="nr-input-label text-[14px] text-[#666] top-[unset]">
@@ -165,7 +165,7 @@ export default function ClientStep({
               setForm({ ...form, lastName: e.target.value })
             }
             id="nom"
-            className="outline-none text-[#333] border rounded px-3 py-2 text-sm pb-0 h-[48px]"
+            className="outline-none text-[#333] border rounded px-[13px] py-2 text-sm pb-0 h-[48px]"
             disabled={loading || isDisabled}
           />
           <label htmlFor="nom" className="nr-input-label text-[14px] text-[#666] top-[unset]">
@@ -185,7 +185,8 @@ export default function ClientStep({
               }
             }}
             id="email-address"
-            className={`outline-none text-[#333] border rounded px-3 py-2 text-sm pb-0 h-[48px] ${
+            className={`outline-none text-[#333] border rounded px-[13px] py-2 text-sm pb-0 h-[48px] 
+              ${
               emailError ? 'border-red-500' : ''
             } ${isValidating ? 'border-blue-300' : ''}`}
             disabled={loading || isDisabled}
@@ -194,29 +195,29 @@ export default function ClientStep({
             Email Address
           </label>
           
-          {emailError && (
+          {/* {emailError && (
             <div className="text-xs text-red-600 mt-1">{emailError}</div>
-          )}
+          )} 
           
           {isValidating && !emailError && (
             <div className="text-xs text-blue-600 mt-1 flex items-center gap-1">
               <span className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></span>
               <span>Checking email availability...</span>
             </div>
-          )}
+          )} 
           
           {!emailError && form.email && validateEmail(form.email) && !isValidating && (
             <div className="text-xs text-green-600 mt-1 flex items-center gap-1">
               <span>✓</span>
               <span>Email looks good</span>
             </div>
-          )}
+          )}  */}
         </div>
       </div>
 
       <button 
         type="button"
-        className="nr-fir-st-btn cursor-pointer inline-block mt-4 bg-[#2fb34a] hover:bg-[#28a745] transition text-white text-sm font-semibold px-6 py-[15px] rounded w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+        className="nr-fir-st-btn cursor-pointer inline-block mt-[34px] bg-[#2fb34a] hover:bg-[#28a745] transition text-white text-[13px] px-[30px] py-[13px] rounded w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={handleContinue}
         disabled={!form.email || !!emailError || loading || isDisabled}
       >
@@ -226,11 +227,11 @@ export default function ClientStep({
             Processing...
           </span>
         ) : (
-          'CONTINUER'
+          'CONTINUE'
         )}
       </button>
       
-      <div className="mt-3 text-xs text-gray-600">
+      <div className="mt-3 text-xs text-gray-600 hidden">
         <p>By continuing, you'll create an account with this email.</p>
         <p>A password will be automatically generated and sent to you.</p>
       </div>
@@ -243,8 +244,8 @@ export default function ClientStep({
 function Header({ step, title, onEdit }) {
   return (
     <div className="flex items-center justify-between">
-      <h2 className="nr-step-hed-wr flex items-center gap-2 font-[700] text-[25px] text-[#333]">
-        <span className="flex items-center justify-center rounded-full border text-[20px] font-[400] border-[#333] h-[35px] w-[35px]">
+      <h2 className="nr-step-hed-wr flex items-center gap-[11px] font-[700] text-[25px] text-[#333]">
+        <span className="flex items-center justify-center rounded-full border-[2px] text-[20px] font-[400] border-[#333] h-[35px] w-[35px]">
           {step}
         </span>
         {title}
@@ -253,7 +254,7 @@ function Header({ step, title, onEdit }) {
       {onEdit && (
         <button
           type="button"
-          className="text-xs text-gray-700 border px-3 py-1 rounded hover:bg-gray-100 transition"
+          className="text-[13px] text-gray-700 border px-[15px] py-[6.5px] rounded hover:bg-gray-100 transition"
           onClick={onEdit}
         >
           Modifier
