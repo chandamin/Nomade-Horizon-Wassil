@@ -306,99 +306,6 @@ export default function Checkout() {
   const [error, setError] = useState(null);
   const [searchParams] = useSearchParams();
 
-  useEffect(() => {
-    const handleAirwallexReturn = async () => {
-      const isReturn = searchParams.get("airwallex_return") === "success";
-      const intentId = searchParams.get("intent_id");
-
-      if (!isReturn || !intentId) return;
-
-      try {
-        const res = await fetch(
-          `https://unpenciled-unhumored-thora.ngrok-free.dev/api/subscription-plans/payment-intents/${intentId}`,
-          {
-            headers: {
-              Accept: "application/json",
-              "ngrok-skip-browser-warning": "true",
-            },
-          }
-        );
-
-        const result = await res.json();
-
-        if (!res.ok) {
-          throw new Error(result?.error || "Failed to verify payment");
-        }
-
-        if (result.status === "SUCCEEDED") {
-          sessionStorage.setItem(
-            "airwallex_payment_result",
-            JSON.stringify({
-              status: result.status,
-              paymentIntentId: result.id,
-            })
-          );
-        } else {
-          sessionStorage.setItem(
-            "airwallex_payment_result",
-            JSON.stringify({
-              status: result.status,
-              paymentIntentId: result.id,
-            })
-          );
-        }
-      } catch (err) {
-        console.error("❌ Airwallex return verification failed:", err);
-      }
-    };
-
-    handleAirwallexReturn();
-  }, [searchParams]);
-
-
-  const VIP_PRODUCT_ID = 210; // replace with real BC product ID
-
-const refreshCart = async (cartId) => {
-  await fetchCartById(cartId);
-};
-
-const addVipToCart = async (cartId) => {
-  const res = await fetch('https://unpenciled-unhumored-thora.ngrok-free.dev/api/cart/add-vip', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'ngrok-skip-browser-warning': 'true'
-    },
-    body: JSON.stringify({ cartId })
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || 'Failed to add VIP product');
-  }
-
-  await refreshCart(cartId);
-};
-
-const removeVipFromCart = async (cartId) => {
-  const res = await fetch('https://unpenciled-unhumored-thora.ngrok-free.dev/api/cart/remove-vip', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'ngrok-skip-browser-warning': 'true'
-    },
-    body: JSON.stringify({ cartId })
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || 'Failed to remove VIP product');
-  }
-
-  await refreshCart(cartId);
-};
   // Enhanced customer creation function
   const handleCustomerCreation = async (customerData, cartId) => {
     try {
@@ -631,47 +538,11 @@ const removeVipFromCart = async (cartId) => {
           return;
         }
 
-
-        
-        // if (cartDataParam) {
-        //   try {
-        //     const decodedCartData = JSON.parse(decodeURIComponent(cartDataParam));
-        //     console.log('📦 Decoded cart data:', decodedCartData);
-            
-        //     const normalizedCart = {
-        //       ...decodedCartData,
-        //       lineItems: decodedCartData.lineItems || {
-        //         physicalItems: [],
-        //         digitalItems: []
-        //       },
-        //       cartAmount: decodedCartData.cartAmount || 0,
-        //       currency: decodedCartData.currency || { code: 'EUR' },
-        //       customerId: decodedCartData.customerId || 0,
-        //       customerEmail: decodedCartData.customerEmail || ''
-        //     };
-            
-        //     setCart(normalizedCart);
-        //     setLoading(false);
-            
-        //   } catch (parseError) {
-        //     console.error('❌ Failed to parse cart data:', parseError);
-        //     setError('Invalid cart data format');
-        //     setLoading(false);
-        //   }
-        // } else if (cartId) {
-        //   await fetchCartById(cartId);
-        // } else {
-        //   setError('Invalid checkout link');
-        //   setLoading(false);
-        // }
-
-        if (cartId) {
-          await fetchCartById(cartId);
-        } else if (cartDataParam) {
+        if (cartDataParam) {
           try {
             const decodedCartData = JSON.parse(decodeURIComponent(cartDataParam));
             console.log('📦 Decoded cart data:', decodedCartData);
-
+            
             const normalizedCart = {
               ...decodedCartData,
               lineItems: decodedCartData.lineItems || {
@@ -683,14 +554,17 @@ const removeVipFromCart = async (cartId) => {
               customerId: decodedCartData.customerId || 0,
               customerEmail: decodedCartData.customerEmail || ''
             };
-
+            
             setCart(normalizedCart);
             setLoading(false);
+            
           } catch (parseError) {
             console.error('❌ Failed to parse cart data:', parseError);
             setError('Invalid cart data format');
             setLoading(false);
           }
+        } else if (cartId) {
+          await fetchCartById(cartId);
         } else {
           setError('Invalid checkout link');
           setLoading(false);
@@ -705,88 +579,55 @@ const removeVipFromCart = async (cartId) => {
     initializeCart();
   }, [searchParams]);
 
-
-
   const fetchCartById = async (cartId) => {
-  try {
-    console.log('🔍 Fetching cart from backend:', cartId);
-
-    const response = await fetch(
-      `https://unpenciled-unhumored-thora.ngrok-free.dev/api/cart-data?cartId=${cartId}`,
-      {
-        headers: {
-          Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
+    try {
+      console.log('🔍 Fetching cart from backend:', cartId);
+      const response = await fetch(
+        `https://unpenciled-unhumored-thora.ngrok-free.dev/api/cart-data?cartId=${cartId}`,
+        {
+          headers: {
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch cart: ${response.status}`);
       }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to fetch cart: ${response.status} - ${errorText}`);
+      
+      const data = await response.json();
+      console.log('📦 Cart data:', data);
+      
+      const transformedCart = {
+        id: data.id || cartId,
+        lineItems: {
+          physicalItems: (data.line_items?.physical_items || []).map(item => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            extendedSalePrice: item.extended_sale_price,
+            imageUrl: item.image_url || '/placeholder.png',
+            options: item.options || []
+          })),
+          digitalItems: data.line_items?.digital_items || []
+        },
+        cartAmount: data.cart_amount || 0,
+        currency: data.currency || { code: 'EUR' },
+        discountAmount: data.discount_amount || 0,
+        taxAmount: data.tax_amount || 0,
+        grandTotal: data.cart_amount || 0,
+        customerId: data.customer_id || 0,
+        customerEmail: data.email || ''
+      };
+      
+      setCart(transformedCart);
+      setLoading(false);
+    } catch (err) {
+      console.error('❌ Cart fetch error:', err);
+      setError('Failed to load cart');
+      setLoading(false);
     }
-
-    const data = await response.json();
-    console.log('📦 Cart data:', data);
-
-    setCart(data);
-    setLoading(false);
-  } catch (err) {
-    console.error('❌ Cart fetch error:', err);
-    setError('Failed to load cart');
-    setLoading(false);
-  }
-};
-  //Working
-  // const fetchCartById = async (cartId) => {
-  //   try {
-  //     console.log('🔍 Fetching cart from backend:', cartId);
-  //     const response = await fetch(
-  //       `https://unpenciled-unhumored-thora.ngrok-free.dev/api/cart?cartId=${cartId}`,
-  //       {
-  //         headers: {
-  //           'Accept': 'application/json'
-  //         }
-  //       }
-  //     );
-      
-  //     if (!response.ok) {
-  //       throw new Error(`Failed to fetch cart: ${response.status}`);
-  //     }
-      
-  //     const data = await response.json();
-  //     console.log('📦 Cart data:', data);
-      
-  //     const transformedCart = {
-  //       id: data.id || cartId,
-  //       lineItems: {
-  //         physicalItems: (data.line_items?.physical_items || []).map(item => ({
-  //           id: item.id,
-  //           name: item.name,
-  //           quantity: item.quantity,
-  //           extendedSalePrice: item.extended_sale_price,
-  //           imageUrl: item.image_url || '/placeholder.png',
-  //           options: item.options || []
-  //         })),
-  //         digitalItems: data.line_items?.digital_items || []
-  //       },
-  //       cartAmount: data.cart_amount || 0,
-  //       currency: data.currency || { code: 'EUR' },
-  //       discountAmount: data.discount_amount || 0,
-  //       taxAmount: data.tax_amount || 0,
-  //       grandTotal: data.cart_amount || 0,
-  //       customerId: data.customer_id || 0,
-  //       customerEmail: data.email || ''
-  //     };
-      
-  //     setCart(transformedCart);
-  //     setLoading(false);
-  //   } catch (err) {
-  //     console.error('❌ Cart fetch error:', err);
-  //     setError('Failed to load cart');
-  //     setLoading(false);
-  //   }
-  // };
+  };
 
   if (loading) {
     return (
@@ -824,8 +665,6 @@ const removeVipFromCart = async (cartId) => {
       onCustomerCreate={handleCustomerCreation}
       onShippingAddress={handleShippingAddress}
       onFetchShippingOptions={fetchShippingOptions}
-      onAddVipToCart={addVipToCart}
-      onRemoveVipFromCart={removeVipFromCart}
     />
   );
 }

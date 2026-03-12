@@ -243,9 +243,7 @@ export default function CheckoutLayout({
   cart, 
   onCustomerCreate,
   onShippingAddress,
-  onFetchShippingOptions,
-  onAddVipToCart,
-  onRemoveVipFromCart,
+  onFetchShippingOptions 
 }) {
   /**
    * activeStep controls which section is expanded.
@@ -264,39 +262,9 @@ export default function CheckoutLayout({
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  const VIP_PRODUCT_ID = 210; // replace
-  const [isVipLoading, setIsVipLoading] = useState(false);
-
-  // const vipSelected = !!cart?.lineItems?.physicalItems?.some(
-  //   (item) => item.product_id === VIP_PRODUCT_ID
-  // );
-  const vipSelected = !![
-    ...(cart?.lineItems?.physicalItems || []),
-    ...(cart?.lineItems?.digitalItems || []),
-  ].some((item) => Number(item.product_id) === VIP_PRODUCT_ID);
-
   // Timer logic from working version
   const DISCOUNT_DURATION = 10 * 60; // 10 minutes in seconds
   const [timeLeft, setTimeLeft] = useState(DISCOUNT_DURATION);
-
-
-  useEffect(() => {
-    const storedPayment = sessionStorage.getItem("airwallex_payment_result");
-    if (!storedPayment) return;
-
-    try {
-      const parsed = JSON.parse(storedPayment);
-      if (parsed?.status === "SUCCEEDED") {
-        setPaymentData((prev) => ({
-          ...prev,
-          status: "SUCCEEDED",
-          paymentIntentId: parsed.paymentIntentId,
-        }));
-      }
-    } catch (err) {
-      console.warn("Failed to parse stored Airwallex payment result", err);
-    }
-  }, []);
   
   useEffect(() => {
     const interval = setInterval(() => {
@@ -312,24 +280,6 @@ export default function CheckoutLayout({
   const validUntilDate = new Date();
   validUntilDate.setDate(validUntilDate.getDate() + 1);
   const formattedDate = validUntilDate.toLocaleDateString("en-GB");
-
-  const handleVipToggle = async (checked) => {
-    if (!cart?.id) return;
-
-    setIsVipLoading(true);
-    try {
-      if (checked) {
-        await onAddVipToCart?.(cart.id);
-      } else {
-        await onRemoveVipFromCart?.(cart.id);
-      }
-    } catch (err) {
-      console.error('VIP toggle failed:', err);
-      alert('Failed to update VIP CLUB selection');
-    } finally {
-      setIsVipLoading(false);
-    }
-  };
 
   // Delivery completion check from working version
   const isDeliveryComplete = !!(
@@ -388,7 +338,7 @@ export default function CheckoutLayout({
         const addressResult = await onShippingAddress(deliveryFormData, customerId, clientData);
         
         if (addressResult) {
-          console.log('Address saved:', addressResult.addressId);
+          console.log('✅ Address saved:', addressResult.addressId);
           // Update delivery data with address ID
           setDeliveryData(prev => ({
             ...prev,
@@ -615,22 +565,10 @@ export default function CheckoutLayout({
               <button
                   type="button"
                   onClick={handlePlaceOrder}
-                  // disabled={isPlacingOrder}
-
-
-
-                  // disabled={isPlacingOrder || paymentData?.status !== "SUCCEEDED"}
-
-                  disabled={isPlacingOrder || isVipLoading || paymentData?.status !== "SUCCEEDED"}
-
-                  // className={`w-full cursor-pointer ${
-                  //   isPlacingOrder 
-                  //     ? 'bg-gray-400 cursor-not-allowed' 
-                  //     : 'bg-[#2fb34a] hover:bg-[#28a745]'
-                  // } transition text-white font-semibold py-3 rounded flex items-center justify-center gap-2`}
+                  disabled={isPlacingOrder}
                   className={`w-full cursor-pointer ${
-                    isPlacingOrder || paymentData?.status !== "SUCCEEDED"
-                      ? 'bg-gray-400 cursor-not-allowed'
+                    isPlacingOrder 
+                      ? 'bg-gray-400 cursor-not-allowed' 
                       : 'bg-[#2fb34a] hover:bg-[#28a745]'
                   } transition text-white font-semibold py-3 rounded flex items-center justify-center gap-2`}
                 >
@@ -704,47 +642,7 @@ export default function CheckoutLayout({
                     className="h-[50px]"
                   />
                 </div>
-
-
-
-                {/* Warrantly Subscription section */}
-
-
                 <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc]">
-                  <div className="nr-checkbox-wr bg-[#3b4450] gap-[10px] p-[10px] rounded-[4px] flex items-center my-[10px]">
-                    <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="26px" height="auto" viewBox="0 0 1200.000000 1100.000000" preserveAspectRatio="xMidYMid meet">
-                      <g transform="translate(0.000000,1280.000000) scale(0.100000,-0.100000)" fill="#FFF" stroke="none">
-                        <path d="M7318 10295 l-3 -1090 -2817 -3 -2818 -2 0 -2430 0 -2430 2820 0 2820 0 2 -1088 3 -1088 2175 2303 c1196 1266 2174 2305 2173 2308 -1 4 -107 117 -235 253 -129 136 -1081 1145 -2117 2242 -1036 1097 -1910 2022 -1942 2055 l-59 60 -2 -1090z"></path>
-                      </g>
-                    </svg>
-
-                    <div className="nr-checkbox-wr-cntnt flex gap-[10px] items-center">
-                      <div className="nr-checkbox-outer">
-                      <input
-                        type="checkbox"
-                        id="vip-club"
-                        name="vip-club"
-                        className="nr-checkbox"
-                        checked={vipSelected}
-                        disabled={isVipLoading}
-                        onChange={(e) => handleVipToggle(e.target.checked)}
-                      />
-                      </div>
-                      <label htmlFor="vip-club" className="text-[16px] text-white">
-                        VIP CLUB ACCESS - HIKE SUMMIT
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="nr-wrranty-text pt-[15px]">
-                    <p className="text-[13px]">
-                      By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Hike Summit.
-                      After the trial, the subscription renews automatically at £12.99/month.
-                      This membership is non-binding and can be cancelled at any time by contacting support.
-                    </p>
-                  </div>
-                </div>
-                {/* <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc]">
                   <div className="nr-wrranty-img-outer w-100 flex justify-center">
                     <img className="h-[100px]" src="../images/one-yr-warranty.webp" alt="wrranty-img" />
                   </div>
@@ -758,7 +656,7 @@ export default function CheckoutLayout({
                   <div className="nr-wrranty-text pt-[15px]">
                     <p className="text-[13px]">EXTENSION GARANTIE 1 AN ! Si cette case est cochée, le montant de 3.97€ sera chargé dans les 24h en tant que transaction additionnelle. Vous bénéficierez d'une extension de garantie de 1 an via notre partenaire AssurPremium. Vous avez 24h pour changer d'avis si vous ne souhaitez plus en bénéficier. Après chargement de la transaction, vous pouvez obtenir un remboursement intégral dans les 90 jours en nous contactant à support@flashventes.com</p>
                   </div>
-                </div> */}
+                </div>
               </>
             )}
           </div>

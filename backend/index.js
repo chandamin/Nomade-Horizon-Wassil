@@ -207,6 +207,85 @@ app.get("/api/cart", async (req, res) => {
   }
 });
 
+app.get("/api/cart-data", async (req, res) => {
+  const { cartId } = req.query;
+
+  if (!cartId) {
+    return res.status(400).json({ error: "Missing cartId" });
+  }
+
+  const STORE_HASH = 'eapn6crf58';
+  const MANAGEMENT_API_TOKEN = process.env.BC_API_TOKEN;
+
+  try {
+    const cartRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}?include=redirect_urls,line_items.physical_items.options,line_items.digital_items,coupons`,
+      {
+        headers: {
+          'X-Auth-Token': MANAGEMENT_API_TOKEN,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    if (!cartRes.ok) {
+      const errorText = await cartRes.text();
+      console.error('❌ Cart fetch failed:', cartRes.status, errorText);
+      return res.status(cartRes.status).json({
+        error: 'Failed to fetch cart',
+        details: errorText
+      });
+    }
+
+    const cartData = await cartRes.json();
+
+    const transformedCart = {
+      id: cartData.data.id,
+      lineItems: {
+        physicalItems: cartData.data.line_items?.physical_items?.map(item => ({
+          id: item.id,
+          product_id: item.product_id,
+          name: item.name,
+          quantity: item.quantity,
+          extendedSalePrice: item.extended_sale_price,
+          list_price: item.list_price,
+          sale_price: item.sale_price,
+          imageUrl: item.image_url || '/placeholder.png',
+          options: item.options || []
+        })) || [],
+        // digitalItems: cartData.data.line_items?.digital_items || []
+        digitalItems: cartData.data.line_items?.digital_items?.map(item => ({
+          id: item.id,
+          product_id: item.product_id,
+          name: item.name,
+          quantity: item.quantity,
+          extendedSalePrice: item.extended_sale_price,
+          list_price: item.list_price,
+          sale_price: item.sale_price,
+          imageUrl: item.image_url || '/placeholder.png',
+          options: item.options || []
+        })) || [],
+      },
+      cartAmount: cartData.data.cart_amount,
+      discountAmount: cartData.data.discount_amount || 0,
+      taxAmount: cartData.data.tax_amount || 0,
+      grandTotal: cartData.data.cart_amount,
+      currency: cartData.data.currency || { code: 'EUR' },
+      customerId: cartData.data.customer_id,
+      coupons: cartData.data.coupons || []
+    };
+
+    return res.json(transformedCart);
+  } catch (err) {
+    console.error('💥 Cart data error:', err);
+    return res.status(500).json({
+      error: 'Server error',
+      message: err.message
+    });
+  }
+});
+
 
 // 1. Create new customer
 app.post("/api/customers", async (req, res) => {
@@ -1290,6 +1369,218 @@ app.get("/api/orders/:orderId", async (req, res) => {
     });
   }
 });
+
+
+
+// Add VIP Product
+
+app.post("/api/cart/add-vip", async (req, res) => {
+  try {
+    const { cartId } = req.body;
+
+    if (!cartId) {
+      return res.status(400).json({ error: "Cart ID is required" });
+    }
+
+    const STORE_HASH = "eapn6crf58";
+    const MANAGEMENT_API_TOKEN = process.env.BC_API_TOKEN;
+    const VIP_PRODUCT_ID = 210;
+
+    const cartRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}?include=line_items.physical_items,line_items.digital_items`,
+      {
+        headers: {
+          "X-Auth-Token": MANAGEMENT_API_TOKEN,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+      }
+    );
+
+    if (!cartRes.ok) {
+      const errorText = await cartRes.text();
+      console.error("❌ Cart fetch failed:", cartRes.status, errorText);
+      return res.status(cartRes.status).json({
+        error: "Failed to fetch cart",
+        details: errorText,
+      });
+    }
+
+    const cartData = await cartRes.json();
+
+    const physicalItems = cartData?.data?.line_items?.physical_items || [];
+    const digitalItems = cartData?.data?.line_items?.digital_items || [];
+    const allItems = [...physicalItems, ...digitalItems];
+
+    const existingVipItem = allItems.find(
+      (item) => Number(item.product_id) === VIP_PRODUCT_ID
+    );
+
+    if (existingVipItem) {
+      return res.json({
+        success: true,
+        alreadyExists: true,
+        message: "VIP product already exists in cart",
+      });
+    }
+
+    const addRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}/items`,
+      {
+        method: "POST",
+        headers: {
+          "X-Auth-Token": MANAGEMENT_API_TOKEN,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          line_items: [
+            {
+              product_id: VIP_PRODUCT_ID,
+              quantity: 1,
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!addRes.ok) {
+      const errorText = await addRes.text();
+      console.error("❌ Add VIP failed:", addRes.status, errorText);
+      return res.status(addRes.status).json({
+        error: "Failed to add VIP product",
+        details: errorText,
+      });
+    }
+
+    const result = await addRes.json();
+
+    res.json({
+      success: true,
+      cart: result.data,
+      message: "VIP product added to cart",
+    });
+  } catch (err) {
+    console.error("💥 Add VIP error:", err);
+    res.status(500).json({
+      error: "Server error",
+      message: err.message,
+    });
+  }
+});
+
+
+// Remove VIP Product
+
+app.post("/api/cart/remove-vip", async (req, res) => {
+  try {
+    const { cartId } = req.body;
+
+    if (!cartId) {
+      return res.status(400).json({ error: "Cart ID is required" });
+    }
+
+    const STORE_HASH = "eapn6crf58";
+    const MANAGEMENT_API_TOKEN = process.env.BC_API_TOKEN;
+    const VIP_PRODUCT_ID = 210;
+
+    // 1. Get cart with both physical + digital items
+    const cartRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}?include=line_items.physical_items,line_items.digital_items`,
+      {
+        headers: {
+          "X-Auth-Token": MANAGEMENT_API_TOKEN,
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("Product REmoved");
+
+    if (!cartRes.ok) {
+      const errorText = await cartRes.text();
+      console.error("❌ Cart fetch failed:", cartRes.status, errorText);
+      return res.status(cartRes.status).json({
+        error: "Failed to fetch cart",
+        details: errorText,
+      });
+    }
+
+    const cartData = await cartRes.json();
+
+    const physicalItems = cartData?.data?.line_items?.physical_items || [];
+    const digitalItems = cartData?.data?.line_items?.digital_items || [];
+    const allItems = [...physicalItems, ...digitalItems];
+
+    // 2. Find ALL VIP items, not just one
+    const vipItems = allItems.filter(
+      (item) => Number(item.product_id) === VIP_PRODUCT_ID
+    );
+
+    console.log("VIP items to remove:", vipItems);
+
+    if (vipItems.length === 0) {
+      return res.json({
+        success: true,
+        message: "VIP product not found in cart",
+      });
+    }
+
+    // 3. Remove every matching VIP line item
+    for (const vipItem of vipItems) {
+      const removeRes = await fetch(
+        `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}/items/${vipItem.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "X-Auth-Token": MANAGEMENT_API_TOKEN,
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!removeRes.ok) {
+        const errorText = await removeRes.text();
+        console.error("❌ Remove VIP failed:", removeRes.status, errorText);
+        return res.status(removeRes.status).json({
+          error: "Failed to remove VIP product",
+          details: errorText,
+        });
+      }
+    }
+
+    // 4. Fetch updated cart after deletion
+    const updatedCartRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}?include=line_items.physical_items,line_items.digital_items`,
+      {
+        headers: {
+          "X-Auth-Token": MANAGEMENT_API_TOKEN,
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const updatedCart = updatedCartRes.ok ? await updatedCartRes.json() : null;
+
+    res.json({
+      success: true,
+      cart: updatedCart?.data || null,
+      removedCount: vipItems.length,
+      message: "VIP product removed from cart",
+    });
+  } catch (err) {
+    console.error("💥 Remove VIP error:", err);
+    res.status(500).json({
+      error: "Server error",
+      message: err.message,
+    });
+  }
+});
+
+
 
 /**
  * ---------------------------------------

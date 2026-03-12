@@ -351,4 +351,88 @@ router.post('/create-checkout', async (req, res) => {
 });
 
 
+
+/**
+ * CREATE PAYMENT INTENT
+ */
+
+router.post('/payment-intents', async (req, res) => {
+  try {
+    const { amount, currency = "CNY", merchant_order_id } = req.body;
+
+    if (!amount || !merchant_order_id) {
+      return res.status(400).json({
+        error: "amount and merchant_order_id are required"
+      });
+    }
+
+    const token = await getAirwallexToken();
+
+    const airwallexRes = await axios.post(
+      "https://api-demo.airwallex.com/api/v1/pa/payment_intents/create",
+      {
+        request_id: crypto.randomUUID(),
+        amount,
+        currency,
+        merchant_order_id,
+        return_url: `${process.env.FRONTEND_URL}`
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+    console.log("Airwallex payment intent response:", airwallexRes.data);
+    res.json(airwallexRes.data);
+
+  } catch (err) {
+    console.error(
+      "Create payment intent error:",
+      err.response?.status,
+      err.response?.data || err.message
+    );
+
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || "Failed to create payment intent"
+    });
+  }
+});
+
+
+
+/**
+ * RETRIEVE PAYMENT INTENT
+ */
+
+router.get('/payment-intents/:id', async (req, res) => {
+  try {
+    const token = await getAirwallexToken();
+
+    const airwallexRes = await axios.get(
+      `https://api-demo.airwallex.com/api/v1/pa/payment_intents/${req.params.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    res.json(airwallexRes.data);
+  } catch (err) {
+    console.error(
+      'Get payment intent error:',
+      err.response?.status,
+      err.response?.data || err.message
+    );
+
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || 'Failed to fetch payment intent',
+    });
+  }
+});
+
+
 module.exports = router;

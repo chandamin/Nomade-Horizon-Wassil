@@ -125,9 +125,21 @@ export default function OrderSummary({ cart, deliveryPrice = 1.99 }) {
   const displayCart = cart || defaultCart;
   
   // Extract items from cart
-  const items = Array.isArray(displayCart.lineItems?.physicalItems) 
-    ? displayCart.lineItems.physicalItems 
-    : [];
+  // const items = Array.isArray(displayCart.lineItems?.physicalItems) 
+  //   ? displayCart.lineItems.physicalItems 
+  //   : [];
+
+  const physicalItems = Array.isArray(displayCart.lineItems?.physicalItems)
+  ? displayCart.lineItems.physicalItems
+  : [];
+
+  const digitalItems = Array.isArray(displayCart.lineItems?.digitalItems)
+  ? displayCart.lineItems.digitalItems
+  : [];
+
+  const items = [...physicalItems, ...digitalItems];
+
+  // console.log("OrderSummary cart items:", items);
 
   // Calculate prices
   const subtotal = Number(displayCart.cartAmount || 0);
@@ -195,6 +207,12 @@ export default function OrderSummary({ cart, deliveryPrice = 1.99 }) {
                   <div className="text-xs text-gray-600 mt-1">
                     Quantity: {quantity}
                   </div>
+
+                  {Number(item.product_id) === 210 && (
+                    <div className="text-xs text-green-600 mt-1">
+                      30-day free trial
+                    </div>
+                  )}
                 </div>
 
                 {/* PRODUCT PRICE */}
