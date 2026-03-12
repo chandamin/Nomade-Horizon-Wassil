@@ -25,7 +25,7 @@
 //       try {
 //         console.log('🔍 Checking if customer exists...');
 //         const searchResponse = await fetch(
-//           `https://unpenciled-unhumored-thora.ngrok-free.dev/api/customers/search?email=${customerData.email}`,
+//           `process.env.BACKEND_URL/api/customers/search?email=${customerData.email}`,
 //           {
 //             method: 'GET',
 //             headers: {
@@ -58,7 +58,7 @@
 //               // Create new customer
 //               console.log('🆕 Creating new customer...');
 //               const createResponse = await fetch(
-//                 'https://unpenciled-unhumored-thora.ngrok-free.dev/api/customers',
+//                 'process.env.BACKEND_URL/api/customers',
 //                 {
 //                   method: 'POST',
 //                   headers: {
@@ -109,7 +109,7 @@
 //         try {
 //           console.log('🔄 Assigning customer to cart...');
 //           const assignResponse = await fetch(
-//             'https://unpenciled-unhumored-thora.ngrok-free.dev/api/cart/assign-customer',
+//             'process.env.BACKEND_URL/api/cart/assign-customer',
 //             {
 //               method: 'POST',
 //               headers: {
@@ -217,7 +217,7 @@
 //     try {
 //       console.log('🔍 Fetching cart from backend:', cartId);
 //       const response = await fetch(
-//         `https://unpenciled-unhumored-thora.ngrok-free.dev/api/cart-data?cartId=${cartId}`,
+//         `process.env.BACKEND_URL/api/cart-data?cartId=${cartId}`,
 //         {
 //           headers: {
 //             'Accept': 'application/json'
@@ -323,7 +323,7 @@ export default function Checkout() {
       try {
         console.log('🔍 Checking if customer exists...');
         const searchResponse = await fetch(
-          `https://unpenciled-unhumored-thora.ngrok-free.dev/api/customers/search?email=${customerData.email}`,
+          `process.env.BACKEND_URL/api/customers/search?email=${customerData.email}`,
           {
             method: 'GET',
             headers: {
@@ -352,7 +352,7 @@ export default function Checkout() {
               // Create new customer
               console.log('🆕 Creating new customer...');
               const createResponse = await fetch(
-                'https://unpenciled-unhumored-thora.ngrok-free.dev/api/customers',
+                'process.env.BACKEND_URL/api/customers',
                 {
                   method: 'POST',
                   headers: {
@@ -403,7 +403,7 @@ export default function Checkout() {
         try {
           console.log('🔄 Assigning customer to cart...');
           const assignResponse = await fetch(
-            'https://unpenciled-unhumored-thora.ngrok-free.dev/api/cart/assign-customer',
+            'process.env.BACKEND_URL/api/cart/assign-customer',
             {
               method: 'POST',
               headers: {
@@ -456,7 +456,7 @@ export default function Checkout() {
       }
       
       const response = await fetch(
-        'https://unpenciled-unhumored-thora.ngrok-free.dev/api/customer/address',
+        'process.env.BACKEND_URL/api/customer/address',
         {
           method: 'POST',
           headers: {
@@ -502,7 +502,7 @@ export default function Checkout() {
       
       // Example: Fetch shipping zones
       const zonesResponse = await fetch(
-        'https://unpenciled-unhumored-thora.ngrok-free.dev/api/shipping/zones',
+        'process.env.BACKEND_URL/api/shipping/zones',
         {
           headers: {
             'Accept': 'application/json'
@@ -583,7 +583,7 @@ export default function Checkout() {
     try {
       console.log('🔍 Fetching cart from backend:', cartId);
       const response = await fetch(
-        `https://unpenciled-unhumored-thora.ngrok-free.dev/api/cart-data?cartId=${cartId}`,
+        `process.env.BACKEND_URL/api/cart-data?cartId=${cartId}`,
         {
           headers: {
             'Accept': 'application/json'

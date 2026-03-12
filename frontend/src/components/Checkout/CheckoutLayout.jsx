@@ -473,7 +473,7 @@ export default function CheckoutLayout({
       }
       // console.log('📤 Order data:', orderData);
       console.log('📤 SENDING to /api/orders/create:', {
-        url: 'https://unpenciled-unhumored-thora.ngrok-free.dev/api/orders/create',
+        url: `${import.meta.env.VITE_BACKEND_URL}/api/orders/create`,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -484,7 +484,7 @@ export default function CheckoutLayout({
 
       // Call the order creation endpoint
       const response = await fetch(
-        'https://unpenciled-unhumored-thora.ngrok-free.dev/api/orders/create',
+        `${import.meta.env.VITE_BACKEND_URL}/api/orders/create`,
         {
           method: 'POST',
           headers: {

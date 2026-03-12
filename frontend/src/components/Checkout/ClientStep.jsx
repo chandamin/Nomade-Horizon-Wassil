@@ -89,7 +89,7 @@ export default function ClientStep({
   const checkEmailExists = async (email) => {
     try {
       const response = await fetch(
-        `https://unpenciled-unhumored-thora.ngrok-free.dev/api/customers/search?email=${encodeURIComponent(email)}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/customers/search?email=${encodeURIComponent(email)}`
       );
       
       if (response.ok) {

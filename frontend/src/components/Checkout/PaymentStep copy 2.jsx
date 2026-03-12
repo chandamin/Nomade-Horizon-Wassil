@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { init } from "@airwallex/components-sdk";
 
-const API_BASE = "https://unpenciled-unhumored-thora.ngrok-free.dev/api/subscription-plans";
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans`;
 
 export default function PaymentStep({
   active,

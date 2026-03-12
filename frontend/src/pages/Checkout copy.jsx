@@ -76,7 +76,7 @@ export default function Checkout() {
   const fetchCartById = async (cartId) => {
     try {
       console.log('🔍 Fetching cart from backend with ID:', cartId);
-      const response = await fetch(`https://unpenciled-unhumored-thora.ngrok-free.dev/api/cart-data?cartId=${cartId}`);
+      const response = await fetch(`process.env.BACKEND_URL/api/cart-data?cartId=${cartId}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch cart data: ${response.status}`);

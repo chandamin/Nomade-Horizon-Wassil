@@ -34,7 +34,7 @@ export default function PaymentStep({
           cart?.id || `cart_${Date.now()}`;
 
         const response = await fetch(
-          "https://unpenciled-unhumored-thora.ngrok-free.dev/api/subscription-plans/payment-intents",
+          `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/payment-intents`,
           {
             method: "POST",
             headers: {
