@@ -238,6 +238,8 @@ import ClientStep from "./ClientStep";
 import ShippingStep from "./ShippingStep";
 import PaymentStep from "./PaymentStep";
 import OrderSummary from "./OrderSummary";
+import { useNavigate } from "react-router-dom";
+
 
 export default function CheckoutLayout({ 
   cart, 
@@ -263,9 +265,11 @@ export default function CheckoutLayout({
   const [customerId, setCustomerId] = useState(null);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const navigate = useNavigate();
 
   const VIP_PRODUCT_ID = 210; // replace
   const [isVipLoading, setIsVipLoading] = useState(false);
+
 
   // const vipSelected = !!cart?.lineItems?.physicalItems?.some(
   //   (item) => item.product_id === VIP_PRODUCT_ID
@@ -502,8 +506,17 @@ export default function CheckoutLayout({
       if (response.ok) {
         const result = JSON.parse(responseText);
         if (result.success) {
-          alert(` Order #${result.orderId} created successfully!`);
           console.log(' Order created:', result);
+
+          navigate("/thank-you", {
+            state: {
+              orderId: result.orderId,
+              amount: cart?.cartAmount,
+              currency: cart?.currency?.code || "EUR",
+              email: clientData?.email,
+            }
+          });
+
           // Optionally redirect or clear cart
           // window.location.href = `/order-confirmation?orderId=${result.orderId}`;
         } else {

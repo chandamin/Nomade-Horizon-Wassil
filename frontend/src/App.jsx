@@ -82,6 +82,7 @@ import Customers from './pages/Customers';
 import SellingPlans from './pages/SellingPlans';
 import CreatePlan from './pages/CreatePlan';
 import Checkout from './pages/Checkout';
+import ThankYou from "./pages/ThankYou";
 
 function Layout() {
   const location = useLocation();
@@ -109,6 +110,7 @@ function Layout() {
             element={<SellingPlans />}
           />
           <Route path="/subscription-plan" element={<CreatePlan />} />
+          <Route path="/thank-you" element={<ThankYou />} />
           <Route path="/checkout" element={<Checkout />} />
         </Routes>
       </main>

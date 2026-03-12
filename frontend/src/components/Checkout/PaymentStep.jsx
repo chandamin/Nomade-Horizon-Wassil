@@ -18,6 +18,14 @@ export default function PaymentStep({
   const [error, setError] = useState("");
   const [intent, setIntent] = useState(null);
 
+  // if (!active) {
+  //   return (
+  //     <section className="pb-4">
+  //       <Header step={3} title="Payment" />
+  //     </section>
+  //   );
+  // }
+
   useEffect(() => {
     if (!active || isDisabled) return;
     if (initializedRef.current) return;
@@ -126,6 +134,14 @@ export default function PaymentStep({
     };
   }, [active, isDisabled, cart, data, onContinue, clientData, deliveryData]);
 
+  if (!active) {
+    return (
+      <section className="pb-4">
+        <Header step={3} title="Payment" />
+      </section>
+    );
+  }
+
   return (
     <section>
       <Header step={3} title="Payment" />
@@ -137,11 +153,11 @@ export default function PaymentStep({
             Card payment
           </label>
 
-          {loading && (
+          {/* {loading && (
             <div className="text-sm text-gray-600 md:pl-[58.5px]">
               Loading secure payment form...
             </div>
-          )}
+          )} */}
 
           {error && (
             <div className="text-sm text-red-600 mb-4 md:pl-[58.5px]">
@@ -158,7 +174,7 @@ export default function PaymentStep({
           </div>
 
           <div className="flex items-center gap-2 mt-[24px] text-[14px] md:text-[16px] text-gray-600 pl-0 md:pl-[58.5px] pr-[29.5px]">
-            🔒 Paiement sécurisé – Vos informations sont 100% confidentielles.
+            🔒 Paiement sécurisé - Vos informations sont 100% confidentielles.
           </div>
 
           {intent?.id && (
