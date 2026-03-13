@@ -248,6 +248,9 @@ export default function CheckoutLayout({
   onFetchShippingOptions,
   onAddVipToCart,
   onRemoveVipFromCart,
+  onFetchLatestCart,
+  onCreateAirwallexCustomer,
+  onMapSubscriptionCustomer,
 }) {
   /**
    * activeStep controls which section is expanded.
@@ -265,6 +268,7 @@ export default function CheckoutLayout({
   const [customerId, setCustomerId] = useState(null);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [bigcommerceCustomer, setBigcommerceCustomer] = useState(null);
   const navigate = useNavigate();
 
   const VIP_PRODUCT_ID = 210; // replace
@@ -360,6 +364,7 @@ export default function CheckoutLayout({
           console.log(' Customer created/retrieved:', result.customerId);
           // Store customer ID for shipping step
           setCustomerId(result.customerId);
+          setBigcommerceCustomer(result.customerData || null);
           // Update clientData with customer information
           setClientData(prev => ({
             ...prev,
@@ -428,6 +433,48 @@ export default function CheckoutLayout({
     }
 
     setIsPlacingOrder(true);
+    let latestCart = cart;
+
+    try {
+      if (onFetchLatestCart && cart?.id) {
+        latestCart = await onFetchLatestCart(cart.id);
+        console.log('🛒 Latest cart before order:', latestCart);
+      }
+    } catch (cartErr) {
+      console.warn('⚠️ Failed to fetch latest cart before order:', cartErr.message);
+    }
+
+    const subscriptionProduct = [
+      ...(latestCart?.lineItems?.physicalItems || []),
+      ...(latestCart?.lineItems?.digitalItems || []),
+    ].find((item) => Number(item.product_id) === VIP_PRODUCT_ID);
+
+    if (subscriptionProduct) {
+      try {
+        console.log('🔁 Subscription product found in final cart. Starting mapping flow...');
+
+        const airwallexCustomer = await onCreateAirwallexCustomer?.({
+          ...clientData,
+          ...bigcommerceCustomer,
+        });
+
+        if (airwallexCustomer && bigcommerceCustomer) {
+          const mappingResult = await onMapSubscriptionCustomer?.({
+            cart: latestCart,
+            bigcommerceCustomer,
+            airwallexCustomer,
+          });
+
+          console.log('✅ Subscription customer mapped:', mappingResult);
+        } else {
+          console.warn('⚠️ Missing Airwallex customer or BigCommerce customer, skipping mapping');
+        }
+      } catch (mappingErr) {
+        console.warn('⚠️ Subscription mapping failed before order creation:', mappingErr.message);
+      }
+    } else {
+      console.log('ℹ️ No subscription product in final cart. Skipping Mongo mapping.');
+    }
 
     try {
       console.log('🛒 Starting order creation...');
@@ -447,18 +494,18 @@ export default function CheckoutLayout({
           email: clientData.email || '',
           phone: clientData.phone || deliveryData.phone || ''
         },
-        products: cart?.lineItems?.physicalItems?.map(item => ({
-          product_id: item.product_id,  
+        products: [
+          ...(latestCart?.lineItems?.physicalItems || []),
+          ...(latestCart?.lineItems?.digitalItems || []),
+        ].map((item) => ({
+          product_id: item.product_id,
           quantity: item.quantity || 1,
-          // product_options: item.options?.map(opt => ({
-          //   id: opt.id || parseInt(opt.productOptionId) || 0,
-          //   value: opt.value || opt.valueText || ''
-          // })) || []
-          product_options: item.options?.map(opt => ({
-            id: opt.nameId,        
-            value: opt.valueId
-          })) || []
-        })) || []
+          product_options: item.options?.map((opt) => ({
+            id: opt.nameId,
+            value: opt.valueId,
+          })) || [],
+        }))
+        
       };
       // Add shipping address if available
       if (deliveryData.address) {
@@ -511,8 +558,8 @@ export default function CheckoutLayout({
           navigate("/thank-you", {
             state: {
               orderId: result.orderId,
-              amount: cart?.cartAmount,
-              currency: cart?.currency?.code || "EUR",
+              amount: latestCart?.cartAmount,
+              currency: latestCart?.currency?.code || "EUR",
               email: clientData?.email,
             }
           });

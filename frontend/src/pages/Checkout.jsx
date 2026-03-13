@@ -399,6 +399,83 @@ const removeVipFromCart = async (cartId) => {
 
   await refreshCart(cartId);
 };
+
+
+  const fetchLatestCart = async (cartId) => {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/cart-data?cartId=${cartId}`,
+      {
+        headers: {
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch latest cart');
+    }
+
+    return await res.json();
+  };
+  const createAirwallexCustomer = async (customerData) => {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/billing-customers`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify({
+          name: `${customerData.firstName || ''} ${customerData.lastName || ''}`.trim(),
+          email: customerData.email,
+          phone_number: customerData.phone || '',
+          type: 'INDIVIDUAL',
+        }),
+      }
+    );
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      throw new Error(result?.error || 'Failed to create Airwallex customer');
+    }
+
+    return result.customer;
+  };
+
+  const mapSubscriptionCustomer = async ({
+    cart,
+    bigcommerceCustomer,
+    airwallexCustomer,
+  }) => {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/subscription-customers/map`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify({
+          cart,
+          bigcommerceCustomer,
+          airwallexCustomer,
+        }),
+      }
+    );
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result?.error || 'Failed to map subscription customer');
+    }
+
+    return result;
+  };
   // Enhanced customer creation function
   const handleCustomerCreation = async (customerData, cartId) => {
     try {
@@ -492,38 +569,59 @@ const removeVipFromCart = async (cartId) => {
       }
       
       // 2. If we have a customer ID, assign it to cart
-      if (customerId && cartId) {
-        try {
-          console.log('🔄 Assigning customer to cart...');
-          const assignResponse = await fetch(
-            `${import.meta.env.VITE_BACKEND_URL}/api/cart/assign-customer`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify({
-                cartId: cartId,
-                customerId: customerId
-              })
-            }
-          );
+      // if (customerId && cartId) {
+      //   try {
+      //     console.log('🔄 Assigning customer to cart...');
+      //     const assignResponse = await fetch(
+      //       `${import.meta.env.VITE_BACKEND_URL}/api/cart/assign-customer`,
+      //       {
+      //         method: 'POST',
+      //         headers: {
+      //           'Content-Type': 'application/json',
+      //           'Accept': 'application/json'
+      //         },
+      //         body: JSON.stringify({
+      //           cartId: cartId,
+      //           customerId: customerId
+      //         })
+      //       }
+      //     );
           
-          console.log('📊 Assign response status:', assignResponse.status);
+      //     console.log('📊 Assign response status:', assignResponse.status);
           
-          if (assignResponse.ok) {
-            console.log('✅ Customer assigned to cart');
-          } else {
-            const errorText = await assignResponse.text();
-            console.warn('⚠️ Failed to assign customer to cart:', assignResponse.status, errorText.substring(0, 200));
-          }
-        } catch (assignErr) {
-          console.warn('⚠️ Cart assignment error:', assignErr.message);
-        }
-      } else {
-        console.log('ℹ️ No customer ID to assign to cart');
-      }
+      //     if (assignResponse.ok) {
+      //       console.log('✅ Customer assigned to cart');
+      //     } else {
+      //       const errorText = await assignResponse.text();
+      //       console.warn('⚠️ Failed to assign customer to cart:', assignResponse.status, errorText.substring(0, 200));
+      //     }
+      //   } catch (assignErr) {
+      //     console.warn('⚠️ Cart assignment error:', assignErr.message);
+      //   }
+      // } else {
+      //   console.log('ℹ️ No customer ID to assign to cart');
+      // }
+
+      // if (customerId && createdCustomerData && cartId) {
+      //   try {
+      //     const latestCart = await fetchLatestCart(cartId);
+
+      //     const airwallexCustomer = await createAirwallexCustomer({
+      //       ...customerData,
+      //       ...createdCustomerData,
+      //     });
+
+      //     const mappingResult = await mapSubscriptionCustomer({
+      //       cart: latestCart,
+      //       bigcommerceCustomer: createdCustomerData,
+      //       airwallexCustomer,
+      //     });
+
+      //     console.log('✅ Subscription mapping result:', mappingResult);
+      //   } catch (mappingErr) {
+      //     console.warn('⚠️ Subscription mapping flow failed:', mappingErr.message);
+      //   }
+      // }
       
       // Return customer data for use in shipping step
       return {
@@ -826,6 +924,9 @@ const removeVipFromCart = async (cartId) => {
       onFetchShippingOptions={fetchShippingOptions}
       onAddVipToCart={addVipToCart}
       onRemoveVipFromCart={removeVipFromCart}
+      onFetchLatestCart={fetchLatestCart}
+      onCreateAirwallexCustomer={createAirwallexCustomer}
+      onMapSubscriptionCustomer={mapSubscriptionCustomer}
     />
   );
 }
