@@ -40,6 +40,13 @@ const SubscriptionPlanSchema = new mongoose.Schema(
       required: true,
     },
 
+    bigcommerceProductId: {
+      type: Number,
+      required: true,
+      unique: true,
+      index: true,
+    },
+
     status: {
       type: String,
       enum: ['enabled', 'disabled', 'archived'],

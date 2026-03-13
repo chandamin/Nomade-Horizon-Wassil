@@ -251,6 +251,7 @@ export default function CheckoutLayout({
   onFetchLatestCart,
   onCreateAirwallexCustomer,
   onMapSubscriptionCustomer,
+  onProvisionSubscription,
 }) {
   /**
    * activeStep controls which section is expanded.
@@ -269,6 +270,7 @@ export default function CheckoutLayout({
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [bigcommerceCustomer, setBigcommerceCustomer] = useState(null);
+  const [airwallexCustomer, setAirwallexCustomer] = useState(null);
   const navigate = useNavigate();
 
   const VIP_PRODUCT_ID = 210; // replace
@@ -433,6 +435,8 @@ export default function CheckoutLayout({
     }
 
     setIsPlacingOrder(true);
+
+   
     let latestCart = cart;
 
     try {
@@ -444,28 +448,43 @@ export default function CheckoutLayout({
       console.warn('⚠️ Failed to fetch latest cart before order:', cartErr.message);
     }
 
+    let awCustomer = airwallexCustomer;
+
     const subscriptionProduct = [
       ...(latestCart?.lineItems?.physicalItems || []),
       ...(latestCart?.lineItems?.digitalItems || []),
     ].find((item) => Number(item.product_id) === VIP_PRODUCT_ID);
 
+    if (subscriptionProduct && !bigcommerceCustomer?.id) {
+      setIsPlacingOrder(false);
+      alert("Customer details are missing. Please go back to the first step and try again.");
+      return;
+    }
+
     if (subscriptionProduct) {
       try {
         console.log('🔁 Subscription product found in final cart. Starting mapping flow...');
 
-        const airwallexCustomer = await onCreateAirwallexCustomer?.({
-          ...clientData,
-          ...bigcommerceCustomer,
-        });
+    
 
-        if (airwallexCustomer && bigcommerceCustomer) {
+        if (!awCustomer) {
+          awCustomer = await onCreateAirwallexCustomer?.({
+            ...clientData,
+            ...bigcommerceCustomer,
+          });
+
+          if (awCustomer) {
+            setAirwallexCustomer(awCustomer);
+          }
+        } 
+        if (awCustomer && bigcommerceCustomer) {
           const mappingResult = await onMapSubscriptionCustomer?.({
             cart: latestCart,
             bigcommerceCustomer,
-            airwallexCustomer,
+            airwallexCustomer: awCustomer,
           });
 
-          console.log('✅ Subscription customer mapped:', mappingResult);
+          console.log(' Subscription customer mapped:', mappingResult);
         } else {
           console.warn('⚠️ Missing Airwallex customer or BigCommerce customer, skipping mapping');
         }
@@ -554,6 +573,21 @@ export default function CheckoutLayout({
         const result = JSON.parse(responseText);
         if (result.success) {
           console.log(' Order created:', result);
+
+          if (subscriptionProduct && awCustomer && bigcommerceCustomer) {
+            try {
+              const subscriptionProvisionResult = await onProvisionSubscription?.({
+                orderId: result.orderId,
+                cart: latestCart,
+                bigcommerceCustomer,
+                airwallexCustomer: awCustomer,
+              });
+
+              console.log('✅ Subscription provisioned:', subscriptionProvisionResult);
+            } catch (subErr) {
+              console.warn('⚠️ Subscription provisioning failed:', subErr.message);
+            }
+          }
 
           navigate("/thank-you", {
             state: {

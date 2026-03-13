@@ -2,7 +2,8 @@ const express = require('express')
 const axios = require('axios');
 const router = express.Router()
 const SubscriptionPlan = require('../models/SubscriptionPlan.js');
-const BillingCustomer = require('../models/BillingCustomer.js');
+// const BillingCustomer = require('../models/BillingCustomer.js');
+const CustomerSubscription = require('../models/CustomerSubscription.js');
 const dayjs = require('dayjs');
 const crypto = require('crypto');
 
@@ -32,6 +33,16 @@ async function getAirwallexToken() {
     );
     throw new Error('Failed to authenticate with Airwallex');
   }
+}
+
+function findSubscriptionProduct(cart, subscriptionProductIds = []) {
+  const physicalItems = cart?.lineItems?.physicalItems || [];
+  const digitalItems = cart?.lineItems?.digitalItems || [];
+  const allItems = [...physicalItems, ...digitalItems];
+
+  return allItems.find((item) =>
+    subscriptionProductIds.includes(Number(item.product_id))
+  );
 }
 
 
@@ -69,12 +80,29 @@ router.post('/plans', async (req, res) => {
       interval = 'MONTH',
       trialDays = 14,
       active,
+      bigcommerceProductId,
     } = req.body;
 
+    if (!name) {
+      return res.status(400).json({ error: 'name is required' });
+    }
+
+    if (amount === undefined || amount === null) {
+      return res.status(400).json({ error: 'amount is required' });
+    }
+
+    if (!bigcommerceProductId) {
+      return res.status(400).json({ error: 'bigcommerceProductId is required' });
+    }
+
     // 1️⃣ Prevent duplicates
-    const exists = await SubscriptionPlan.findOne({ name });
+    const exists = await SubscriptionPlan.findOne({
+      $or: [{ name }, { bigcommerceProductId }],
+    });
     if (exists) {
-      return res.status(400).json({ error: 'Plan already exists' });
+      return res.status(400).json({
+        error: 'Plan already exists for this name or BigCommerce product',
+      });
     }
 
     const token = await getAirwallexToken();
@@ -120,6 +148,8 @@ router.post('/plans', async (req, res) => {
       currency,
       interval,
       trialDays,
+      active,
+      bigcommerceProductId,
       airwallexProductId: productRes.data.id,
       airwallexPriceId: priceRes.data.id,
     });
@@ -524,6 +554,162 @@ router.get('/payment-intents/:id', async (req, res) => {
 
     res.status(err.response?.status || 500).json({
       error: err.response?.data || 'Failed to fetch payment intent',
+    });
+  }
+});
+
+router.post('/subscriptions/provision', async (req, res) => {
+  try {
+    const {
+      orderId,
+      cart,
+      bigcommerceCustomer,
+      airwallexCustomer,
+    } = req.body;
+
+    if (!orderId || !cart || !bigcommerceCustomer || !airwallexCustomer) {
+      return res.status(400).json({
+        error: 'orderId, cart, bigcommerceCustomer and airwallexCustomer are required',
+      });
+    }
+
+    if (!bigcommerceCustomer.id) {
+      return res.status(400).json({
+        error: 'bigcommerceCustomer.id is required',
+      });
+    }
+
+    const airwallexCustomerId =
+      airwallexCustomer.airwallexCustomerId || airwallexCustomer.id;
+
+    if (!airwallexCustomerId) {
+      return res.status(400).json({
+        error: 'airwallex customer id is required',
+      });
+    }
+
+    const subscriptionProductIds = (
+      process.env.SUBSCRIPTION_PRODUCT_IDS || ''
+    )
+      .split(',')
+      .map((id) => Number(id.trim()))
+      .filter(Boolean);
+
+    const subscriptionProduct = findSubscriptionProduct(
+      cart,
+      subscriptionProductIds
+    );
+
+    if (!subscriptionProduct) {
+      return res.json({
+        success: true,
+        provisioned: false,
+        message: 'No subscription product found in order cart',
+      });
+    }
+
+    const plan = await SubscriptionPlan.findOne({
+      bigcommerceProductId: Number(subscriptionProduct.product_id),
+    });
+
+    if (!plan) {
+      return res.status(404).json({
+        error: 'No SubscriptionPlan found for BigCommerce product',
+      });
+    }
+    if (plan.status === 'disabled' || plan.active === false) {
+      return res.status(400).json({
+        error: 'SubscriptionPlan is disabled',
+      });
+    }
+
+    const existing = await CustomerSubscription.findOne({
+      bigcommerceOrderId: Number(orderId),
+      bigcommerceProductId: Number(subscriptionProduct.product_id),
+    });
+
+    if (existing) {
+      return res.json({
+        success: true,
+        provisioned: false,
+        message: 'Subscription already provisioned for this order',
+        subscription: existing,
+      });
+    }
+
+    const token = await getAirwallexToken();
+
+    const subscriptionRes = await axios.post(
+      'https://api-demo.airwallex.com/api/v1/subscriptions/create',
+      {
+        request_id: crypto.randomUUID(),
+        customer_id: airwallexCustomerId,
+        items: [
+          {
+            price_id: plan.airwallexPriceId,
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          bigcommerceOrderId: String(orderId),
+          bigcommerceCustomerId: String(bigcommerceCustomer.id),
+          bigcommerceProductId: String(subscriptionProduct.product_id),
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const awSubscription = subscriptionRes.data;
+
+    const saved = await CustomerSubscription.create({
+      bigcommerceOrderId: Number(orderId),
+      bigcommerceCustomerId: Number(bigcommerceCustomer.id),
+      bigcommerceProductId: Number(subscriptionProduct.product_id),
+
+      airwallexCustomerId,
+      airwallexProductId: plan.airwallexProductId,
+      airwallexPriceId: plan.airwallexPriceId,
+      airwallexSubscriptionId: awSubscription.id,
+
+      planName: plan.name,
+      status: awSubscription.status || 'active',
+
+      amount: plan.amount,
+      currency: plan.currency,
+      interval: plan.interval,
+      trialDays: plan.trialDays,
+
+      startedAt: awSubscription.created_at
+        ? dayjs(awSubscription.created_at).toDate()
+        : new Date(),
+      nextBillingAt: awSubscription.next_billing_at
+        ? dayjs(awSubscription.next_billing_at).toDate()
+        : null,
+
+      metadata: {
+        source: 'bigcommerce-checkout',
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      provisioned: true,
+      subscription: saved,
+    });
+  } catch (err) {
+    console.error(
+      'Provision subscription error:',
+      err.response?.status,
+      err.response?.data || err.message
+    );
+
+    return res.status(err.response?.status || 500).json({
+      error: err.response?.data || 'Failed to provision subscription',
     });
   }
 });

@@ -446,6 +446,39 @@ const removeVipFromCart = async (cartId) => {
     return result.customer;
   };
 
+  const provisionSubscription = async ({
+    orderId,
+    cart,
+    bigcommerceCustomer,
+    airwallexCustomer,
+  }) => {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/subscriptions/provision`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify({
+          orderId,
+          cart,
+          bigcommerceCustomer,
+          airwallexCustomer,
+        }),
+      }
+    );
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result?.error || 'Failed to provision subscription');
+    }
+
+    return result;
+  };
+
   const mapSubscriptionCustomer = async ({
     cart,
     bigcommerceCustomer,
@@ -927,6 +960,7 @@ const removeVipFromCart = async (cartId) => {
       onFetchLatestCart={fetchLatestCart}
       onCreateAirwallexCustomer={createAirwallexCustomer}
       onMapSubscriptionCustomer={mapSubscriptionCustomer}
+      onProvisionSubscription={provisionSubscription}
     />
   );
 }
