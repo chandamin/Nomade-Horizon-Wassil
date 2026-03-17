@@ -107,35 +107,35 @@ export default function OrderSummary({ cart, deliveryPrice = 1.99 }) {
     lineItems: {
       physicalItems: [
         {
-          id: '1',
-          name: 'LED Projector HY300 – Android 11 – WiFi – Bluetooth',
+          id: "1",
+          name: "LED Projector HY300 – Android 11 – WiFi – Bluetooth",
           quantity: 1,
           extendedSalePrice: 43.98,
-          imageUrl: '/product-placeholder.png'
-        }
-      ]
+          imageUrl: "/product-placeholder.png",
+        },
+      ],
     },
     cartAmount: 43.98,
     discountAmount: 0,
     taxAmount: 0,
-    currency: { code: 'EUR' }
+    currency: { code: "EUR" },
   };
 
   // Use provided cart or default
   const displayCart = cart || defaultCart;
-  
+
   // Extract items from cart
-  // const items = Array.isArray(displayCart.lineItems?.physicalItems) 
-  //   ? displayCart.lineItems.physicalItems 
+  // const items = Array.isArray(displayCart.lineItems?.physicalItems)
+  //   ? displayCart.lineItems.physicalItems
   //   : [];
 
   const physicalItems = Array.isArray(displayCart.lineItems?.physicalItems)
-  ? displayCart.lineItems.physicalItems
-  : [];
+    ? displayCart.lineItems.physicalItems
+    : [];
 
   const digitalItems = Array.isArray(displayCart.lineItems?.digitalItems)
-  ? displayCart.lineItems.digitalItems
-  : [];
+    ? displayCart.lineItems.digitalItems
+    : [];
 
   const items = [...physicalItems, ...digitalItems];
 
@@ -157,10 +157,16 @@ export default function OrderSummary({ cart, deliveryPrice = 1.99 }) {
     <div className="bg-white border rounded text-sm max-[991px]:block lg:block">
       {/* TITLE */}
       <div className="nr-right-prt-hed-wr border-b flex justify-between p-[19.5px] mb-[19.5px]">
-        <h3 className="font-semibold text-gray-900">
-          Order summary
-        </h3>
-        <a href="" className="text-[#476bef] hover:text-[#002fe1]">Edit Cart</a>
+        <h3 className="font-semibold text-gray-900">Order summary</h3>
+        <button
+          onClick={() =>
+            (window.location.href =
+              "https://kasweb-c4.mybigcommerce.com/cart.php")
+          }
+          className="text-[#476bef] hover:text-[#002fe1]"
+        >
+          Edit Cart
+        </button>
       </div>
       <div className="nr-rght-btm-prt">
         {/* PRODUCTS */}
@@ -176,13 +182,9 @@ export default function OrderSummary({ cart, deliveryPrice = 1.99 }) {
               <div className="font-medium text-gray-900 leading-snug">
                 Your cart is empty
               </div>
-              <div className="text-xs text-gray-600 mt-1">
-                Quantity: 0
-              </div>
+              <div className="text-xs text-gray-600 mt-1">Quantity: 0</div>
             </div>
-            <div className="font-semibold text-gray-900">
-              €0.00
-            </div>
+            <div className="font-semibold text-gray-900">€0.00</div>
           </div>
         ) : (
           // Dynamic items
@@ -191,7 +193,10 @@ export default function OrderSummary({ cart, deliveryPrice = 1.99 }) {
             const quantity = Number(item.quantity || 1);
 
             return (
-              <div key={item.id || index} className="flex gap-3 p-[19.5px] pt-0">
+              <div
+                key={item.id || index}
+                className="flex gap-3 p-[19.5px] pt-0"
+              >
                 {/* PRODUCT IMAGE */}
                 <img
                   src={item.imageUrl || "/product-placeholder.png"}
@@ -258,19 +263,19 @@ export default function OrderSummary({ cart, deliveryPrice = 1.99 }) {
 
         {/* DIVIDER */}
         <div className="nr-total-prt p-[19.5px] border-t">
-        {/* TOTAL */}
-        <div className="flex justify-between items-center text-base font-semibold text-gray-900">
-          <span>Total ({currency})</span>
-          <span className="text-[30px]">{formatPrice(total)}</span>
-        </div>
+          {/* TOTAL */}
+          <div className="flex justify-between items-center text-base font-semibold text-gray-900">
+            <span>Total ({currency})</span>
+            <span className="text-[30px]">{formatPrice(total)}</span>
+          </div>
 
-        {/* VAT NOTE */}
-        <div className="text-xs text-gray-500 mt-1">
-          Including VAT{subtotal > 0 ? ' (estimated)' : ''}
-        </div>
-        
-        {/* PROMO CODE */}
-        {/* <div className="nr-promo-code-prt">
+          {/* VAT NOTE */}
+          <div className="text-xs text-gray-500 mt-1">
+            Including VAT{subtotal > 0 ? " (estimated)" : ""}
+          </div>
+
+          {/* PROMO CODE */}
+          {/* <div className="nr-promo-code-prt">
           <label className="block text-xs text-gray-600 my-1">
             Promotional code
           </label>
@@ -305,4 +310,3 @@ export default function OrderSummary({ cart, deliveryPrice = 1.99 }) {
     </div>
   );
 }
-

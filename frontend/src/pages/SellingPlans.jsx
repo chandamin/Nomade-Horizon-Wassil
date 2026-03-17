@@ -80,6 +80,7 @@ export default function SellingPlans({ environment }) {
                 <TableHead>Interval</TableHead>
                 <TableHead>Free Trial</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>BC Product ID</TableHead>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -118,6 +119,7 @@ export default function SellingPlans({ environment }) {
                         {plan.status === 'enabled' ? 'Enabled' : 'Disabled'}
                       </button>
                     </TableCell>
+                    <TableCell>{plan.bigcommerceProductId}</TableCell>
 
 
                   </tr>
@@ -169,6 +171,7 @@ function CreatePlanForm({ onClose, onCreated, environment }) {
     amount: '',
     interval: 'MONTH',
     trialDays: 30,
+    bigcommerceProductId: '',
   })
 
   const handleChange = e => {
@@ -186,6 +189,7 @@ function CreatePlanForm({ onClose, onCreated, environment }) {
         ...form,
         amount: Number(form.amount),
         trialDays: Number(form.trialDays),
+        bigcommerceProductId: Number(form.bigcommerceProductId),
       }),
     })
 
@@ -229,6 +233,17 @@ function CreatePlanForm({ onClose, onCreated, environment }) {
             type="number"
             placeholder="Amount (USD)"
             value={form.amount}
+            onChange={handleChange}
+            required
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-400 outline-none"
+          />
+
+          {/* Bigcommerce Product Id */}
+          <input
+            name="bigcommerceProductId"
+            type="number"
+            placeholder="BigCommerce Product ID"
+            value={form.bigcommerceProductId}
             onChange={handleChange}
             required
             className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-gray-400 outline-none"

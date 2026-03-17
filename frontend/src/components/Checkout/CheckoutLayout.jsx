@@ -589,14 +589,14 @@ export default function CheckoutLayout({
             }
           }
 
-          navigate("/thank-you", {
-            state: {
-              orderId: result.orderId,
-              amount: latestCart?.cartAmount,
-              currency: latestCart?.currency?.code || "EUR",
-              email: clientData?.email,
-            }
-          });
+          // navigate("/thank-you", {
+          //   state: {
+          //     orderId: result.orderId,
+          //     amount: latestCart?.cartAmount,
+          //     currency: latestCart?.currency?.code || "EUR",
+          //     email: clientData?.email,
+          //   }
+          // });
 
           // Optionally redirect or clear cart
           // window.location.href = `/order-confirmation?orderId=${result.orderId}`;

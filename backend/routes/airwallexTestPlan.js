@@ -643,13 +643,20 @@ router.post('/subscriptions/provision', async (req, res) => {
       'https://api-demo.airwallex.com/api/v1/subscriptions/create',
       {
         request_id: crypto.randomUUID(),
-        customer_id: airwallexCustomerId,
+        billing_customer_id: airwallexCustomerId,
+        collection_method: 'OUT_OF_BAND',
+        currency: plan.currency,
         items: [
           {
             price_id: plan.airwallexPriceId,
             quantity: 1,
           },
         ],
+        duration: {
+          period_unit: plan.interval,
+          period: 1,
+        },
+        legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
         metadata: {
           bigcommerceOrderId: String(orderId),
           bigcommerceCustomerId: String(bigcommerceCustomer.id),
