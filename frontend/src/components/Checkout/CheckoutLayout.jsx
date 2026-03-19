@@ -1,243 +1,9 @@
-//Working
-// import { useState, useEffect } from "react";
-// import ClientStep from "./ClientStep";
-// import ShippingStep from "./ShippingStep";
-// import PaymentStep from "./PaymentStep";
-// import OrderSummary from "./OrderSummary";
-
-// export default function CheckoutLayout({ cart, onCustomerCreate }) {
-//   /**
-//    * activeStep controls which section is expanded.
-//    * Order: client → delivery → payment
-//    */
-//   const [activeStep, setActiveStep] = useState("client");
-
-//   /**
-//    * Static state holders for now
-//    * (will be hydrated later via BigCommerce SDK)
-//    */
-//   const [clientData, setClientData] = useState({});
-//   const [deliveryData, setDeliveryData] = useState({});
-//   const [paymentData, setPaymentData] = useState({});
-
-//   // Timer logic from working version
-//   const DISCOUNT_DURATION = 10 * 60; // 10 minutes in seconds
-//   const [timeLeft, setTimeLeft] = useState(DISCOUNT_DURATION);
-  
-//   useEffect(() => {
-//     const interval = setInterval(() => {
-//       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-//     }, 1000);
-
-//     return () => clearInterval(interval);
-//   }, []);
-
-//   const minutes = String(Math.floor(timeLeft / 60)).padStart(2, "0");
-//   const seconds = String(timeLeft % 60).padStart(2, "0");
-
-//   const validUntilDate = new Date();
-//   validUntilDate.setDate(validUntilDate.getDate() + 1);
-//   const formattedDate = validUntilDate.toLocaleDateString("en-GB");
-
-//   // Delivery completion check from working version
-//   const isDeliveryComplete = !!(
-//     deliveryData?.address &&
-//     deliveryData?.city &&
-//     deliveryData?.method
-//   );
-
-//   const hasReachedDelivery = activeStep === "delivery" || activeStep === "payment";
-
-//   // Enhanced client continue handler with customer creation
-//   const handleClientContinue = async (clientFormData) => {
-//     // First, store the client data locally
-//     setClientData(clientFormData);
-    
-//     // Then, if we have the customer creation handler and cart ID,
-//     // try to create/assign the customer in the background
-//     if (onCustomerCreate && cart?.id) {
-//       try {
-//         // This runs asynchronously - don't wait for it to complete
-//         onCustomerCreate(clientFormData, cart.id)
-//           .then(customerId => {
-//             if (customerId) {
-//               console.log('Customer processed successfully:', customerId);
-//               // Optionally update clientData with customer ID if needed
-//               setClientData(prev => ({
-//                 ...prev,
-//                 customerId: customerId
-//               }));
-//             }
-//           })
-//           .catch(err => {
-//             console.warn('Customer creation completed with warnings:', err);
-//             // Don't block checkout flow even if customer creation has issues
-//           });
-//       } catch (err) {
-//         console.error('Error initiating customer creation:', err);
-//         // Continue checkout anyway - customer creation is optional
-//       }
-//     }
-    
-//     // Move to next step immediately (don't wait for customer creation)
-//     setActiveStep("delivery");
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-[#fff]">
-//       {/* ================= HEADER ================= */}
-//       <header className="bg-white border-b">
-//         <div className="max-w-[1200px] mx-auto py-4 text-center px-[20px]">
-//           <img
-//             src="https://images.unsplash.com/photo-1607082349566-1870e33f43d1?w=200"
-//             alt="Flashventes"
-//             className="h-7 mx-auto object-contain"
-//           />
-//         </div>
-//       </header>
-
-//       {/* ================= PROMO BANNER (using old styles but new logic) ================= */}
-//       <div className="max-w-[1200px] mx-auto px-[20px] mb-6">
-//         <div className="nr-date-time-wr text-white bg-[#3b4450] rounded-[5px] py-[8px] px-[10px] text-center">
-//           <p className="nr-date-time-txt-fir text-[14px] md:text-[16px]">
-//             Félicitations, votre promo a été appliquée.
-//           </p>
-//           <p className="nr-date-time-txt-sec text-[13px] md:text-[16px]">
-//             Il vous reste <span className="text-[#f4d54c] font-[600]">{minutes}:{seconds}</span> pour en bénéficier. 
-//             Valable ce <b>{formattedDate}</b>
-//           </p>
-//         </div>
-//       </div>
-
-//       {/* ================= MAIN CONTENT ================= */}
-//       <main className="max-w-[1200px] mx-auto gap-8 py-8 px-[20px] grid grid-cols-1 sm:grid-cols-12 md:grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 2xl:grid-cols-12">
-//         {/* ================= LEFT COLUMN ================= */}
-//         <section className="col-span-7">
-//           <div className="bg-white rounded pt-[24px] space-y-6">
-//             {/* CLIENT STEP with updated onContinue handler */}
-//             <ClientStep
-//               active={activeStep === "client"}
-//               data={clientData}
-//               onContinue={handleClientContinue}  // Updated to use new handler
-//               onEdit={() => setActiveStep("client")}
-//               isDisabled={activeStep !== "client"}
-//               cart={cart}
-//             />
-
-//             {/* DELIVERY STEP with cart prop and hasReached logic */}
-//             <ShippingStep
-//               active={activeStep === "delivery"}
-//               hasReached={hasReachedDelivery}
-//               data={deliveryData}
-//               isComplete={isDeliveryComplete}
-//               onContinue={(data) => {
-//                 setDeliveryData(data);
-//                 setActiveStep("payment");
-//               }}
-//               onEdit={() => setActiveStep("delivery")}
-//               isDisabled={activeStep !== "delivery"}
-//               cart={cart}
-//             />
-
-//             {/* PAYMENT STEP with cart prop */}
-//             <PaymentStep 
-//               active={activeStep === "payment"} 
-//               data={paymentData}
-//               onContinue={(data) => setPaymentData(data)}
-//               isDisabled={activeStep !== "payment"}
-//               cart={cart}
-//             />
-
-//             {/* ORDER BUTTON & SECURITY SECTION */}
-//             {activeStep === "payment" && (
-//               <>
-//                 <button
-//                   type="button"
-//                   className="w-full cursor-pointer bg-[#2fb34a] hover:bg-[#28a745] transition text-white font-semibold py-3 rounded"
-//                   onClick={async () => {
-//                     // Here you would integrate with order creation API
-//                     console.log('Placing order with:', {
-//                       cartId: cart?.id,
-//                       clientData,
-//                       deliveryData,
-//                       paymentData
-//                     });
-                    
-//                     // TODO: Implement order creation logic
-//                     // await createOrderInBigCommerce({
-//                     //   cartId: cart.id,
-//                     //   customerData: clientData,
-//                     //   shippingData: deliveryData,
-//                     //   paymentData: paymentData
-//                     // });
-//                   }}
-//                 >
-//                   PLACE AN ORDER
-//                 </button>
-
-//                 <div className="text-xs text-gray-600 text-center mt-3">
-//                   🔒 Secure 256-bit SSL encryption
-//                 </div>
-
-//                 <div className="flex justify-center gap-6 mt-4">
-//                   <img
-//                     src="https://upload.wikimedia.org/wikipedia/commons/3/3a/McAfee_logo.png"
-//                     alt="McAfee"
-//                     className="h-6"
-//                   />
-//                   <img
-//                     src="https://upload.wikimedia.org/wikipedia/commons/6/6b/Norton_logo.svg"
-//                     alt="Norton"
-//                     className="h-6"
-//                   />
-//                   <img
-//                     src="https://upload.wikimedia.org/wikipedia/commons/5/5b/TRUSTe_logo.png"
-//                     alt="TRUSTe"
-//                     className="h-6"
-//                   />
-//                 </div>
-//               </>
-//             )}
-//           </div>
-//         </section>
-
-//         {/* ================= RIGHT COLUMN ================= */}
-//         <aside className="col-span-5">
-//           {/* Pass cart prop to OrderSummary */}
-//           <OrderSummary deliveryPrice={deliveryData?.price ?? 0} cart={cart} />
-//         </aside>
-//       </main>
-
-//       {/* ================= FOOTER ================= */}
-//       <footer className="text-xs text-gray-500 text-center py-6 space-y-2">
-//         <div className="space-x-3">
-//           <a href="#" className="hover:underline">
-//             General Terms and Conditions
-//           </a>
-//           <a href="#" className="hover:underline">
-//             Shipping Policies and Rates
-//           </a>
-//           <a href="#" className="hover:underline">
-//             Privacy Policy
-//           </a>
-//         </div>
-//         <div>
-//           <a href="#" className="hover:underline">
-//             Exchanges and Returns
-//           </a>
-//         </div>
-//       </footer>
-//     </div>
-//   );
-// }
-
-
-
 import { useState, useEffect } from "react";
 import ClientStep from "./ClientStep";
 import ShippingStep from "./ShippingStep";
 import PaymentStep from "./PaymentStep";
 import OrderSummary from "./OrderSummary";
+import ThankYouStep from "./ThankYouStep";
 import { useNavigate } from "react-router-dom";
 
 
@@ -272,6 +38,8 @@ export default function CheckoutLayout({
   const [bigcommerceCustomer, setBigcommerceCustomer] = useState(null);
   const [airwallexCustomer, setAirwallexCustomer] = useState(null);
   const navigate = useNavigate();
+  const [orderComplete, setOrderComplete] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState(null);
 
   const VIP_PRODUCT_ID = 210; // replace
   const [isVipLoading, setIsVipLoading] = useState(false);
@@ -350,39 +118,51 @@ export default function CheckoutLayout({
 
   const hasReachedDelivery = activeStep === "delivery" || activeStep === "payment";
 
-  // Enhanced client continue handler with customer creation
+
   const handleClientContinue = async (clientFormData) => {
-    // First, store the client data locally
-    setClientData(clientFormData);
+    // :white_check_mark: Step 1: Normalize and save the FRESH form data
+    const newClientData = {
+      firstName: clientFormData.firstName?.trim() || "",
+      lastName: clientFormData.lastName?.trim() || "",
+      email: clientFormData.email?.trim()?.toLowerCase() || "",
+      phone: clientFormData.phone?.trim() || "",
+      company: clientFormData.company?.trim() || ""
+    };
+
+    console.log(":floppy_disk: Saving FRESH form data:", newClientData);
+    setClientData(newClientData);
     
-    // Then, if we have the customer creation handler and cart ID,
-    // try to create/assign the customer in the background
+    // :white_check_mark: Step 2: Create/fetch customer in background (optional)
     if (onCustomerCreate && cart?.id) {
       try {
-        console.log('👤 Starting customer creation...');
+        console.log(':bust_in_silhouette: Checking customer in BigCommerce for email:', newClientData.email);
         const result = await onCustomerCreate(clientFormData, cart.id);
         
         if (result && result.customerId) {
-          console.log(' Customer created/retrieved:', result.customerId);
-          // Store customer ID for shipping step
+          console.log(':white_check_mark: Customer found/created. ID:', result.customerId);
+          
+          // :key: CRITICAL FIX: Only merge SAFE fields from API
+          // DO NOT overwrite firstName/lastName/email from API!
+          setClientData(prev => ({
+            ...prev,                    // Keep ALL fresh form data
+            customerId: result.customerId,  // :white_check_mark: Add these from API
+            id: result.customerId,
+            // :warning: ONLY add these if they don't exist in form data:
+            ...(prev.phone || !result.customerData?.phone ? {} : { phone: result.customerData.phone }),
+            ...(prev.company || !result.customerData?.company ? {} : { company: result.customerData.company }),
+            // :x: NEVER do: ...result.customerData (it overwrites name/email!)
+          }));
+          
           setCustomerId(result.customerId);
           setBigcommerceCustomer(result.customerData || null);
-          // Update clientData with customer information
-          setClientData(prev => ({
-            ...prev,
-            customerId: result.customerId,
-            ...result.customerData
-          }));
-        } else {
-          console.warn('⚠️ Customer creation returned no customer ID');
         }
       } catch (err) {
-        console.error('❌ Error during customer creation:', err);
-        // Continue checkout anyway - customer creation is optional
+        console.error(':x: Customer API error (continuing anyway):', err);
+        // Continue checkout even if customer API fails
       }
     }
     
-    // Move to next step immediately (don't wait for customer creation)
+    // :white_check_mark: Step 3: Move to next step
     setActiveStep("delivery");
   };
 
@@ -428,9 +208,21 @@ export default function CheckoutLayout({
 
 
   // Order creation function
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = async (paymentResultArg = null) => {
     if (!cart?.id) {
       alert("No cart found. Please refresh the page.");
+      return;
+    }
+
+    // console.log('🎯 handlePlaceOrder called', {
+    //   timestamp: new Date().toISOString(),
+    //   cartId: cart?.id,
+    //   paymentIntentId: paymentData?.paymentIntentId,
+    //   isPlacingOrder,
+    // });
+    
+    if (isPlacingOrder) {
+      console.log("🚫 Blocked duplicate call");
       return;
     }
 
@@ -495,6 +287,28 @@ export default function CheckoutLayout({
       console.log('ℹ️ No subscription product in final cart. Skipping Mongo mapping.');
     }
 
+    const finalPaymentData = paymentResultArg || paymentData || {};
+
+    console.log("💳 paymentData from state:", paymentData);
+    console.log("💳 paymentResultArg:", paymentResultArg);
+    console.log("💳 finalPaymentData used for order:", finalPaymentData);
+
+    const intentId = finalPaymentData?.paymentIntentId;
+    const isPaymentSuccessful = finalPaymentData?.status === "SUCCEEDED";
+
+    const paymentMethod = isPaymentSuccessful
+      ? {
+          name: "Airwallex Credit Card",
+          method: "airwallex",
+          paid: true,
+          transaction_id: intentId,
+          amount: latestCart?.cartAmount || 0,
+          currency: latestCart?.currency?.code || "EUR",
+        }
+    : null;
+
+    console.log("💳 Derived paymentMethod:", paymentMethod);
+
     try {
       console.log('🛒 Starting order creation...');
       // Prepare the order data
@@ -523,7 +337,8 @@ export default function CheckoutLayout({
             id: opt.nameId,
             value: opt.valueId,
           })) || [],
-        }))
+        })),
+        paymentMethod:paymentMethod,
         
       };
       // Add shipping address if available
@@ -552,6 +367,8 @@ export default function CheckoutLayout({
         body: JSON.stringify(orderData, null, 2)
       });
 
+      console.log("📤 Final order payload:", orderData);
+
       // Call the order creation endpoint
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/orders/create`,
@@ -565,6 +382,8 @@ export default function CheckoutLayout({
           body: JSON.stringify(orderData)
         }
       );
+
+      console.log("PaymentMethod", paymentMethod);
       const responseText = await response.text();
       console.log('📥 Response status:', response.status);
       console.log('📥 Response body:', responseText);
@@ -583,7 +402,7 @@ export default function CheckoutLayout({
                 airwallexCustomer: awCustomer,
               });
 
-              console.log('✅ Subscription provisioned:', subscriptionProvisionResult);
+              console.log('Subscription provisioned:', subscriptionProvisionResult);
             } catch (subErr) {
               console.warn('⚠️ Subscription provisioning failed:', subErr.message);
             }
@@ -599,7 +418,7 @@ export default function CheckoutLayout({
           // });
 
           // Optionally redirect or clear cart
-          // window.location.href = `/order-confirmation?orderId=${result.orderId}`;
+          window.location.href = `https://kasweb-c4.mybigcommerce.com/order-confirmation?orderId=${result.orderId}`;
         } else {
           throw new Error(result.error || 'Failed to create order');
         }
@@ -697,6 +516,7 @@ export default function CheckoutLayout({
               data={paymentData}
               onContinue={(data) => setPaymentData(data)}
               isDisabled={activeStep !== "payment"}
+              onPlaceOrder={handlePlaceOrder}
               cart={cart}
               clientData={clientData}
               deliveryData={deliveryData}
@@ -706,7 +526,7 @@ export default function CheckoutLayout({
             {activeStep === "payment" && (
               <>
 
-              <button
+              {/* <button
                   type="button"
                   onClick={handlePlaceOrder}
                   // disabled={isPlacingOrder}
@@ -738,54 +558,16 @@ export default function CheckoutLayout({
                     'PLACE AN ORDER'
                   )}
 
-                </button>
-                {/* <button
-                  type="button"
-                  className="w-full cursor-pointer bg-[#2fb34a] hover:bg-[#28a745] transition text-white font-semibold py-3 rounded"
-                  onClick={async () => {
-                    // Here you would integrate with order creation API
-                    console.log('🎯 Placing order with data:', {
-                      cartId: cart?.id,
-                      customerId: customerId,
-                      clientData,
-                      deliveryData,
-                      paymentData,
-                      customerEmail: clientData.email,
-                      shippingAddress: {
-                        firstName: deliveryData.firstName || clientData.firstName,
-                        lastName: deliveryData.lastName || clientData.lastName,
-                        address: deliveryData.address,
-                        city: deliveryData.city,
-                        postalCode: deliveryData.postalCode,
-                        country: deliveryData.country,
-                        phone: deliveryData.phone || clientData.phone
-                      },
-                      shippingMethod: deliveryData.method,
-                      shippingPrice: deliveryData.price
-                    });
-                    
-                    // TODO: Implement order creation logic
-                    // You'll need to create an order in BigCommerce using:
-                    // 1. Cart ID
-                    // 2. Customer ID
-                    // 3. Shipping address
-                    // 4. Payment method
-                    // 5. Shipping method
-                    
-                    // Example endpoint to create:
-                    // await createOrderInBigCommerce({
-                    //   cartId: cart.id,
-                    //   customerId: customerId,
-                    //   billingAddress: { ... },
-                    //   shippingAddress: { ... },
-                    //   shippingMethodId: deliveryData.method,
-                    //   paymentMethod: paymentData.method
-                    // });
-                  }}
-                >
-                  PLACE AN ORDER
                 </button> */}
 
+                {isPlacingOrder && (
+                  <div className="w-full bg-[#2fb34a] text-white font-semibold py-3 rounded flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    PROCESSING ORDER...
+                  </div>
+                )}
+               
+                
                 <div className="text-xs text-gray-600 text-center mt-3 flex items-center gap-[5px] justify-center">
                   <img src="../images/ssl.webp" alt="lock" className="h-[15px]"/>
                    Secure 256-bit SSL encryption

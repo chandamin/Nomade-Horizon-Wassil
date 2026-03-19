@@ -20,6 +20,41 @@ const SUBSCRIPTION_PRODUCT_IDS = (
   .map((id) => Number(id.trim()))
   .filter(Boolean);
 
+
+
+
+async function updateOrderStatus(orderId, statusId, storeHash, apiToken) {
+  try {
+    const res = await fetch(
+      `https://api.bigcommerce.com/stores/${storeHash}/v2/orders/${orderId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'X-Auth-Token': apiToken,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          status_id: statusId
+        })
+      }
+    );
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.warn(`Failed to update order ${orderId} status to ${statusId}:`, res.status, errorText);
+      return { success: false, error: errorText };
+    }
+
+    const updatedOrder = await res.json();
+    console.log(`Order ${orderId} status updated to ${statusId}`);
+    return { success: true, order: updatedOrder };
+  } catch (err) {
+    console.error('Order status update error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 const bcGetHeaders = {
   'X-Auth-Token': MANAGEMENT_API_TOKEN,
   'Accept': 'application/json'
@@ -842,12 +877,10 @@ router.post('/orders/create', async (req, res) => {
 
     if (paymentMethod) {
       orderData.payment_method = paymentMethod.name || paymentMethod.method;
-
-      if (paymentMethod.paid && statusId === 1) {
-        orderData.status_id = 10;
-      }
     }
 
+
+    console.log('Incoming paymentMethod:', paymentMethod);
     debug('Order data to create:', orderData);
 
     const createOrderRes = await fetch(
@@ -885,6 +918,28 @@ router.post('/orders/create', async (req, res) => {
     }
 
     const createdOrder = JSON.parse(responseText);
+
+    if (paymentMethod && paymentMethod.paid && createdOrder.id) {
+      console.log(
+        `Airwallex payment already confirmed for order ${createdOrder.id}, updating order status in BigCommerce`
+      );
+
+      const statusResult = await updateOrderStatus(
+        createdOrder.id,
+        11, // change this if your store uses a different status id for Awaiting Fulfillment
+        STORE_HASH,
+        MANAGEMENT_API_TOKEN
+      );
+
+      console.log('Order status update result:', statusResult);
+
+      if (!statusResult.success) {
+        console.warn(
+          `Payment was successful but failed to update order ${createdOrder.id} status`,
+          statusResult.error
+        );
+      }
+    }
 
     await updateInventory(products, STORE_HASH, MANAGEMENT_API_TOKEN);
 

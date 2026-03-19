@@ -90,6 +90,15 @@ export default function ClientStep({
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/customers/search?email=${encodeURIComponent(email)}`
+        
+        // `${import.meta.env.VITE_BACKEND_URL}/api/customers/search?email=${encodeURIComponent(email)}`,
+        //   {
+        //     method: 'GET',
+        //     headers: {
+        //       'Accept': 'application/json',
+        //       'ngrok-skip-browser-warning': 'true'
+        //     }
+        //   }
       );
       
       if (response.ok) {

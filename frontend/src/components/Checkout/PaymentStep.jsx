@@ -9,6 +9,7 @@ export default function PaymentStep({
   cart,
   clientData,
   deliveryData,
+  onPlaceOrder,
 }) {
   const containerRef = useRef(null);
   const elementRef = useRef(null);
@@ -25,114 +26,233 @@ export default function PaymentStep({
   //     </section>
   //   );
   // }
+  const successHandledRef = useRef(false);
 
-  useEffect(() => {
-    if (!active || isDisabled) return;
-    if (initializedRef.current) return;
-    if (!cart?.cartAmount) return;
+useEffect(() => {
+  if (!active || isDisabled) return;
+  if (!cart?.id || !cart?.cartAmount) return;
+  if (initializedRef.current) return;
 
-    let isMounted = true;
+  initializedRef.current = true;
+  let isMounted = true;
 
-    const setupPayment = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const setupPayment = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        const merchantOrderId =
-          cart?.id || `cart_${Date.now()}`;
-
-        const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/payment-intents`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-              "ngrok-skip-browser-warning": "true",
-            },
-            body: JSON.stringify({
-              amount: Number(cart.cartAmount),
-              currency: cart?.currency?.code || "EUR",
-              merchant_order_id: merchantOrderId,
-            }),
-          }
-        );
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result?.error || "Failed to create payment intent");
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/payment-intents`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+          body: JSON.stringify({
+            amount: Number(cart.cartAmount),
+            currency: cart?.currency?.code || "EUR",
+            merchant_order_id: cart.id,
+          }),
         }
+      );
 
-        if (!isMounted) return;
-        setIntent(result);
+      const result = await response.json();
 
-        await init({
-          env: "demo",
-          enabledElements: ["payments"],
-        });
-
-        const element = await createElement("dropIn", {
-          intent_id: result.id,
-          client_secret: result.client_secret,
-          currency: result.currency,
-          methods: ["card"],
-        });
-
-        if (!element) {
-          throw new Error("Failed to create Airwallex payment element");
-        }
-
-        elementRef.current = element;
-        element.mount(containerRef.current);
-
-        element.on("ready", () => {
-          if (!isMounted) return;
-          setLoading(false);
-        });
-
-        element.on("success", (event) => {
-          const paymentIntent = event?.detail?.intent || result;
-
-          onContinue?.({
-            ...data,
-            status: "SUCCEEDED",
-            paymentIntentId: paymentIntent?.id || result.id,
-            clientSecret: result.client_secret,
-            intent: paymentIntent,
-          });
-        });
-
-        element.on("error", (event) => {
-          const message =
-            event?.detail?.error?.message ||
-            event?.detail?.message ||
-            "Payment failed";
-
-          setError(message);
-
-          onContinue?.({
-            ...data,
-            status: "FAILED",
-            paymentIntentId: result.id,
-            clientSecret: result.client_secret,
-          });
-        });
-
-        initializedRef.current = true;
-      } catch (err) {
-        console.error("❌ Airwallex payment setup error:", err);
-        setLoading(false);
-        setError(err.message || "Failed to load payment form");
+      if (!response.ok) {
+        throw new Error(result?.error || "Failed to create payment intent");
       }
-    };
 
-    setupPayment();
+      if (!isMounted) return;
+      setIntent(result);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [active, isDisabled, cart, data, onContinue, clientData, deliveryData]);
+      await init({
+        env: "demo",
+        enabledElements: ["payments"],
+      });
+
+      const element = await createElement("dropIn", {
+        intent_id: result.id,
+        client_secret: result.client_secret,
+        currency: result.currency,
+        methods: ["card"],
+      });
+
+      if (!element) {
+        throw new Error("Failed to create Airwallex payment element");
+      }
+
+      elementRef.current = element;
+      element.mount(containerRef.current);
+
+      element.on("ready", () => {
+        if (!isMounted) return;
+        setLoading(false);
+      });
+
+      element.on("success", (event) => {
+        if (successHandledRef.current) return;
+        successHandledRef.current = true;
+
+        const paymentIntent = event?.detail?.intent || result;
+
+        const successPayload = {
+          status: "SUCCEEDED",
+          paymentIntentId: paymentIntent?.id || result.id,
+          clientSecret: result.client_secret,
+          intent: paymentIntent,
+        };
+
+        onContinue?.(successPayload);
+        onPlaceOrder?.(successPayload);
+      });
+
+      element.on("error", (event) => {
+        const message =
+          event?.detail?.error?.message ||
+          event?.detail?.message ||
+          "Payment failed";
+
+        setError(message);
+
+        onContinue?.({
+          status: "FAILED",
+          paymentIntentId: result.id,
+          clientSecret: result.client_secret,
+        });
+      });
+    } catch (err) {
+      console.error("❌ Airwallex payment setup error:", err);
+      setLoading(false);
+      setError(err.message || "Failed to load payment form");
+      initializedRef.current = false;
+    }
+  };
+
+  setupPayment();
+
+  return () => {
+    isMounted = false;
+    if (elementRef.current?.unmount) {
+      elementRef.current.unmount();
+    }
+    elementRef.current = null;
+  };
+}, [active, isDisabled, cart?.id, cart?.cartAmount, cart?.currency?.code]);
+  // const successHandledRef = useRef(false);
+  // useEffect(() => {
+  //   if (!active || isDisabled) return;
+  //   if (initializedRef.current) return;
+  //   if (!cart?.cartAmount) return;
+
+  //   initializedRef.current = true;
+  //   let isMounted = true;
+   
+
+  //   const setupPayment = async () => {
+  //     try {
+  //       setLoading(true);
+  //       setError("");
+
+  //       const merchantOrderId =
+  //         cart?.id || `cart_${Date.now()}`;
+
+  //       const response = await fetch(
+  //         `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/payment-intents`,
+  //         {
+  //           method: "POST",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //             "Accept": "application/json",
+  //             "ngrok-skip-browser-warning": "true",
+  //           },
+  //           body: JSON.stringify({
+  //             amount: Number(cart.cartAmount),
+  //             currency: cart?.currency?.code || "EUR",
+  //             merchant_order_id: merchantOrderId,
+  //           }),
+  //         }
+  //       );
+
+  //       const result = await response.json();
+
+  //       if (!response.ok) {
+  //         throw new Error(result?.error || "Failed to create payment intent");
+  //       }
+
+  //       if (!isMounted) return;
+  //       setIntent(result);
+
+  //       await init({
+  //         env: "demo",
+  //         enabledElements: ["payments"],
+  //       });
+
+  //       const element = await createElement("dropIn", {
+  //         intent_id: result.id,
+  //         client_secret: result.client_secret,
+  //         currency: result.currency,
+  //         methods: ["card"],
+  //       });
+
+  //       if (!element) {
+  //         throw new Error("Failed to create Airwallex payment element");
+  //       }
+
+  //       elementRef.current = element;
+  //       element.mount(containerRef.current);
+
+  //       element.on("ready", () => {
+  //         if (!isMounted) return;
+  //         setLoading(false);
+  //       });
+
+  //       // const successHandledRef = useRef(false);
+
+  //       element.on("success", (event) => {
+  //         const paymentIntent = event?.detail?.intent || result;
+
+  //         onContinue?.({
+  //           ...data,
+  //           status: "SUCCEEDED",
+  //           paymentIntentId: paymentIntent?.id || result.id,
+  //           clientSecret: result.client_secret,
+  //           intent: paymentIntent,
+  //         });
+  //         onPlaceOrder?.();
+  //       });
+
+  //       element.on("error", (event) => {
+  //         const message =
+  //           event?.detail?.error?.message ||
+  //           event?.detail?.message ||
+  //           "Payment failed";
+
+  //         setError(message);
+
+  //         onContinue?.({
+  //           ...data,
+  //           status: "FAILED",
+  //           paymentIntentId: result.id,
+  //           clientSecret: result.client_secret,
+  //         });
+  //       });
+
+  //       initializedRef.current = true;
+  //     } catch (err) {
+  //       console.error("❌ Airwallex payment setup error:", err);
+  //       setLoading(false);
+  //       setError(err.message || "Failed to load payment form");
+  //     }
+  //   };
+
+  //   setupPayment();
+
+  //   return () => {
+  //     isMounted = false;
+  //   };
+  // }, [active, isDisabled, cart, data, onContinue, clientData, deliveryData]);
 
   if (!active) {
     return (
