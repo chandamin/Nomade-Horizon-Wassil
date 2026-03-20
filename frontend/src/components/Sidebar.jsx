@@ -13,7 +13,7 @@ import Switch from 'react-switch'
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { name: 'Selling Plans', path: '/selling-plans', icon: Package },
-  { name: 'Customers', path: '/customers', icon: Users },
+  // { name: 'Customers', path: '/customers', icon: Users },
   { name: 'Subscriptions', path: '/subscriptions', icon: Repeat },
 ]
 
@@ -117,47 +117,3 @@ function Sidebar({ setEnvironment }) {
 export default Sidebar
 
 
-// import { NavLink } from 'react-router-dom'
-
-// const navItemClasses = ({ isActive }) =>
-//   `flex items-center px-4 py-3 rounded-lg transition-all duration-200
-//    ${
-//      isActive
-//        ? 'bg-gray-700 text-white'
-//        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-//    }`
-
-// function Sidebar() {
-//   return (
-//     <aside className="w-64 min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 p-6">
-//       {/* Logo */}
-//       <div className="text-white text-xl font-bold mb-10">
-//         Ascend
-//         <p className="text-sm text-gray-400 font-normal">
-//           Subscription Admin
-//         </p>
-//       </div>
-
-//       {/* Navigation */}
-//       <nav className="space-y-2">
-//         <NavLink to="/dashboard" className={navItemClasses}>
-//           Dashboard
-//         </NavLink>
-
-//         <NavLink to="/selling-plans" className={navItemClasses}>
-//           Selling Plans
-//         </NavLink>
-
-//         <NavLink to="/customers" className={navItemClasses}>
-//           Customers
-//         </NavLink>
-
-//         <NavLink to="/subscriptions" className={navItemClasses}>
-//           Subscriptions
-//         </NavLink>
-//       </nav>
-//     </aside>
-//   )
-// }
-
-// export default Sidebar

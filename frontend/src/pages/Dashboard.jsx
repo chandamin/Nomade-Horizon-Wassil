@@ -1,101 +1,184 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+
+const DASHBOARD_API = `${import.meta.env.VITE_BACKEND_URL}/api/dashboard`
 
 export default function Dashboard() {
   const [data, setData] = useState(null)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastFetchedAt, setLastFetchedAt] = useState('')
 
   useEffect(() => {
-  fetch(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard`, {
-  // fetch("/api/dashboard", {
-    headers: {
-      'ngrok-skip-browser-warning': 'true',
-    },
-  })
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error(`Error: ${res.status} ${res.statusText}`)
+    loadDashboard()
+  }, [])
+
+  const loadDashboard = async (isManualRefresh = false) => {
+    try {
+      if (isManualRefresh) {
+        setRefreshing(true)
+      } else {
+        setLoading(true)
       }
-      return res.json()
-    })
-    .then((jsonData) => {
+
+      setError('')
+
+      console.log('[Dashboard.jsx] Fetching dashboard from:', DASHBOARD_API)
+
+      const res = await fetch(DASHBOARD_API, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+        },
+      })
+
+      console.log('[Dashboard.jsx] Dashboard response status:', res.status)
+
+      const jsonData = await res.json()
+
+      console.log('[Dashboard.jsx] Dashboard response payload:', jsonData)
+
+      if (!res.ok) {
+        throw new Error(jsonData?.error || `Error: ${res.status} ${res.statusText}`)
+      }
+
       setData(jsonData)
-    })
-    .catch((err) => {
-      console.error('Error fetching data:', err)
-      setError(`Failed to fetch data. ${err.message}`)
-    })
-}, [])
+      setLastFetchedAt(new Date().toLocaleString())
+    } catch (err) {
+      console.error('[Dashboard.jsx] Error fetching dashboard:', err)
+      setError(`Failed to fetch dashboard. ${err.message}`)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
 
+  const filteredActivity = useMemo(() => {
+    const rows = Array.isArray(data?.recentActivity) ? data.recentActivity : []
+    const q = search.trim().toLowerCase()
 
-  /* Loading */
-  if (!data && !error) {
+    if (!q) return rows
+
+    return rows.filter((row) => {
+      const customer = String(row.customer || '').toLowerCase()
+      const action = String(row.action || '').toLowerCase()
+      const plan = String(row.plan || '').toLowerCase()
+      const externalSubscriptionId = String(row.externalSubscriptionId || '').toLowerCase()
+
+      return (
+        customer.includes(q) ||
+        action.includes(q) ||
+        plan.includes(q) ||
+        externalSubscriptionId.includes(q)
+      )
+    })
+  }, [data, search])
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500 animate-pulse">
-          Loading dashboard…
-        </p>
+        <p className="text-gray-500 animate-pulse">Loading dashboard…</p>
       </div>
     )
   }
 
-  /* Error */
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-        {error}
+      <div className="space-y-4">
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+          {error}
+        </div>
+
+        <button
+          onClick={() => loadDashboard(true)}
+          className="px-4 py-2 rounded-lg bg-gray-800 text-white text-sm hover:bg-gray-900 transition"
+        >
+          Retry
+        </button>
       </div>
     )
   }
 
-  const filteredActivity = data.recentActivity.filter((row) =>
-    row.customer.toLowerCase().includes(search.toLowerCase())
-  )
+  const stats = data?.stats || {}
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800">
-          Dashboard
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Overview of subscriptions and recent activity
-        </p>
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+          <p className="text-gray-500 mt-1">
+            Overview of subscriptions and recent activity
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            Last fetched: {lastFetchedAt || '-'}
+          </p>
+        </div>
+
+        <button
+          onClick={() => loadDashboard(true)}
+          disabled={refreshing}
+          className={`px-4 py-2 rounded-lg text-sm text-white transition ${
+            refreshing
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-gray-800 hover:bg-gray-900'
+          }`}
+        >
+          {refreshing ? 'Refreshing...' : 'Refresh Dashboard'}
+        </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
         <StatCard
           label="Total Subscribers"
-          value={data.stats.totalSubscribers}
+          value={stats.totalSubscribers ?? 0}
         />
         <StatCard
           label="Active"
-          value={data.stats.activeSubscriptions}
+          value={stats.activeSubscriptions ?? 0}
         />
         <StatCard
           label="Paused"
-          value={data.stats.pausedSubscriptions}
+          value={stats.pausedSubscriptions ?? 0}
         />
         <StatCard
           label="Cancelled"
-          value={data.stats.cancelledSubscriptions}
+          value={stats.cancelledSubscriptions ?? 0}
+        />
+        <StatCard
+          label="Pending"
+          value={stats.pendingSubscriptions ?? 0}
         />
       </div>
 
-      {/* Search */}
-      <div className="flex justify-between items-center">
+      <div className="bg-white rounded-xl shadow p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <input
           type="text"
-          placeholder="Search by customer..."
+          placeholder="Search by customer, action, plan, or subscription id..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full md:w-1/3 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="w-full md:w-1/2 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+        />
+
+        <div className="text-sm text-gray-500">
+          Showing {filteredActivity.length} of {Array.isArray(data?.recentActivity) ? data.recentActivity.length : 0} records
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <InfoCard
+          label="Total Subscription Orders"
+          value={data?.totalSubscriptionOrders ?? 0}
+        />
+        <InfoCard
+          label="Recent Activity Count"
+          value={Array.isArray(data?.recentActivity) ? data.recentActivity.length : 0}
+        />
+        <InfoCard
+          label="Ascend Subscriptions"
+          value="Subscriptions at convenience"
         />
       </div>
 
-      {/* Activity Table */}
       <div className="bg-white rounded-xl shadow overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-100">
@@ -103,23 +186,32 @@ export default function Dashboard() {
               <TableHead>Customer</TableHead>
               <TableHead>Action</TableHead>
               <TableHead>Plan</TableHead>
+              <TableHead>External ID</TableHead>
               <TableHead>Date</TableHead>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-gray-100">
             {filteredActivity.length > 0 ? (
               filteredActivity.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <TableCell>{row.customer}</TableCell>
-                  <TableCell>{row.action}</TableCell>
-                  <TableCell>{row.plan}</TableCell>
-                  <TableCell>{row.date}</TableCell>
+                <tr key={`${row.externalSubscriptionId || 'row'}-${i}`} className="hover:bg-gray-50">
+                  <TableCell>{row.customer || '-'}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={row.action} />
+                  </TableCell>
+                  <TableCell>{row.plan || '-'}</TableCell>
+                  <TableCell>
+                    <span className="text-xs text-gray-600 break-all">
+                      {row.externalSubscriptionId || '-'}
+                    </span>
+                  </TableCell>
+                  <TableCell>{row.date || '-'}</TableCell>
                 </tr>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan="4"
+                  colSpan="5"
                   className="text-center py-6 text-gray-500"
                 >
                   No matching records found
@@ -129,17 +221,26 @@ export default function Dashboard() {
           </tbody>
         </table>
       </div>
+
+     
     </div>
   )
 }
-
-/* ---------- Reusable Components ---------- */
 
 function StatCard({ label, value }) {
   return (
     <div className="bg-white rounded-xl shadow p-5">
       <p className="text-gray-500 text-sm">{label}</p>
-      <p className="text-2xl font-bold text-gray-800 mt-1">
+      <p className="text-2xl font-bold text-gray-800 mt-1">{value}</p>
+    </div>
+  )
+}
+
+function InfoCard({ label, value }) {
+  return (
+    <div className="bg-white rounded-xl shadow p-5">
+      <p className="text-gray-500 text-sm">{label}</p>
+      <p className="text-lg font-semibold text-gray-800 mt-1 break-all">
         {value}
       </p>
     </div>
@@ -156,135 +257,31 @@ function TableHead({ children }) {
 
 function TableCell({ children }) {
   return (
-    <td className="px-6 py-4 text-sm text-gray-700">
+    <td className="px-6 py-4 text-sm text-gray-700 align-top">
       {children}
     </td>
   )
 }
 
+function StatusBadge({ status }) {
+  const normalized = String(status || '').toLowerCase()
 
+  const styles = {
+    active: 'bg-green-100 text-green-800',
+    paused: 'bg-yellow-100 text-yellow-800',
+    cancelled: 'bg-red-100 text-red-800',
+    canceled: 'bg-red-100 text-red-800',
+    pending: 'bg-gray-100 text-gray-800',
+    pending_payment: 'bg-gray-100 text-gray-800',
+  }
 
-// import { useEffect, useState } from 'react';
-
-// export default function Dashboard() {
-//   const [data, setData] = useState(null);
-//   const [error, setError] = useState(null);
-//   const [search, setSearch] = useState('');
-
-//   useEffect(() => {
-//     fetch(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard`)
-//       .then((res) => {
-//         if (!res.ok) throw new Error(`Error: ${res.status} ${res.statusText}`);
-//         return res.text();
-//       })
-//       .then((text) => {
-//         try {
-//           const jsonData = JSON.parse(text);
-//           setData(jsonData);
-//         } catch (e) {
-//           console.error('Error parsing JSON:', e);
-//           setError(`The response is not valid JSON. Raw response: ${text}`);
-//         }
-//       })
-//       .catch((err) => {
-//         console.error('Error fetching data:', err);
-//         setError(`Failed to fetch data. Please try again later. ${err.message}`);
-//       });
-//   }, []);
-
-//   // Loading state
-//   if (!data && !error)
-//     return (
-//       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#DBF3FA] via-[#B7E9F7] to-[#7AD7F0]">
-//         <p className="text-slate-700 animate-pulse">Loading dashboard…</p>
-//       </div>
-//     );
-
-//   // Error state
-//   if (error)
-//     return (
-//       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#DBF3FA] via-[#B7E9F7] to-[#7AD7F0]">
-//         <p className="text-red-600">{error}</p>
-//       </div>
-//     );
-
-//   // Filter recent activity
-//   const filteredActivity = data.recentActivity.filter((row) =>
-//     row.customer.toLowerCase().includes(search.toLowerCase())
-//   );
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-[#DBF3FA] via-[#B7E9F7] to-[#7AD7F0] p-8">
-//       <h1 className="text-3xl font-semibold text-slate-900 mb-6">
-//         Subscription Dashboard
-//       </h1>
-
-//       {/* Stats */}
-//       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-//         <div className="bg-white/80 backdrop-blur-md p-4 rounded-lg shadow hover:shadow-lg transition">
-//           <p className="text-gray-600 font-medium">Total Subscribers</p>
-//           <p className="text-xl font-bold">{data.stats.totalSubscribers}</p>
-//         </div>
-//         <div className="bg-white/80 backdrop-blur-md p-4 rounded-lg shadow hover:shadow-lg transition">
-//           <p className="text-gray-600 font-medium">Active</p>
-//           <p className="text-xl font-bold">{data.stats.activeSubscriptions}</p>
-//         </div>
-//         <div className="bg-white/80 backdrop-blur-md p-4 rounded-lg shadow hover:shadow-lg transition">
-//           <p className="text-gray-600 font-medium">Paused</p>
-//           <p className="text-xl font-bold">{data.stats.pausedSubscriptions}</p>
-//         </div>
-//         <div className="bg-white/80 backdrop-blur-md p-4 rounded-lg shadow hover:shadow-lg transition">
-//           <p className="text-gray-600 font-medium">Cancelled</p>
-//           <p className="text-xl font-bold">{data.stats.cancelledSubscriptions}</p>
-//         </div>
-//       </div>
-
-//       {/* Search */}
-//       <div className="mb-4">
-//         <input
-//           type="text"
-//           placeholder="Search by customer..."
-//           value={search}
-//           onChange={(e) => setSearch(e.target.value)}
-//           className="w-full md:w-1/3 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
-//         />
-//       </div>
-
-//       {/* Table */}
-//       <div className="overflow-x-auto rounded-lg shadow-lg">
-//         <table className="min-w-full bg-white/80 backdrop-blur-md divide-y divide-gray-200">
-//           <thead className="bg-blue-100">
-//             <tr>
-//               <th className="px-6 py-3 text-left text-sm font-semibold text-blue-900 uppercase">Customer</th>
-//               <th className="px-6 py-3 text-left text-sm font-semibold text-blue-900 uppercase">Action</th>
-//               <th className="px-6 py-3 text-left text-sm font-semibold text-blue-900 uppercase">Plan</th>
-//               <th className="px-6 py-3 text-left text-sm font-semibold text-blue-900 uppercase">Date</th>
-//             </tr>
-//           </thead>
-//           <tbody className="divide-y divide-gray-200">
-//             {filteredActivity.length > 0 ? (
-//               filteredActivity.map((row, i) => (
-//                 <tr
-//                   key={i}
-//                   className="hover:bg-blue-50 transition-colors"
-//                 >
-//                   <td className="px-6 py-3">{row.customer}</td>
-//                   <td className="px-6 py-3">{row.action}</td>
-//                   <td className="px-6 py-3">{row.plan}</td>
-//                   <td className="px-6 py-3">{row.date}</td>
-//                 </tr>
-//               ))
-//             ) : (
-//               <tr>
-//                 <td colSpan="4" className="px-6 py-3 text-center text-gray-500">
-//                   No matching records found
-//                 </td>
-//               </tr>
-//             )}
-//           </tbody>
-//         </table>
-//       </div>
-//     </div>
-//   );
-// }
-
+  return (
+    <span
+      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+        styles[normalized] || 'bg-gray-100 text-gray-800'
+      }`}
+    >
+      {status || 'unknown'}
+    </span>
+  )
+}

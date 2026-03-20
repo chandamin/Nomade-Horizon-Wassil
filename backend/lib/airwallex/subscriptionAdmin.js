@@ -105,64 +105,84 @@ async function buildProjectionPayload(customerSubscriptionDoc, overrides = {}) {
   const subscriptionCustomer = await SubscriptionCustomer.findOne({
     bigcommerceCustomerId: customerSubscriptionDoc.bigcommerceCustomerId,
     subscriptionProductId: customerSubscriptionDoc.bigcommerceProductId,
-  }).lean();
+  });
 
-  const customerName = [
-    subscriptionCustomer?.bigcommerceFirstName,
-    subscriptionCustomer?.bigcommerceLastName,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .trim();
+  if (!subscriptionCustomer) {
+    throw new Error(
+      `SubscriptionCustomer not found for bigcommerceCustomerId=${customerSubscriptionDoc.bigcommerceCustomerId} and subscriptionProductId=${customerSubscriptionDoc.bigcommerceProductId}`
+    );
+  }
 
   const existingProjection = await Subscription.findOne({
     externalSubscriptionId: customerSubscriptionDoc.airwallexSubscriptionId,
-  }).lean();
+  });
 
   return {
-    storeHash: overrides.storeHash || existingProjection?.storeHash || STORE_HASH,
-    customerId: customerSubscriptionDoc.bigcommerceCustomerId,
-    customerEmail:
-      overrides.customerEmail ||
-      subscriptionCustomer?.bigcommerceEmail ||
-      existingProjection?.customerEmail ||
-      null,
-    productId: customerSubscriptionDoc.bigcommerceProductId,
-    productName:
-      overrides.productName ||
-      subscriptionCustomer?.subscriptionProductName ||
-      existingProjection?.productName ||
-      null,
-
-    plan: customerSubscriptionDoc.planName || existingProjection?.plan || null,
-    interval: customerSubscriptionDoc.interval || existingProjection?.interval || null,
-
-    status: normaliseStatus(overrides.status || customerSubscriptionDoc.status),
+    subscriptionCustomerId: subscriptionCustomer._id,
+    customerSubscriptionId: customerSubscriptionDoc._id,
 
     externalSubscriptionId: customerSubscriptionDoc.airwallexSubscriptionId,
 
+    airwallexCustomerId:
+      customerSubscriptionDoc.airwallexCustomerId ||
+      subscriptionCustomer.airwallexCustomerId ||
+      null,
+
+    bigcommerceCustomerId: customerSubscriptionDoc.bigcommerceCustomerId,
+
+    customerEmail:
+      overrides.customerEmail ||
+      subscriptionCustomer.bigcommerceEmail ||
+      subscriptionCustomer.airwallexEmail ||
+      existingProjection?.customerEmail ||
+      null,
+
+    planName:
+      overrides.planName ||
+      customerSubscriptionDoc.planName ||
+      existingProjection?.planName ||
+      subscriptionCustomer.subscriptionProductName ||
+      null,
+
+    productId:
+      customerSubscriptionDoc.bigcommerceProductId ||
+      existingProjection?.productId ||
+      subscriptionCustomer.subscriptionProductId ||
+      null,
+
+    price:
+      overrides.price ??
+      customerSubscriptionDoc.amount ??
+      existingProjection?.price ??
+      null,
+
+    currency:
+      overrides.currency ||
+      customerSubscriptionDoc.currency ||
+      existingProjection?.currency ||
+      null,
+
+    interval:
+      overrides.interval ||
+      customerSubscriptionDoc.interval ||
+      existingProjection?.interval ||
+      null,
+
+    status: normaliseStatus(
+      overrides.status || customerSubscriptionDoc.status || existingProjection?.status
+    ),
+
+    nextBillingAt:
+      overrides.nextBillingAt ||
+      customerSubscriptionDoc.nextBillingAt ||
+      existingProjection?.nextBillingAt ||
+      null,
+
     orders: existingProjection?.orders || [],
 
-    metadata: {
-      customerName: customerName || null,
-      airwallexCustomerId: customerSubscriptionDoc.airwallexCustomerId,
-      subscriptionCustomerId: subscriptionCustomer?._id || null,
-      customerSubscriptionId: customerSubscriptionDoc._id,
-      amount: customerSubscriptionDoc.amount || null,
-      currency: customerSubscriptionDoc.currency || null,
-      startedAt: customerSubscriptionDoc.startedAt || null,
-      nextBillingAt:
-        overrides.nextBillingAt ||
-        customerSubscriptionDoc.nextBillingAt ||
-        null,
-      cancelAtPeriodEnd: Boolean(overrides.cancelAtPeriodEnd),
-      lastSyncedAt: overrides.lastSyncedAt || new Date(),
-      syncError: overrides.syncError || null,
-      ...(existingProjection?.metadata || {}),
-      ...(customerSubscriptionDoc.metadata || {}),
-      ...(subscriptionCustomer?.metadata || {}),
-      ...(overrides.metadata || {}),
-    },
+    lastSyncedAt: overrides.lastSyncedAt || new Date(),
+    syncStatus: overrides.syncStatus || 'ok',
+    syncError: overrides.syncError || null,
   };
 }
 
@@ -172,7 +192,7 @@ async function upsertSubscriptionProjection(customerSubscriptionDoc, overrides =
   return Subscription.findOneAndUpdate(
     { externalSubscriptionId: customerSubscriptionDoc.airwallexSubscriptionId },
     { $set: payload },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
   );
 }
 

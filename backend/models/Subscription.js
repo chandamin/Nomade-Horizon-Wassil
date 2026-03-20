@@ -24,6 +24,10 @@ const subscriptionSchema = new mongoose.Schema(
 
     airwallexCustomerId: String,
     bigcommerceCustomerId: Number,
+    customerEmail: {
+      type: String,
+      index: true,
+    },
 
     // 📦 Plan/Product Info
     planName: String,

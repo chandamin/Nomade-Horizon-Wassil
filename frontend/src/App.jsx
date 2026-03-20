@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Subscriptions from './pages/Subscriptions';
-import Customers from './pages/Customers';
+// import Customers from './pages/Customers';
 import SellingPlans from './pages/SellingPlans';
 import CreatePlan from './pages/CreatePlan';
 import Checkout from './pages/Checkout';
@@ -29,7 +29,7 @@ function Layout() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
-          <Route path="/customers" element={<Customers />} />
+          {/* <Route path="/customers" element={<Customers />} /> */}
           <Route
             path="/selling-plans"
             element={<SellingPlans />}

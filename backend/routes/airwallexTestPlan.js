@@ -771,6 +771,21 @@ router.post('/subscriptions/provision', async (req, res) => {
       },
     });
 
+    const { upsertSubscriptionProjection } = require('../lib/airwallex/subscriptionAdmin');
+
+    const subscriptionProjection = await upsertSubscriptionProjection(
+      saved,
+      {
+        lastSyncedAt: new Date(),
+        syncStatus: 'ok',
+      }
+    );
+
+    console.log('[order-flow] Subscription projection upserted:', {
+      subscriptionId: subscriptionProjection._id,
+      externalSubscriptionId: subscriptionProjection.externalSubscriptionId,
+    });
+
     return res.status(201).json({
       success: true,
       provisioned: true,

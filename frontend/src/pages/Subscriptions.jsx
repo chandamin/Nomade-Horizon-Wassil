@@ -225,7 +225,7 @@ export default function Subscriptions() {
                 return (
                   <tr key={sub._id} className="hover:bg-gray-50">
                     <TableCell>{sub.customerEmail || '-'}</TableCell>
-                    <TableCell>{sub.plan || '-'}</TableCell>
+                    <TableCell>{sub.planName || '-'}</TableCell>
                     <TableCell>
                       <StatusBadge status={sub.status} />
                     </TableCell>
