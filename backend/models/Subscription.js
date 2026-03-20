@@ -1,65 +1,74 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const OrderSchema = new mongoose.Schema({
-    orderId: Number,
-    orderNumber: String,
-    total: Number,
-    createdAt: Date,
-});
-
-const SubscriptionSchema = new mongoose.Schema({
-    storeHash: {
-        type: String,
-        required: true,
-        index: true,
+const subscriptionSchema = new mongoose.Schema(
+  {
+    // 🔗 References
+    subscriptionCustomerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SubscriptionCustomer",
+      required: true,
     },
 
-    customerId: Number,
-    customerEmail: String,
+    customerSubscriptionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CustomerSubscription",
+      required: true,
+    },
 
+    // 🧾 External IDs
+    externalSubscriptionId: {
+      type: String,
+      required: true,
+      index: true,
+    },
+
+    airwallexCustomerId: String,
+    bigcommerceCustomerId: Number,
+
+    // 📦 Plan/Product Info
+    planName: String,
     productId: Number,
-    productName: String,
+    price: Number,
+    currency: String,
+    interval: String,
 
-    plan: String, // e.g. monthly / yearly
-    interval: String, // month | year
-
+    // 📊 Status
     status: {
-        type: String,
-        enum: ['pending_payment', 'active', 'paused', 'cancelled'],
-        default: 'pending_payment',
+      type: String,
+      enum: [
+        "pending",
+        "trialing",
+        "active",
+        "paused",
+        "past_due",
+        "cancelled",
+        "expired",
+      ],
+      default: "pending",
     },
 
-    externalSubscriptionId: String, // Airwallex later
+    nextBillingAt: Date,
 
-    orders: [OrderSchema],
+    // 📦 Orders
+    orders: [
+      {
+        bigcommerceOrderId: Number,
+        amount: Number,
+        currency: String,
+        createdAt: Date,
+      },
+    ],
 
-}, { timestamps: true });
+    // 🔄 Sync
+    lastSyncedAt: Date,
+    syncStatus: {
+      type: String,
+      enum: ["ok", "failed"],
+      default: "ok",
+    },
+    syncError: String,
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('Subscription', SubscriptionSchema);
-
-
-// const mongoose = require('mongoose');
-
-// const OrderSchema = new mongoose.Schema({
-//     orderId: Number,
-//     orderNumber: String,
-//     total: Number,
-//     createdAt: Date,
-// })
-
-// const SubscriptionSchema = new mongoose.Schema({
-//     storeHash: {type: String, required:true},
-//     customerEmail: {type: String, required:true},
-//     // productId: {type: Number, required: true},
-
-//     status: {
-//         type: String,
-//         enum: ['pending', 'active', 'paused', 'cancelled'],
-//         default: 'pending',
-//     },
-//     startedAt: {type: Date, default: Date.now},
-//     orders: [OrderSchema],
-    
-// },{ timestamps: true })
-
-// module.exports = mongoose.model('Subscription', SubscriptionSchema);
+module.exports = mongoose.model("Subscription", subscriptionSchema);

@@ -28,6 +28,21 @@ export default function PaymentStep({
   // }
   const successHandledRef = useRef(false);
 
+  // Reset initialization when payment step becomes inactive
+useEffect(() => {
+  if (!active) {
+    console.log("🔄 Payment step became inactive, resetting initialization...");
+    initializedRef.current = false;
+    successHandledRef.current = false;
+
+    // Unmount the element if it exists
+    if (elementRef.current?.unmount) {
+      elementRef.current.unmount();
+    }
+    elementRef.current = null;
+  }
+}, [active]);
+
 useEffect(() => {
   if (!active || isDisabled) return;
   if (!cart?.id || !cart?.cartAmount) return;
@@ -51,7 +66,7 @@ useEffect(() => {
             "ngrok-skip-browser-warning": "true",
           },
           body: JSON.stringify({
-            amount: Number(cart.cartAmount),
+            amount: Number(cart.cartAmount) + Number(deliveryData?.price || 0),
             currency: cart?.currency?.code || "EUR",
             merchant_order_id: cart.id,
           }),
@@ -139,7 +154,7 @@ useEffect(() => {
     }
     elementRef.current = null;
   };
-}, [active, isDisabled, cart?.id, cart?.cartAmount, cart?.currency?.code]);
+}, [active, isDisabled, cart?.id, cart?.cartAmount, deliveryData, cart?.currency?.code]);
   // const successHandledRef = useRef(false);
   // useEffect(() => {
   //   if (!active || isDisabled) return;

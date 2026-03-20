@@ -11,11 +11,12 @@ import ThankYou from "./pages/ThankYou";
 function Layout() {
   const location = useLocation();
   const isCheckout = location.pathname === '/checkout';
+  const hideSidebar = location.pathname === '/thank-you';
 
   return (
     <div className="flex min-h-screen">
       {/* Sidebar only if NOT checkout */}
-      {!isCheckout && <Sidebar />}
+      {!isCheckout && !hideSidebar && <Sidebar />}
 
       <main
         className={`flex-1 ${
