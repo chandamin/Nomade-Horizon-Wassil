@@ -153,7 +153,6 @@ const removeVipFromCart = async (cartId) => {
     cart,
     bigcommerceCustomer,
     airwallexCustomer,
-    paymentSourceId,
   }) => {
     const res = await fetch(
       `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/subscriptions/provision`,
@@ -169,7 +168,6 @@ const removeVipFromCart = async (cartId) => {
           cart,
           bigcommerceCustomer,
           airwallexCustomer,
-          paymentSourceId,
         }),
       }
     );

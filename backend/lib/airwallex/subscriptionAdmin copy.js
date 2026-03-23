@@ -7,7 +7,8 @@ const SubscriptionCustomer = require('../../models/SubscriptionCustomer');
 const { getAirwallexToken } = require('./token');
 
 const STORE_HASH = process.env.BC_STORE_HASH || 'eapn6crf58';
-const AIRWALLEX_BASE_URL = 'https://api-demo.airwallex.com/api/v1';
+const AIRWALLEX_BASE_URL =
+  process.env.AIRWALLEX_BASE_URL || 'https://api-demo.airwallex.com/api/v1';
 
 function normaliseStatus(status) {
   const value = String(status || '').toUpperCase();
@@ -39,15 +40,9 @@ function asDate(value) {
 
 async function airwallexRequest(config, retry = true) {
   try {
-    console.log('[subscriptionAdmin] Airwallex request start', {
-      method: config.method,
-      url: config.url,
-      retry,
-    })
+    const token = await getAirwallexToken();
 
-    const token = await getAirwallexToken()
-
-    const response = await axios({
+    return await axios({
       baseURL: AIRWALLEX_BASE_URL,
       ...config,
       headers: {
@@ -55,30 +50,12 @@ async function airwallexRequest(config, retry = true) {
         'Content-Type': 'application/json',
         ...(config.headers || {}),
       },
-    })
-
-    console.log('[subscriptionAdmin] Airwallex request success', {
-      method: config.method,
-      url: config.url,
-      status: response.status,
-    })
-
-    return response
+    });
   } catch (err) {
-    const status = err.response?.status
-
-    console.log('[subscriptionAdmin] Airwallex request failed', {
-      method: config.method,
-      url: config.url,
-      status,
-      data: err.response?.data || err.message,
-      retry,
-    })
+    const status = err.response?.status;
 
     if (status === 401 && retry) {
-      console.log('[subscriptionAdmin] retrying with force refresh token')
-
-      const freshToken = await getAirwallexToken(true)
+      const freshToken = await getAirwallexToken(true);
 
       return axios({
         baseURL: AIRWALLEX_BASE_URL,
@@ -88,17 +65,17 @@ async function airwallexRequest(config, retry = true) {
           'Content-Type': 'application/json',
           ...(config.headers || {}),
         },
-      })
+      });
     }
 
-    throw err
+    throw err;
   }
-} 
+}
 
 async function fetchAirwallexSubscription(airwallexSubscriptionId) {
   const response = await airwallexRequest({
     method: 'GET',
-    url: `/subscriptions/${airwallexSubscriptionId}`,
+    url: `/pa/subscriptions/${airwallexSubscriptionId}`,
   });
 
   return response.data;
@@ -107,7 +84,7 @@ async function fetchAirwallexSubscription(airwallexSubscriptionId) {
 async function cancelAirwallexSubscription(airwallexSubscriptionId) {
   const response = await airwallexRequest({
     method: 'POST',
-    url: `/subscriptions/${airwallexSubscriptionId}/cancel`,
+    url: `/pa/subscriptions/${airwallexSubscriptionId}/cancel`,
     data: {},
   });
 
@@ -117,7 +94,7 @@ async function cancelAirwallexSubscription(airwallexSubscriptionId) {
 async function updateAirwallexSubscription(airwallexSubscriptionId, payload) {
   const response = await airwallexRequest({
     method: 'POST',
-    url: `/subscriptions/${airwallexSubscriptionId}/update`,
+    url: `/pa/subscriptions/${airwallexSubscriptionId}/update`,
     data: payload,
   });
 

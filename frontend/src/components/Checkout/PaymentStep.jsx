@@ -10,6 +10,7 @@ export default function PaymentStep({
   clientData,
   deliveryData,
   onPlaceOrder,
+  airwallexCustomerId,
 }) {
   const containerRef = useRef(null);
   const elementRef = useRef(null);
@@ -106,22 +107,248 @@ useEffect(() => {
         setLoading(false);
       });
 
-      element.on("success", (event) => {
+     
+
+      element.on("success", async (event) => {
         if (successHandledRef.current) return;
         successHandledRef.current = true;
 
         const paymentIntent = event?.detail?.intent || result;
+        const intentId = paymentIntent?.id || result.id;
+
+        console.log("💳 [STEP 1] Payment success event received");
+        console.log("   intentId:", intentId);
+        console.log("   airwallexCustomerId:", airwallexCustomerId);
+        console.log("   event.detail keys:", event?.detail ? Object.keys(event.detail) : []);
+        console.log("   event.detail.payment_method:", event?.detail?.payment_method);
+
+        // Extract the payment_method.id from event (preferred) - has prefix like att_xxx
+        // Note: GET payment-intents doesn't return payment_method.id, so we MUST get it from event
+        let paymentMethodId =
+          event?.detail?.payment_method?.id ||
+          event?.detail?.intent?.payment_method?.id ||
+          event?.detail?.intent?.latest_payment_attempt?.payment_method?.id;
+
+        console.log("💳 [STEP 2] paymentMethodId from event:", paymentMethodId);
+
+        // If not in event, fetch the payment intent (but API might not return payment_method.id)
+        if (!paymentMethodId && intentId) {
+          try {
+            console.log("💳 [STEP 2b] Fetching payment intent to get payment_method.id...");
+            const fetchRes = await fetch(
+              `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/payment-intents/${intentId}`,
+              {
+                method: "GET",
+                headers: {
+                  "Accept": "application/json",
+                  "ngrok-skip-browser-warning": "true",
+                },
+              }
+            );
+
+            if (fetchRes.ok) {
+              const fetchedIntent = await fetchRes.json();
+              console.log("📥 Fetched PaymentIntent:", JSON.stringify(fetchedIntent, null, 2));
+
+              // API might not return payment_method.id, so use attempt ID as fallback
+              paymentMethodId =
+                fetchedIntent?.latest_payment_attempt?.payment_method?.id ||
+                fetchedIntent?.latest_payment_attempt?.id; // Use attempt ID as external_id
+
+              console.log("💳 [STEP 2c] Extracted ID for PaymentSource:", paymentMethodId);
+            } else {
+              console.warn("⚠️ Failed to fetch payment intent:", fetchRes.status);
+            }
+          } catch (fetchErr) {
+            console.warn("⚠️ Could not fetch payment intent:", fetchErr.message);
+          }
+        }
+
+        // Create Payment Source to get psrc_ ID (required for AUTO_CHARGE subscriptions)
+        let paymentSourceId = null;
+
+        if (airwallexCustomerId) {
+          try {
+            console.log("🔄 [STEP 3] Creating Payment Source for AUTO_CHARGE...");
+            console.log("   billing_customer_id:", airwallexCustomerId);
+            console.log("   external_id:", paymentMethodId || intentId);
+            console.log("   linked_payment_account_id env:", import.meta.env.VITE_AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID);
+
+            const requestBody = {
+              billing_customer_id: airwallexCustomerId,
+              payment_method_id: paymentMethodId || intentId,
+            };
+
+            // Only add linked_payment_account_id if it's set
+            if (import.meta.env.VITE_AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID) {
+              requestBody.linked_payment_account_id = import.meta.env.VITE_AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID;
+            }
+
+            console.log("   Request body:", JSON.stringify(requestBody));
+
+            const sourceRes = await fetch(
+              `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/payment-sources/create`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "ngrok-skip-browser-warning": "true"
+                },
+                body: JSON.stringify(requestBody),
+              }
+            );
+
+            const responseText = await sourceRes.text();
+            console.log("   Response status:", sourceRes.status);
+            console.log("   Response body:", responseText);
+
+            if (sourceRes.ok) {
+              const sourceData = JSON.parse(responseText);
+              paymentSourceId = sourceData.paymentSource?.id;
+              console.log("✅ [STEP 4] PaymentSource created:", paymentSourceId);
+            } else {
+              console.warn("⚠️ Failed to create PaymentSource:", sourceRes.status, responseText);
+            }
+          } catch (sourceErr) {
+            console.error("❌ [STEP 3 ERROR] PaymentSource creation error:", sourceErr);
+          }
+        } else {
+          console.warn("⚠️ [STEP 3 SKIP] Cannot create PaymentSource - missing airwallexCustomerId");
+        }
 
         const successPayload = {
           status: "SUCCEEDED",
           paymentIntentId: paymentIntent?.id || result.id,
           clientSecret: result.client_secret,
           intent: paymentIntent,
+          ...(paymentSourceId && { paymentSourceId }),
         };
+        console.log("💳 [STEP 5] Payment success - final payment_source_id:", paymentSourceId);
+        console.log("💳 [STEP 5] Success payload:", JSON.stringify(successPayload, null, 2));
 
         onContinue?.(successPayload);
         onPlaceOrder?.(successPayload);
       });
+
+element.on("error", (event) => {
+const message =
+event?.detail?.error?.message ||
+event?.detail?.message ||
+"Payment failed";
+
+setError(message);
+
+onContinue?.({
+status: "FAILED",
+paymentIntentId: result.id,
+clientSecret: result.client_secret,
+});
+});
+      // element.on("success", async (event) => {
+      //   if (successHandledRef.current) return;
+      //   successHandledRef.current = true;
+
+      //   const paymentIntent = event?.detail?.intent || result;
+      //   const intentId = paymentIntent?.id || result.id;
+
+      //   // Extract the payment_method.id (has prefix like att_xxx)
+      //   let paymentMethodId =
+      //     // Path 1: From event detail (if available)
+      //     event?.detail?.payment_method?.id ||
+      //     event?.detail?.intent?.payment_method?.id ||
+      //     // Path 2: From latest_payment_attempt (CORRECT PATH per API docs)
+      //     paymentIntent?.latest_payment_attempt?.payment_method?.id ||
+      //     // Path 3: Direct payment_method (unlikely but check)
+      //     paymentIntent?.payment_method?.id;
+
+      //   // If not in event, fetch the payment intent to get payment_method
+      //   if (!paymentMethodId && intentId) {
+      //     try {
+      //       const fetchRes = await fetch(
+      //         `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/payment-intents/${intentId}`,
+      //         {
+      //           method: "GET",
+      //           headers: {
+      //             "Accept": "application/json",
+      //             "ngrok-skip-browser-warning": "true",
+      //           },
+      //         }
+      //       );
+
+      //       if (fetchRes.ok) {
+      //         const fetchedIntent = await fetchRes.json();
+      //         console.log("📥 Fetched PaymentIntent structure:", {
+      //           has_latest_payment_attempt: !!fetchedIntent?.latest_payment_attempt,
+      //           payment_attempt_id: fetchedIntent?.latest_payment_attempt?.id,
+      //           has_payment_method: !!fetchedIntent?.latest_payment_attempt?.payment_method,
+      //           payment_method_type: fetchedIntent?.latest_payment_attempt?.payment_method?.type,
+      //           full_attempt: fetchedIntent?.latest_payment_attempt,
+      //         });
+      //         paymentMethodId =
+      //           fetchedIntent?.latest_payment_attempt?.payment_method?.id ||
+      //           fetchedIntent?.payment_method?.id;
+      //         console.log("💳 Fetched payment_method_id:", paymentMethodId);
+      //       }
+      //     } catch (fetchErr) {
+      //       console.warn("⚠️ Could not fetch payment intent:", fetchErr.message);
+      //     }
+      //   }
+
+      //   // Create Payment Source to get psrc_ ID (required for AUTO_CHARGE subscriptions)
+      //   let paymentSourceId = null;
+
+      //   if (paymentMethodId && airwallexCustomerId) {
+      //     try {
+      //       console.log("🔄 Creating Payment Source for AUTO_CHARGE...");
+      //       console.log("   billing_customer_id:", airwallexCustomerId);
+      //       console.log("   payment_method_id:", paymentMethodId);
+
+      //       const sourceRes = await fetch(
+      //         `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/payment-sources/create`,
+      //         {
+      //           method: "POST",
+      //           headers: {
+      //             "Content-Type": "application/json",
+      //             "ngrok-skip-browser-warning": "true"
+      //           },
+      //           body: JSON.stringify({
+      //             billing_customer_id: airwallexCustomerId,
+      //             payment_method_id: paymentMethodId,
+      //             linked_payment_account_id: import.meta.env.VITE_AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
+      //           }),
+      //         }
+      //       );
+
+      //       if (sourceRes.ok) {
+      //         const sourceData = await sourceRes.json();
+      //         paymentSourceId = sourceData.paymentSource?.id;
+      //         console.log("✅ PaymentSource created:", paymentSourceId);
+      //       } else {
+      //         const errorText = await sourceRes.text();
+      //         console.warn("⚠️ Failed to create PaymentSource:", sourceRes.status, errorText);
+      //       }
+      //     } catch (sourceErr) {
+      //       console.warn("⚠️ PaymentSource creation error:", sourceErr.message);
+      //     }
+      //   } else {
+      //     console.warn("⚠️ Cannot create PaymentSource - missing paymentMethodId or airwallexCustomerId", {
+      //       hasPaymentMethodId: !!paymentMethodId,
+      //       hasAirwallexCustomerId: !!airwallexCustomerId
+      //     });
+      //   }
+
+      //   const successPayload = {
+      //     status: "SUCCEEDED",
+      //     paymentIntentId: paymentIntent?.id || result.id,
+      //     clientSecret: result.client_secret,
+      //     intent: paymentIntent,
+      //     ...(paymentSourceId && { paymentSourceId }),
+      //   };
+      //   console.log("💳 Payment success - final payment_source_id:", paymentSourceId);
+
+      //   onContinue?.(successPayload);
+      //   onPlaceOrder?.(successPayload);
+      // });
 
       element.on("error", (event) => {
         const message =

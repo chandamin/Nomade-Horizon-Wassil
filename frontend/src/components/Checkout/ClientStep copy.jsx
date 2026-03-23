@@ -72,16 +72,6 @@ export default function ClientStep({
         setIsValidating(false);
         return;
       }
-
-      const fullName = `${form.firstName} ${form.lastName}`.trim();
-      const awCustomer = await createOrFindAirwallexCustomer(form.email, fullName);
-
-      if (awCustomer) {
-        // Notify parent via custom event (since no prop exists yet)
-        window.dispatchEvent(new CustomEvent('airwallexCustomerReady', { 
-          detail: { customer: awCustomer } 
-        }));
-      }
       
       // All validations passed, continue to next step
       onContinue(form);
@@ -135,36 +125,7 @@ export default function ClientStep({
     }
   };
 
-  const createOrFindAirwallexCustomer = async (email, name) => {
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/billing-customers`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-        body: JSON.stringify({
-          email: email.toLowerCase().trim(),
-          name: name?.trim() || undefined,
-          type: "INDIVIDUAL",
-        }),
-      }
-    );
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      console.warn("⚠️ Airwallex customer creation failed:", result?.error);
-      return null;
-    }
-    return result.customer; // { airwallexCustomerId, email, name, ... }
-  } catch (err) {
-    console.error("❌ Airwallex customer API error:", err.message);
-    return null;
-  }
-};
+ 
 
   /* ================= COLLAPSED VIEW ================= */
   if (!active && data && data.email) {

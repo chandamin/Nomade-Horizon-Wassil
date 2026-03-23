@@ -539,7 +539,7 @@ router.post('/create-checkout', async (req, res) => {
 
 router.post('/payment-intents', async (req, res) => {
   try {
-    const { amount, currency = "CNY", merchant_order_id, customer_id,} = req.body;
+    const { amount, currency = "CNY", merchant_order_id } = req.body;
 
     if (!amount || !merchant_order_id) {
       return res.status(400).json({
@@ -556,18 +556,7 @@ router.post('/payment-intents', async (req, res) => {
         amount,
         currency,
         merchant_order_id,
-        return_url: `${process.env.FRONTEND_URL}`,
-        ...(customer_id && { customer_id }),
-
-        // Enable merchant-initiated payments for reusable payment source
-        ...(customer_id && {
-          payment_consent: {
-            next_triggered_by: "merchant",
-            merchant_trigger_reason: "unscheduled",
-            payment_amount_type: "VARIABLE", // Allow variable amounts for subscriptions
-            payment_currency: currency,
-          }
-        }),
+        return_url: `${process.env.FRONTEND_URL}`
       },
       {
         headers: {
@@ -576,11 +565,6 @@ router.post('/payment-intents', async (req, res) => {
         }
       }
     );
-    console.log("PaymentIntent created:", {
-      id: airwallexRes.data.id,
-      customer_id: airwallexRes.data.customer_id,
-      has_payment_consent: !!airwallexRes.data.payment_consent,
-    });
     console.log("Airwallex payment intent response:", airwallexRes.data);
     res.json(airwallexRes.data);
 
@@ -617,8 +601,6 @@ router.get('/payment-intents/:id', async (req, res) => {
       }
     );
 
-    console.log("📥 Fetched payment intent:", airwallexRes.data); 
-
     res.json(airwallexRes.data);
   } catch (err) {
     console.error(
@@ -640,16 +622,7 @@ router.post('/subscriptions/provision', async (req, res) => {
       cart,
       bigcommerceCustomer,
       airwallexCustomer,
-      paymentSourceId,
     } = req.body;
-
-    console.log('📥 [PROVISION] Received request:', {
-      orderId,
-      paymentSourceId,
-      paymentSourceIdPrefix: paymentSourceId?.substring(0, 4),
-      hasAirwallexCustomer: !!airwallexCustomer,
-      airwallexCustomerId: airwallexCustomer?.airwallexCustomerId || airwallexCustomer?.id,
-    });
 
     if (!orderId || !cart || !bigcommerceCustomer || !airwallexCustomer) {
       return res.status(400).json({
@@ -663,23 +636,6 @@ router.post('/subscriptions/provision', async (req, res) => {
       });
     }
 
-
-    // Validate paymentSourceId format - must start with 'psrc_'
-    if (paymentSourceId && !paymentSourceId.startsWith('psrc_')) {
-      console.error('❌ [PROVISION] Invalid paymentSourceId format:', {
-        paymentSourceId,
-        prefix: paymentSourceId?.substring(0, 4),
-        expected: 'psrc_',
-      });
-      return res.status(400).json({
-        error: `Invalid paymentSourceId format. Expected 'psrc_xxx', got '${paymentSourceId?.substring(0, 4)}xxx'`,
-        code: 'INVALID_PAYMENT_SOURCE_ID',
-        received_id: paymentSourceId,
-        expected_prefix: 'psrc_',
-        received_prefix: paymentSourceId?.substring(0, 4),
-      });
-    }
-    
     const airwallexCustomerId =
       airwallexCustomer.airwallexCustomerId || airwallexCustomer.id;
 
@@ -756,8 +712,7 @@ router.post('/subscriptions/provision', async (req, res) => {
       {
         request_id: crypto.randomUUID(),
         billing_customer_id: airwallexCustomerId,
-        // collection_method: 'OUT_OF_BAND',
-        collection_method: 'AUTO_CHARGE',
+        collection_method: 'OUT_OF_BAND',
         currency: plan.currency,
         items: [
           {
@@ -770,8 +725,6 @@ router.post('/subscriptions/provision', async (req, res) => {
           period: 1,
         },
         legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
-        linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
-        payment_source_id: paymentSourceId,
         metadata: {
           bigcommerceOrderId: String(orderId),
           bigcommerceCustomerId: String(bigcommerceCustomer.id),
@@ -851,65 +804,5 @@ router.post('/subscriptions/provision', async (req, res) => {
   }
 });
 
-
-/**
- * CREATE PAYMENT SOURCE (for AUTO_CHARGE subscriptions)
- * Call this AFTER successful payment to get reusable psrc_ ID
- */
-router.post('/payment-sources/create', async (req, res) => {
-  try {
-    const {
-      billing_customer_id,
-      payment_method_id,  // The payment_method.id from successful PaymentIntent
-      linked_payment_account_id,
-    } = req.body;
-    
-    if (!billing_customer_id || !payment_method_id) {
-      return res.status(400).json({
-        error: "billing_customer_id and payment_method_id are required"
-      });
-    }
-
-    const token = await getAirwallexToken();
-
-    const airwallexRes = await axios.post(
-      "https://api-demo.airwallex.com/api/v1/payment_sources/create",
-      {
-        request_id: crypto.randomUUID(),
-        billing_customer_id,
-        external_id: payment_method_id,  // Airwallex calls it "external_id"
-        linked_payment_account_id,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
-
-    console.log("✅ PaymentSource created:", {
-      id: airwallexRes.data.id,  // This is the psrc_ ID!
-      billing_customer_id: airwallexRes.data.billing_customer_id,
-      external_id: airwallexRes.data.external_id,
-    });
-
-    res.status(201).json({
-      success: true,
-      paymentSource: {
-        id: airwallexRes.data.id,  // psrc_xxx
-        billing_customer_id: airwallexRes.data.billing_customer_id,
-        external_id: airwallexRes.data.external_id,  // pm_xxx
-        linked_payment_account_id: airwallexRes.data.linked_payment_account_id,
-        created_at: airwallexRes.data.created_at,
-      }
-    });
-  } catch (err) {
-    console.error("Create payment source error:", err.response?.status, err.response?.data || err.message);
-    res.status(err.response?.status || 500).json({
-      error: err.response?.data || "Failed to create payment source"
-    });
-  }
-});
 
 module.exports = router;

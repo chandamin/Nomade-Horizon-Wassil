@@ -50,7 +50,7 @@ async function backfillEmails() {
             }
           });
           
-          console.log(`✅ Updated ${sub._id} | Email: ${sc.bigcommerceEmail}`);
+          console.log(` Updated ${sub._id} | Email: ${sc.bigcommerceEmail}`);
           updated++;
         } else {
           console.log(`⚠️ Skipped ${sub._id} | No matching SubscriptionCustomer`);

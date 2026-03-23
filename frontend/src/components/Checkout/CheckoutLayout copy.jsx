@@ -41,20 +41,6 @@ export default function CheckoutLayout({
   const [orderComplete, setOrderComplete] = useState(false);
   const [createdOrder, setCreatedOrder] = useState(null);
 
-
-  // Listen for Airwallex customer from ClientStep
-  useEffect(() => {
-    const handleCustomerReady = (e) => {
-      if (e.detail?.customer?.airwallexCustomerId) {
-        setAirwallexCustomer(e.detail.customer);
-        console.log("✅ Airwallex customer received:", e.detail.customer.airwallexCustomerId);
-      }
-    };
-    
-    window.addEventListener('airwallexCustomerReady', handleCustomerReady);
-    return () => window.removeEventListener('airwallexCustomerReady', handleCustomerReady);
-  }, []);
-
   const VIP_PRODUCT_ID = 210; // replace
   const [isVipLoading, setIsVipLoading] = useState(false);
 
@@ -240,9 +226,6 @@ export default function CheckoutLayout({
       return;
     }
 
-    const finalPaymentData = paymentResultArg || paymentData || {};
-    const paymentSourceId = finalPaymentData?.paymentSourceId;
-
     setIsPlacingOrder(true);
 
    
@@ -304,7 +287,7 @@ export default function CheckoutLayout({
       console.log('ℹ️ No subscription product in final cart. Skipping Mongo mapping.');
     }
 
-    
+    const finalPaymentData = paymentResultArg || paymentData || {};
 
     console.log("💳 paymentData from state:", paymentData);
     console.log("💳 paymentResultArg:", paymentResultArg);
@@ -412,19 +395,11 @@ export default function CheckoutLayout({
 
           if (subscriptionProduct && awCustomer && bigcommerceCustomer) {
             try {
-              console.log('📤 [CHECKOUTLAYOUT] Calling provision with:', {
-                orderId: result.orderId,
-                paymentSourceId,
-                paymentSourceIdPrefix: paymentSourceId?.substring(0, 4),
-                hasAwCustomer: !!awCustomer,
-                hasBigCommerceCustomer: !!bigcommerceCustomer,
-              });
               const subscriptionProvisionResult = await onProvisionSubscription?.({
                 orderId: result.orderId,
                 cart: latestCart,
                 bigcommerceCustomer,
                 airwallexCustomer: awCustomer,
-                paymentSourceId,
               });
 
               console.log('Subscription provisioned:', subscriptionProvisionResult);
@@ -545,7 +520,6 @@ export default function CheckoutLayout({
               cart={cart}
               clientData={clientData}
               deliveryData={deliveryData}
-              airwallexCustomerId={airwallexCustomer?.airwallexCustomerId}
             />
 
             {/* ORDER BUTTON & SECURITY SECTION */}
