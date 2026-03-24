@@ -42,7 +42,6 @@ function Layout() {
     </div>
   );
 }
-
 export default function App() {
   return (
     <BrowserRouter>

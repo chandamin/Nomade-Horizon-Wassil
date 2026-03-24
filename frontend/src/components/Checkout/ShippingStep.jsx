@@ -212,7 +212,7 @@ export default function ShippingStep({
               <div className="flex items-center gap-2">
                 <input
                   type="radio"
-                  name="delivery"
+                  // name="delivery"
                   checked={form.method === "free"}
                   onChange={() =>
                     setForm({ ...form, method: "free", price: 0 })
@@ -231,7 +231,7 @@ export default function ShippingStep({
                   <div className="gap-2 w-full flex items-start">
                     <input
                       type="radio"
-                      name="delivery"
+                      // name="delivery"
                       checked={form.method === "insured"}
                       onChange={() =>
                         setForm({ ...form, method: "insured", price: 1.99 })
@@ -296,37 +296,33 @@ export default function ShippingStep({
     
     return (
       <section className="nr-second-step border-b pb-4">
-        <Header step={2} title="Delivery" onEdit={onEdit} />
+        <Header step={2} title="Delivery" onEdit={onEdit} firstName={data.firstName} lastName={data.lastName} phone={data.phone} addressLine={addressLine} method={data.method} price={data.price} addressId={data.addressId}/>
 
-        <div className="nr-sec-st-cntnt-wr pl-8 text-sm text-gray-700 space-y-2">
-          {/* Name - same as ClientStep shows email */}
+        {/* <div className="nr-sec-st-cntnt-wr pl-8 text-sm text-gray-700 space-y-2">
           {(data.firstName || data.lastName) && (
             <div className="font-medium">
               {data.firstName} {data.lastName}
             </div>
           )}
           
-          {/* Phone */}
           {data.phone && (
             <div className="text-gray-600">
-              📞 {data.phone}
+              {data.phone}
             </div>
           )}
           
-          {/* Address */}
           {addressLine && (
             <div className="text-gray-600">
-              📍 {addressLine}
+              {addressLine}
             </div>
           )}
           
-          {/* Delivery Method - this is unique to ShippingStep */}
           {data.method && (
             <div className="mt-3 pt-3 border-t">
               <div className="text-gray-900 font-medium">
                 {data.method === "free"
-                  ? "🚚 Free Delivery"
-                  : "🚚 Delivery + Insurance"}
+                  ? "Free Delivery"
+                  : "Delivery + Insurance"}
               </div>
               <div className="font-semibold text-gray-900 mt-1">
                 {data.price ? `€${data.price.toFixed(2)}` : "€0.00"}
@@ -339,14 +335,13 @@ export default function ShippingStep({
             </div>
           )}
           
-          {/* Address Save Status */}
           {data.addressId && (
             <div className="text-xs text-green-600 mt-2 flex items-center gap-1">
               <span>✓</span>
               <span>Address saved to your account</span>
             </div>
           )}
-        </div>
+        </div>   */}
       </section>
     );
   }
@@ -361,20 +356,57 @@ export default function ShippingStep({
 
 /* ================= SHARED HEADER ================= */
 
-function Header({ step, title, onEdit }) {
+function Header({ step, title, onEdit, firstName, lastName, phone, addressLine, method, price, addressId }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-start justify-between">
       <h2 className="nr-step-hed-wr flex items-center gap-2 font-[700] text-[25px] text-[#333]">
         <span className="flex items-center justify-center rounded-full border-[2px] text-[20px] font-[400] border-[#333] h-[35px] w-[35px]">
           {step}
         </span>
         {title}
       </h2>
-
+      <ul className="nr-step-summry w-[100%] pl-[20px]">
+        <li className="nr-name text-[13px] text-[#333]">
+          {firstName} {lastName}
+        </li>
+        <li className="nr-phone text-[13px] text-[#333]">
+          {phone}
+        </li>
+        <li className="nr-address text-[13px] text-[#333]">
+          {addressLine}
+        </li>
+        <li className="nr-delivery-cntnt text-[13px] text-[#333]">
+          {method && (
+            <div className="mt-3 pt-3 border-t">
+              <div className="text-gray-900 font-medium">
+                {method === "free"
+                  ? "Free Delivery"
+                  : "Delivery + Insurance"}
+              </div>
+              <div className="font-semibold text-gray-900 mt-1">
+                {price ? `€${price.toFixed(2)}` : "€0.00"}
+              </div>
+              {method === "insured" && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Protection against loss, breakage, and theft
+                </div>
+              )}
+            </div>
+          )}
+            
+            {/* Address Save Status */}
+            {addressId && (
+              <div className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                <span>✓</span>
+                <span>Address saved to your account</span>
+              </div>
+            )}
+        </li>
+      </ul>
       {onEdit && (
         <button
           type="button"
-          className="text-xs text-gray-700 border px-3 py-1 rounded hover:bg-gray-100 transition"
+          className="ml-[20px] text-[13px] text-gray-700 px-[15px] py-[7px] rounded transition"
           onClick={onEdit}
         >
           Modifier
