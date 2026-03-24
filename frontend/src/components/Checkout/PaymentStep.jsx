@@ -169,7 +169,7 @@ useEffect(() => {
 
         if (airwallexCustomerId) {
           try {
-            console.log("🔄 [STEP 3] Creating Payment Source for AUTO_CHARGE...");
+            console.log(":arrows_counterclockwise: [STEP 3] Creating Payment Source for AUTO_CHARGE...");
             console.log("   billing_customer_id:", airwallexCustomerId);
             console.log("   external_id:", paymentMethodId || intentId);
             console.log("   linked_payment_account_id env:", import.meta.env.VITE_AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID);
