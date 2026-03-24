@@ -170,15 +170,15 @@ export default function ClientStep({
   if (!active && data && data.email) {
     return (
       <section className="border-b pb-4">
-        <Header step={1} title="Client" onEdit={onEdit} />
-        <div className="pl-8 text-sm text-gray-700">
+        <Header step={1} title="Client" onEdit={onEdit} email={data.email}/>
+        {/* <div className="pl-8 text-sm text-gray-700">
           {data.email}
           {data.firstName && data.lastName && (
             <div className="mt-1">
               {data.firstName} {data.lastName}
             </div>
           )}
-        </div>
+        </div> */}
       </section>
     );
   }
@@ -291,20 +291,29 @@ export default function ClientStep({
 
 /* ================= SHARED HEADER ================= */
 
-function Header({ step, title, onEdit }) {
+function Header({ step, title, onEdit,email }) {
   return (
     <div className="flex items-center justify-between">
-      <h2 className="nr-step-hed-wr flex items-center gap-[11px] font-[700] text-[25px] text-[#333]">
+      <h2 className="nr-step-hed-wr flex items-center gap-[11px] font-[700] text-[25px] text-[#333] min-w-[140px]">
         <span className="flex items-center justify-center rounded-full border-[2px] text-[20px] font-[400] border-[#333] h-[35px] w-[35px]">
           {step}
         </span>
         {title}
       </h2>
 
+      <div className="text-[13px] text-gray-700 w-[100%] pl-[20px]">
+          {email}
+          {/* {data.firstName && data.lastName && (
+            <div className="mt-1">
+              {data.firstName} {data.lastName}
+            </div>
+          )} */}
+        </div>
+
       {onEdit && (
         <button
           type="button"
-          className="text-[13px] text-gray-700 border px-[15px] py-[6.5px] rounded hover:bg-gray-100 transition"
+          className="text-[13px] ml-[20px] text-gray-700 border px-[15px] py-[6.5px] rounded hover:bg-gray-100 transition"
           onClick={onEdit}
         >
           Modifier
