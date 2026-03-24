@@ -45,7 +45,7 @@ app.use('/api/sync-orders', require('./routes/syncOrders'));
 app.use('/api/selling-plans', require('./routes/airwallexLivePlan'));
 app.use('/api/subscription-plans', require('./routes/airwallexTestPlan'));
 
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
