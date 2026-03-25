@@ -75,48 +75,6 @@ export default function CheckoutLayout({
   const [timeLeft, setTimeLeft] = useState(DISCOUNT_DURATION);
 
 
-  const ensureAirwallexCustomerForSubscription = async (cartToCheck = cart) => {
-    const subscriptionProduct = [
-      ...(cartToCheck?.lineItems?.physicalItems || []),
-      ...(cartToCheck?.lineItems?.digitalItems || []),
-    ].find((item) => Number(item.product_id) === VIP_PRODUCT_ID);
-
-    if (!subscriptionProduct) {
-      console.log("ℹ️ No subscription product in cart, Airwallex customer not needed yet");
-      return null;
-    }
-
-    if (airwallexCustomer?.airwallexCustomerId) {
-      console.log("✅ Reusing existing Airwallex customer:", airwallexCustomer.airwallexCustomerId);
-      return airwallexCustomer;
-    }
-
-    const payload = {
-      firstName: clientData?.firstName || "",
-      lastName: clientData?.lastName || "",
-      email: clientData?.email || bigcommerceCustomer?.email || "",
-      phone: clientData?.phone || bigcommerceCustomer?.phone || "",
-    };
-
-    console.log("👤 [AW CUSTOMER] Ensuring Airwallex customer before payment", {
-      hasSubscriptionProduct: true,
-      email: payload.email,
-      hasClientData: !!clientData?.email,
-      hasBigcommerceCustomer: !!bigcommerceCustomer?.id,
-    });
-
-    const awCustomer = await onCreateAirwallexCustomer?.(payload);
-
-    if (awCustomer) {
-      console.log("✅ [AW CUSTOMER] Ready before payment:", awCustomer.airwallexCustomerId);
-      setAirwallexCustomer(awCustomer);
-      return awCustomer;
-    }
-
-    throw new Error("Failed to prepare Airwallex customer before payment");
-  };
-
-
   useEffect(() => {
     const storedPayment = sessionStorage.getItem("airwallex_payment_result");
     if (!storedPayment) return;
@@ -172,8 +130,7 @@ export default function CheckoutLayout({
   const isDeliveryComplete = !!(
     deliveryData?.address &&
     deliveryData?.city &&
-    deliveryData?.postalCode &&
-    deliveryData?.shippingOptionId
+    deliveryData?.method
   );
 
   const hasReachedDelivery = activeStep === "delivery" || activeStep === "payment";
@@ -255,16 +212,12 @@ export default function CheckoutLayout({
       } finally {
         setIsSavingAddress(false);
       }
-    } 
-
-    try {
-      await ensureAirwallexCustomerForSubscription(cart);
-    } catch (err) {
-      console.error("❌ Failed to prepare Airwallex customer before payment:", err);
-      alert("Unable to prepare subscription billing customer. Please try again.");
-      return;
+    } else {
+      console.warn('⚠️ No customer ID or shipping address handler available');
+      if (!customerId) {
+        console.warn('⚠️ Customer ID is null. Customer creation may have failed.');
+      }
     }
-
     
     // Move to payment step
     setActiveStep("payment");
@@ -544,12 +497,11 @@ export default function CheckoutLayout({
 
   // Optional: Fetch shipping options when delivery step becomes active
   useEffect(() => {
-    console.log("🧭 CheckoutLayout step changed:", {
-      activeStep,
-      hasFetchShippingHandler: !!onFetchShippingOptions,
-      shippingOptionsCount: shippingOptions.length,
-    });
-  }, [activeStep, onFetchShippingOptions, shippingOptions.length]);
+    if (activeStep === "delivery" && onFetchShippingOptions) {
+      // You could fetch shipping options based on address when user starts filling it
+      console.log('🚚 Delivery step active, ready to fetch shipping options');
+    }
+  }, [activeStep, onFetchShippingOptions]);
 
   return (
     <div className="min-h-screen bg-[#fff]">

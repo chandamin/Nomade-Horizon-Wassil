@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export default function ShippingStep({
   active,
@@ -10,7 +10,10 @@ export default function ShippingStep({
   isDisabled,
   cart,
   customerData,
-  isLoading
+  isLoading,
+  onFetchShippingOptions,
+  shippingOptions = [],
+  setShippingOptions,
 }) {
   const [form, setForm] = useState({
     country: "France",
@@ -20,9 +23,29 @@ export default function ShippingStep({
     city: "",
     postalCode: "",
     phone: "",
-    method: "insured",
-    price: 1.99,
+    state: "",
+    method: "",
+    methodLabel: "",
+    shippingOptionId: "",
+    price: 0,
   });
+
+  const [isFetchingShipping, setIsFetchingShipping] = useState(false);
+  const shippingDebounceRef = useRef(null);
+  const lastFetchedPayloadRef = useRef("");
+
+  const normalizedAddress = form.address?.trim() || "";
+  const normalizedCity = form.city?.trim() || "";
+  const normalizedPostalCode = form.postalCode?.trim() || "";
+  const normalizedCountry = form.country?.trim() || "";
+
+  const hasRequiredAddressForQuotes = !!(
+    normalizedAddress &&
+    normalizedCity &&
+    normalizedPostalCode &&
+    normalizedCountry
+  );
+
 
   // Pre-fill when editing OR when customer data is available
   useEffect(() => {
@@ -34,34 +57,249 @@ export default function ShippingStep({
         firstName: customerData.firstName || "",
         lastName: customerData.lastName || "",
         phone: customerData.phone || "",
+        address: customerData.address || prev.address,
+        city: customerData.city || prev.city,
+        postalCode: customerData.postalCode || prev.postalCode,
+        country: customerData.country || prev.country,
       }));
     }
   }, [data, customerData]);
 
+  const previousAddressKeyRef = useRef("");
+
+  useEffect(() => {
+    if (!active) return;
+
+    const addressKey = JSON.stringify({
+      address: normalizedAddress,
+      city: normalizedCity,
+      postalCode: normalizedPostalCode,
+      country: normalizedCountry,
+    });
+
+    if (!hasRequiredAddressForQuotes) {
+      previousAddressKeyRef.current = addressKey;
+      return;
+    }
+
+    if (
+      previousAddressKeyRef.current &&
+      previousAddressKeyRef.current !== addressKey
+    ) {
+      setForm((prev) => ({
+        ...prev,
+        method: "",
+        methodLabel: "",
+        shippingOptionId: "",
+        price: 0,
+      }));
+      setShippingOptions?.([]);
+      lastFetchedPayloadRef.current = "";
+    }
+
+    previousAddressKeyRef.current = addressKey;
+  }, [
+    active,
+    normalizedAddress,
+    normalizedCity,
+    normalizedPostalCode,
+    normalizedCountry,
+    hasRequiredAddressForQuotes,
+    setShippingOptions,
+]);
+
+
+  useEffect(() => {
+    const shouldFetch = active && cart?.id && hasRequiredAddressForQuotes;
+
+    const countryCodeMap = {
+      France: "FR",
+      Belgium: "BE",
+      Luxembourg: "LU",
+      Switzerland: "CH",
+    };
+
+    const payload = {
+      cartId: cart?.id,
+      address: {
+        firstName: form.firstName?.trim() || "",
+        lastName: form.lastName?.trim() || "",
+        address1: normalizedAddress,
+        city: normalizedCity,
+        postalCode: normalizedPostalCode,
+        countryCode: countryCodeMap[normalizedCountry] || "FR",
+        stateOrProvince: form.state?.trim() || normalizedCity || "",
+        phone: form.phone?.trim() || "",
+      },
+    };
+
+    const payloadKey = JSON.stringify(payload);
+
+    console.log("🚚 Shipping fetch check:", {
+      active,
+      cartId: cart?.id,
+      normalizedAddress,
+      normalizedCity,
+      normalizedPostalCode,
+      normalizedCountry,
+      hasRequiredAddressForQuotes,
+      shouldFetch,
+      hasFetchFn: !!onFetchShippingOptions,
+      payloadKey,
+      lastFetchedPayload: lastFetchedPayloadRef.current,
+    });
+
+    if (shippingDebounceRef.current) {
+      clearTimeout(shippingDebounceRef.current);
+    }
+
+    if (!active) {
+      console.log("ℹ️ Shipping quotes skipped: delivery step is not active");
+      return;
+    }
+
+    if (!cart?.id) {
+      console.warn("⚠️ Shipping quotes skipped: cart.id missing");
+      return;
+    }
+
+    if (!onFetchShippingOptions) {
+      console.error("❌ onFetchShippingOptions NOT PASSED");
+      return;
+    }
+
+    if (!hasRequiredAddressForQuotes) {
+      console.log("ℹ️ Waiting for required delivery fields before fetching shipping quotes");
+      setShippingOptions?.([]);
+      lastFetchedPayloadRef.current = "";
+      return;
+    }
+
+    if (lastFetchedPayloadRef.current === payloadKey) {
+      console.log("⏭️ Skipping fetch: same payload already fetched");
+      return;
+    }
+
+    shippingDebounceRef.current = setTimeout(async () => {
+      try {
+        setIsFetchingShipping(true);
+        console.log("📤 Calling shipping quotes API with payload:", payload);
+
+        const options = await onFetchShippingOptions(payload);
+        console.log("📥 Shipping quotes API returned:", options);
+
+        const safeOptions = Array.isArray(options) ? options : [];
+        setShippingOptions?.(safeOptions);
+        lastFetchedPayloadRef.current = payloadKey;
+
+        console.log("✅ Shipping options stored in component:", safeOptions);
+
+        if (safeOptions.length > 0) {
+          const first = safeOptions[0];
+
+          setForm((prev) => {
+            if (prev.shippingOptionId) return prev;
+
+            console.log("✅ Auto-selecting first shipping option:", first);
+            return {
+              ...prev,
+              method: first.id,
+              methodLabel: first.description,
+              shippingOptionId: first.id,
+              price: Number(first.cost || 0),
+            };
+          });
+        }
+      } catch (err) {
+        console.error("❌ Failed to fetch shipping options:", err);
+        setShippingOptions?.([]);
+        lastFetchedPayloadRef.current = "";
+      } finally {
+        setIsFetchingShipping(false);
+      }
+    }, 500);
+
+    return () => {
+      if (shippingDebounceRef.current) {
+        clearTimeout(shippingDebounceRef.current);
+      }
+    };
+  }, [
+    active,
+    cart?.id,
+    normalizedAddress,
+    normalizedCity,
+    normalizedPostalCode,
+    normalizedCountry,
+    form.firstName,
+    form.lastName,
+    form.phone,
+    form.state,
+    // form.shippingOptionId,
+    hasRequiredAddressForQuotes,
+    onFetchShippingOptions,
+    setShippingOptions,
+  ]);
+
   // Debug logs
   useEffect(() => {
-    console.log('📦 ShippingStep debug:', {
+    console.log("📦 ShippingStep debug:", {
       active,
       hasReachedDelivery,
       isComplete,
       hasData: !!data,
-      data: data,
-      form: form
+      data,
+      form,
+      normalizedAddress,
+      normalizedCity,
+      normalizedPostalCode,
+      normalizedCountry,
+      shippingOptionsCount: shippingOptions.length,
+      shippingOptions,
+      hasRequiredAddressForQuotes,
+      isFetchingShipping,
     });
-  }, [active, hasReachedDelivery, isComplete, data, form]);
+
+    console.log("🧪 Required fields status:", {
+      addressReady: !!normalizedAddress,
+      cityReady: !!normalizedCity,
+      postalReady: !!normalizedPostalCode,
+      countryReady: !!normalizedCountry,
+    });
+  }, [
+    active,
+    hasReachedDelivery,
+    isComplete,
+    data,
+    form,
+    normalizedAddress,
+    normalizedCity,
+    normalizedPostalCode,
+    normalizedCountry,
+    shippingOptions,
+    hasRequiredAddressForQuotes,
+    isFetchingShipping,
+  ]);
 
   // Check if we have data to show summary (similar to ClientStep logic)
   const hasDataToShow = data && (data.address || data.city || data.method);
 
   // Validation helper
   const isFormValid = () => {
-    return form.address && form.city && form.firstName && form.lastName;
+    return (
+      form.address?.trim() &&      
+      form.city?.trim() &&         
+      form.firstName?.trim() &&    
+      form.lastName?.trim() &&     
+      form.postalCode?.trim() &&   
+      form.shippingOptionId        
+    );
   };
 
   // Handle continue with validation
   const handleContinue = () => {
     if (!isFormValid()) {
-      alert("Please fill in all required fields: address, city, first name, and last name");
+      alert("Please fill in all required fields and select a delivery method");
       return;
     }
     onContinue(form);
@@ -86,6 +324,7 @@ export default function ShippingStep({
                   }
                   disabled={isLoading}
                 >
+                  <option value="Sélectionnez un pays">Sélectionnez un pays</option>
                   <option value="France">France</option>
                   <option value="Belgium">Belgium</option>
                   <option value="Luxembourg">Luxembourg</option>
@@ -208,52 +447,108 @@ export default function ShippingStep({
           <div className="mt-6 text-sm">
             <div className="mb-3 text-[15px] font-[700]">Delivery method</div>
 
-            <label className="flex items-center justify-between border rounded p-4 mb-2 cursor-pointer hover:bg-gray-50">
-              <div className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  // name="delivery"
-                  checked={form.method === "free"}
-                  onChange={() =>
-                    setForm({ ...form, method: "free", price: 0 })
-                  }
-                  className="h-[25px] w-[25px]"
-                  disabled={isLoading}
-                />
-                <p className="nr-payment-option-hed text-[15px] font-[700]">Free Delivery</p>
-              </div>
-              <span className="font-medium">€0.00</span>
-            </label>
-
-            <label className="flex items-start justify-between border-2 border-green-400 border-dashed bg-green-100 rounded p-4 cursor-pointer hover:bg-green-50">
-              <div className="items-start gap-2">
-                <div className="nr-payment-option-outer-wr flex gap-[10px] items-center">
-                  <div className="gap-2 w-full flex items-start">
-                    <input
-                      type="radio"
-                      // name="delivery"
-                      checked={form.method === "insured"}
-                      onChange={() =>
-                        setForm({ ...form, method: "insured", price: 1.99 })
-                      }
-                      className="h-[25px] w-[25px]"
-                      disabled={isLoading}
-                    />
-                    <div className="flex gap-[10px] justify-between w-full items-center">
-                      <p className="nr-payment-option-hed text-[15px] font-[700]">
-                        Delivery + Insurance (Protection against loss, breakage, and theft)
-                      </p>
-                      <span className="font-[700] text-[15px]">€1.99</span>
-                    </div>
-                  </div>
+            {!hasRequiredAddressForQuotes ? (
+                <div className="text-sm text-gray-600 border rounded p-4 bg-gray-50">
+                  Veuillez saisir une adresse de livraison pour obtenir une estimation des frais de livraison.
                 </div>
-                <p className="nr-payment-option-des text-[13px] py-3">
-                  Cochez cette case si vous souhaitez ajouter une garantie de transport. 
-                  En cas de perte, vol ou dommages survenus lors du transport par la poste, 
-                  nous renverrons votre commande gratuitement en 24h.
-                </p>
-              </div>
-            </label>
+              ) : isFetchingShipping ? (
+                <div className="text-sm text-gray-600 border rounded p-4 bg-gray-50">
+                  Chargement des frais de livraison...
+                </div>
+              ) : shippingOptions.length > 0 ? (
+                shippingOptions.map((option) => {
+                const isFreeOption =
+                  option.type === "freeshipping" ||
+                  /free shipping/i.test(option.description || "");
+
+                const isInsuranceOption =
+                  /insurance|protection against loss|breakage|theft/i.test(option.description || "");
+
+                return (
+                  <label
+                    key={option.id}
+                    className={
+                      isInsuranceOption
+                        ? "flex items-start justify-between border-2 border-green-400 border-dashed bg-green-100 rounded p-4 cursor-pointer hover:bg-green-50 mb-2"
+                        : "flex items-center justify-between border rounded p-4 mb-2 cursor-pointer hover:bg-gray-50"
+                    }
+                  >
+                    {isInsuranceOption ? (
+                      <div className="items-start gap-2 w-full">
+                        <div className="nr-payment-option-outer-wr flex gap-[10px] items-center">
+                          <div className="gap-2 w-full flex items-start">
+                            <input
+                              type="radio"
+                              name="delivery"
+                              checked={form.shippingOptionId === option.id}
+                              onChange={() => {
+                                console.log("🟢 User selected shipping option:", option);
+                                setForm((prev) => ({
+                                  ...prev,
+                                  method: option.id,
+                                  methodLabel: option.description,
+                                  shippingOptionId: option.id,
+                                  price: Number(option.cost || 0),
+                                }));
+                              }}
+                              className="h-[25px] w-[25px]"
+                              disabled={isLoading || isFetchingShipping}
+                            />
+                            <div className="flex gap-[10px] justify-between w-full items-center">
+                              <p className="nr-payment-option-hed text-[15px] font-[700]">
+                                {option.description}
+                              </p>
+                              <span className="font-[700] text-[15px]">
+                                €{Number(option.cost || 0).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <p className="nr-payment-option-des text-[13px] py-3">
+                          Cochez cette case si vous souhaitez ajouter une garantie de transport.
+                          En cas de perte, vol ou dommages survenus lors du transport par la poste,
+                          nous renverrons votre commande gratuitement en 24h.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="delivery"
+                            checked={form.shippingOptionId === option.id}
+                            onChange={() => {
+                              console.log("🟢 User selected shipping option:", option);
+                              setForm((prev) => ({
+                                ...prev,
+                                method: option.id,
+                                methodLabel: option.description,
+                                shippingOptionId: option.id,
+                                price: Number(option.cost || 0),
+                              }));
+                            }}
+                            className="h-[25px] w-[25px]"
+                            disabled={isLoading || isFetchingShipping}
+                          />
+                          <p className="nr-payment-option-hed text-[15px] font-[700]">
+                            {isFreeOption ? "Free Delivery" : option.description}
+                          </p>
+                        </div>
+                        <span className="font-medium">
+                          €{Number(option.cost || 0).toFixed(2)}
+                        </span>
+                      </>
+                    )}
+                  </label>
+                );
+              })
+            ) : (
+              <></>
+              // <div className="text-sm text-red-600 border rounded p-4 bg-red-50">
+              //   Aucune méthode de livraison n’est disponible pour cette adresse.
+              // </div>
+            )}
           </div>
 
           <button
@@ -296,52 +591,19 @@ export default function ShippingStep({
     
     return (
       <section className="nr-second-step border-b pb-4">
-        <Header step={2} title="Delivery" onEdit={onEdit} firstName={data.firstName} lastName={data.lastName} phone={data.phone} addressLine={addressLine} method={data.method} price={data.price} addressId={data.addressId}/>
-
-        {/* <div className="nr-sec-st-cntnt-wr pl-8 text-sm text-gray-700 space-y-2">
-          {(data.firstName || data.lastName) && (
-            <div className="font-medium">
-              {data.firstName} {data.lastName}
-            </div>
-          )}
-          
-          {data.phone && (
-            <div className="text-gray-600">
-              {data.phone}
-            </div>
-          )}
-          
-          {addressLine && (
-            <div className="text-gray-600">
-              {addressLine}
-            </div>
-          )}
-          
-          {data.method && (
-            <div className="mt-3 pt-3 border-t">
-              <div className="text-gray-900 font-medium">
-                {data.method === "free"
-                  ? "Free Delivery"
-                  : "Delivery + Insurance"}
-              </div>
-              <div className="font-semibold text-gray-900 mt-1">
-                {data.price ? `€${data.price.toFixed(2)}` : "€0.00"}
-              </div>
-              {data.method === "insured" && (
-                <div className="text-xs text-gray-500 mt-1">
-                  Protection against loss, breakage, and theft
-                </div>
-              )}
-            </div>
-          )}
-          
-          {data.addressId && (
-            <div className="text-xs text-green-600 mt-2 flex items-center gap-1">
-              <span>✓</span>
-              <span>Address saved to your account</span>
-            </div>
-          )}
-        </div>   */}
+        <Header
+          step={2}
+          title="Delivery"
+          onEdit={onEdit}
+          firstName={data.firstName}
+          lastName={data.lastName}
+          phone={data.phone}
+          addressLine={addressLine}
+          method={data.method}
+          methodLabel={data.methodLabel}
+          price={data.price}
+          addressId={data.addressId}
+        />
       </section>
     );
   }
@@ -356,7 +618,7 @@ export default function ShippingStep({
 
 /* ================= SHARED HEADER ================= */
 
-function Header({ step, title, onEdit, firstName, lastName, phone, addressLine, method, price, addressId }) {
+function Header({ step, title, onEdit, firstName, lastName, phone, addressLine, method, methodLabel, price, addressId }) {
   return (
     <div className="flex items-start justify-between">
       <h2 className="nr-step-hed-wr flex items-center gap-2 font-[700] text-[25px] text-[#333]">
@@ -379,28 +641,21 @@ function Header({ step, title, onEdit, firstName, lastName, phone, addressLine, 
           {method && (
             <div className="mt-3 pt-3 border-t">
               <div className="text-gray-900 font-medium">
-                {method === "free"
-                  ? "Free Delivery"
-                  : "Delivery + Insurance"}
+                {methodLabel || method}
               </div>
               <div className="font-semibold text-gray-900 mt-1">
-                {price ? `€${price.toFixed(2)}` : "€0.00"}
+                {typeof price === "number" ? `€${price.toFixed(2)}` : "€0.00"}
               </div>
-              {method === "insured" && (
-                <div className="text-xs text-gray-500 mt-1">
-                  Protection against loss, breakage, and theft
-                </div>
-              )}
             </div>
           )}
             
             {/* Address Save Status */}
-            {addressId && (
+            {/* {addressId && (
               <div className="text-xs text-green-600 mt-2 flex items-center gap-1">
                 <span>✓</span>
                 <span>Address saved to your account</span>
               </div>
-            )}
+            )} */}
         </li>
       </ul>
       {onEdit && (
@@ -415,5 +670,4 @@ function Header({ step, title, onEdit, firstName, lastName, phone, addressLine, 
     </div>
   );
 }
-
 

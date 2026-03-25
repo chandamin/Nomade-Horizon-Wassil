@@ -33,7 +33,6 @@ export default function Dashboard() {
       })
 
       console.log('[Dashboard.jsx] Dashboard response status:', res.status)
-      console.log('[Dashboard.jsx] Dashboard response headers:', await res.json())
 
       const jsonData = await res.json()
 

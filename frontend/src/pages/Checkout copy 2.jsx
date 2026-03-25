@@ -346,6 +346,61 @@ const removeVipFromCart = async (cartId) => {
         console.error('❌ Network error checking customer:', networkError.message);
       }
       
+      // 2. If we have a customer ID, assign it to cart
+      // if (customerId && cartId) {
+      //   try {
+      //     console.log('🔄 Assigning customer to cart...');
+      //     const assignResponse = await fetch(
+      //       `${import.meta.env.VITE_BACKEND_URL}/api/cart/assign-customer`,
+      //       {
+      //         method: 'POST',
+      //         headers: {
+      //           'Content-Type': 'application/json',
+      //           'Accept': 'application/json'
+      //         },
+      //         body: JSON.stringify({
+      //           cartId: cartId,
+      //           customerId: customerId
+      //         })
+      //       }
+      //     );
+          
+      //     console.log('📊 Assign response status:', assignResponse.status);
+          
+      //     if (assignResponse.ok) {
+      //       console.log('✅ Customer assigned to cart');
+      //     } else {
+      //       const errorText = await assignResponse.text();
+      //       console.warn('⚠️ Failed to assign customer to cart:', assignResponse.status, errorText.substring(0, 200));
+      //     }
+      //   } catch (assignErr) {
+      //     console.warn('⚠️ Cart assignment error:', assignErr.message);
+      //   }
+      // } else {
+      //   console.log('ℹ️ No customer ID to assign to cart');
+      // }
+
+      // if (customerId && createdCustomerData && cartId) {
+      //   try {
+      //     const latestCart = await fetchLatestCart(cartId);
+
+      //     const airwallexCustomer = await createAirwallexCustomer({
+      //       ...customerData,
+      //       ...createdCustomerData,
+      //     });
+
+      //     const mappingResult = await mapSubscriptionCustomer({
+      //       cart: latestCart,
+      //       bigcommerceCustomer: createdCustomerData,
+      //       airwallexCustomer,
+      //     });
+
+      //     console.log('✅ Subscription mapping result:', mappingResult);
+      //   } catch (mappingErr) {
+      //     console.warn('⚠️ Subscription mapping flow failed:', mappingErr.message);
+      //   }
+      // }
+      
       // Return customer data for use in shipping step
       return {
         customerId: customerId,
@@ -410,46 +465,31 @@ const removeVipFromCart = async (cartId) => {
   };
 
   // Shipping method handler (optional - for dynamic shipping)
-  const fetchShippingOptions = async ({ cartId, address }) => {
-    const payload = { cartId, address };
-
-    console.log("🌍 FRONTEND -> /api/shipping/quotes request payload:", payload);
-
-    const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/shipping/quotes`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    console.log("📡 /api/shipping/quotes response status:", response.status);
-
-    const responseText = await response.text();
-    console.log("📡 /api/shipping/quotes raw response:", responseText);
-
-    let result = {};
+  const fetchShippingOptions = async (addressData) => {
     try {
-      result = responseText ? JSON.parse(responseText) : {};
+      console.log('🚚 Fetching shipping options for address:', addressData);
+      
+      // Example: Fetch shipping zones
+      const zonesResponse = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/shipping/zones`,
+        {
+          headers: {
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      if (zonesResponse.ok) {
+        const zonesData = await zonesResponse.json();
+        console.log('✅ Shipping zones:', zonesData.zones);
+        return zonesData;
+      }
+      
+      return null;
     } catch (err) {
-      console.error("❌ Failed to parse shipping quotes response JSON:", err);
-      throw new Error("Invalid shipping quotes response");
+      console.warn('⚠️ Shipping options fetch error:', err);
+      return null;
     }
-
-    console.log("📦 Parsed shipping quotes response:", result);
-
-    if (!response.ok || !result.success) {
-      console.error("❌ Shipping quotes request failed:", result);
-      throw new Error(result.error || 'Failed to fetch shipping options');
-    }
-
-    console.log("✅ Returning shipping options to ShippingStep:", result.shippingOptions || []);
-    return result.shippingOptions || [];
   };
 
   useEffect(() => {

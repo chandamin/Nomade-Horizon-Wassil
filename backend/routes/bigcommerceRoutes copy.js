@@ -75,11 +75,12 @@ const debug = (label, data) => {
 
 function getCountryCode(countryName) {
   const countryMap = {
-    "France": "FR",
-    "Belgium": "BE",
-    "Luxembourg": "LU",
-    "Switzerland": "CH",
-    "United States": "US",
+    'United States': 'US',
+    'France': 'FR',
+    'Canada': 'CA',
+    'United Kingdom': 'GB',
+    'Germany': 'DE',
+    'Australia': 'AU'
   };
 
   return countryMap[countryName] || 'FR';
@@ -738,311 +739,69 @@ router.get('/shipping/zones/:zoneId/methods', async (req, res) => {
 });
 
 router.post('/shipping/quotes', async (req, res) => {
-  console.log('='.repeat(80));
-  console.log('🚚 SHIPPING QUOTES API HIT');
-  console.log('🕒 Timestamp:', new Date().toISOString());
-  console.log('📥 Incoming body:', JSON.stringify(req.body, null, 2));
-
+  console.log('Getting shipping quotes');
   try {
-    const { cartId, address } = req.body;
-
-    console.log('🔎 Extracted inputs:', {
-      cartId,
-      hasAddress: !!address,
-      address1: address?.address1,
-      city: address?.city,
-      postalCode: address?.postalCode,
-      countryCode: address?.countryCode,
-      stateOrProvince: address?.stateOrProvince,
-      firstName: address?.firstName,
-      lastName: address?.lastName,
-      phone: address?.phone,
-    });
+    const { cartId } = req.body;
 
     if (!cartId) {
-      console.warn('❌ Validation failed: cartId missing');
       return res.status(400).json({
         success: false,
-        error: 'cartId is required'
+        error: 'Cart ID is required'
       });
     }
 
-    if (!address?.countryCode || !address?.city || !address?.address1) {
-      console.warn('❌ Validation failed: required address fields missing', {
-        countryCode: !!address?.countryCode,
-        city: !!address?.city,
-        address1: !!address?.address1,
-      });
-
-      return res.status(400).json({
-        success: false,
-        error: 'address.countryCode, address.city, and address.address1 are required'
-      });
-    }
-
-    console.log('✅ Validation passed');
-
-    // 1) Get checkout by cart id
-    const checkoutUrl = `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${cartId}`;
-    console.log('📤 Fetching checkout from BigCommerce:', checkoutUrl);
-
-    const checkoutRes = await fetch(checkoutUrl, {
-      method: 'GET',
-      headers: bcHeaders
-    });
-
-    const checkoutText = await checkoutRes.text();
-
-    console.log('📡 Checkout response status:', checkoutRes.status);
-    console.log('📡 Checkout raw response:', checkoutText.substring(0, 2000));
-
-    if (!checkoutRes.ok) {
-      console.error('❌ Failed to fetch checkout from BigCommerce');
-      return res.status(checkoutRes.status).json({
-        success: false,
-        error: 'Failed to fetch checkout',
-        details: checkoutText
-      });
-    }
-
-    let checkoutData;
-    try {
-      checkoutData = JSON.parse(checkoutText);
-      console.log('✅ Checkout JSON parsed successfully');
-    } catch (parseErr) {
-      console.error('❌ Failed to parse checkout JSON:', parseErr.message);
-      return res.status(500).json({
-        success: false,
-        error: 'Invalid checkout response from BigCommerce',
-        details: checkoutText.substring(0, 1000)
-      });
-    }
-
-    const checkoutId = checkoutData?.data?.id || cartId;
-
-    console.log('🧾 Checkout summary:', {
-      checkoutId,
-      cartId,
-      checkoutDataId: checkoutData?.data?.id,
-      hasCart: !!checkoutData?.data?.cart,
-      existingConsignmentsCount: checkoutData?.data?.consignments?.length || 0,
-    });
-
-    const physicalItems = checkoutData?.data?.cart?.line_items?.physical_items || [];
-    const digitalItems = checkoutData?.data?.cart?.line_items?.digital_items || [];
-    const lineItems = [...physicalItems, ...digitalItems];
-
-    console.log('🛒 Checkout line items summary:', {
-      physicalCount: physicalItems.length,
-      digitalCount: digitalItems.length,
-      totalCount: lineItems.length,
-      items: lineItems.map((item) => ({
-        id: item.id,
-        product_id: item.product_id,
-        name: item.name,
-        quantity: item.quantity,
-      })),
-    });
-
-    if (lineItems.length === 0) {
-      console.warn('⚠️ No line items found in checkout/cart');
-    }
-
-    const consignmentPayload = [
+    const cartRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}`,
       {
-        shipping_address: {
-          first_name: address.firstName || 'Guest',
-          last_name: address.lastName || 'Customer',
-          address1: address.address1 || 'N/A',
-          city: address.city || 'N/A',
-          state_or_province: address.stateOrProvince || address.city || 'N/A',
-          postal_code: address.postalCode || '00000',
-          country_code: address.countryCode || 'FR',
-          phone: address.phone || ''
-        },
-        line_items: lineItems.map((item) => ({
-          item_id: item.id,
-          quantity: item.quantity
-        }))
+        headers: bcGetHeaders
+      }
+    );
+
+    if (!cartRes.ok) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cart not found'
+      });
+    }
+
+    const shippingOptions = [
+      {
+        id: 'free',
+        name: 'Free Delivery',
+        description: 'Standard delivery',
+        cost: 0,
+        estimated_days: '5-7 business days'
+      },
+      {
+        id: 'insured',
+        name: 'Delivery + Insurance',
+        description: 'Protection against loss, breakage, and theft',
+        cost: 1.99,
+        estimated_days: '3-5 business days'
+      },
+      {
+        id: 'express',
+        name: 'Express Delivery',
+        description: 'Priority shipping',
+        cost: 4.99,
+        estimated_days: '1-2 business days'
       }
     ];
 
-    console.log(
-      '📦 Consignment payload to BigCommerce:',
-      JSON.stringify(consignmentPayload, null, 2)
-    );
-
-    // 2) Create/update consignment AND request available shipping options
-    const consignmentsUrl =
-      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${checkoutId}/consignments?include=consignments.available_shipping_options`;
-
-    console.log('📤 Posting consignments to BigCommerce:', consignmentsUrl);
-
-    const consignmentsRes = await fetch(consignmentsUrl, {
-      method: 'POST',
-      headers: bcHeaders,
-      body: JSON.stringify(consignmentPayload)
-    });
-
-    const consignmentsText = await consignmentsRes.text();
-
-    console.log('📡 Consignments response status:', consignmentsRes.status);
-    console.log('📡 Consignments raw response:', consignmentsText.substring(0, 4000));
-
-    if (!consignmentsRes.ok) {
-      console.error('❌ Failed to create/update consignment or fetch shipping quotes');
-      return res.status(consignmentsRes.status).json({
-        success: false,
-        error: 'Failed to fetch shipping quotes',
-        details: consignmentsText
-      });
-    }
-
-    let consignmentsData;
-    try {
-      consignmentsData = JSON.parse(consignmentsText);
-      console.log('✅ Consignments JSON parsed successfully');
-    } catch (parseErr) {
-      console.error('❌ Failed to parse consignments JSON:', parseErr.message);
-      return res.status(500).json({
-        success: false,
-        error: 'Invalid consignments response from BigCommerce',
-        details: consignmentsText.substring(0, 1000)
-      });
-    }
-
-    const checkoutPayload = consignmentsData?.data || {};
-    const consignments = checkoutPayload?.consignments || [];
-    const firstConsignment = consignments[0];
-
-    console.log('📋 Consignments summary:', {
-      dataType: typeof consignmentsData?.data,
-      hasCheckoutPayload: !!checkoutPayload,
-      count: consignments.length,
-      hasFirstConsignment: !!firstConsignment,
-      firstConsignmentId: firstConsignment?.id,
-      availableShippingOptionsCount: firstConsignment?.available_shipping_options?.length || 0,
-      consignmentIds: consignments.map((c) => c.id),
-    });
-
-    const shippingOptions = firstConsignment?.available_shipping_options || [];
-
-    console.log(
-      '🚚 Raw available shipping options from BigCommerce:',
-      JSON.stringify(shippingOptions, null, 2)
-    );
-
-    const mappedShippingOptions = shippingOptions.map((option) => ({
-      id: option.id,
-      description: option.description || option.name,
-      cost:
-        option.cost ??
-        option.cost_ex_tax ??
-        option.cost_inc_tax ??
-        option.amount ??
-        option.rate ??
-        0,
-      type: option.type,
-      isRecommended: option.is_recommended || false,
-      raw: option
-    }));
-
-    console.log('✅ Final mapped shipping options:', JSON.stringify(mappedShippingOptions, null, 2));
-
-    const responsePayload = {
+    res.json({
       success: true,
-      checkoutId,
-      consignments,
-      shippingOptions: mappedShippingOptions
-    };
-
-    console.log('📤 Responding to frontend with:', JSON.stringify({
-      success: responsePayload.success,
-      checkoutId: responsePayload.checkoutId,
-      consignmentsCount: responsePayload.consignments.length,
-      shippingOptionsCount: responsePayload.shippingOptions.length,
-    }, null, 2));
-
-    console.log('='.repeat(80));
-
-    return res.json(responsePayload);
+      options: shippingOptions,
+      message: 'Shipping quotes retrieved'
+    });
   } catch (err) {
-    console.error('💥 Shipping quotes error:', err.message);
-    console.error('💥 Shipping quotes stack:', err.stack);
-    console.log('='.repeat(80));
-
-    return res.status(500).json({
+    console.error('Shipping quotes error:', err);
+    res.status(500).json({
       success: false,
-      error: 'Server error fetching shipping quotes',
+      error: 'Server error',
       message: err.message
     });
   }
 });
-
-// router.post('/shipping/quotes', async (req, res) => {
-//   console.log('Getting shipping quotes');
-//   try {
-//     const { cartId } = req.body;
-
-//     if (!cartId) {
-//       return res.status(400).json({
-//         success: false,
-//         error: 'Cart ID is required'
-//       });
-//     }
-
-//     const cartRes = await fetch(
-//       `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}`,
-//       {
-//         headers: bcGetHeaders
-//       }
-//     );
-
-//     if (!cartRes.ok) {
-//       return res.status(400).json({
-//         success: false,
-//         error: 'Cart not found'
-//       });
-//     }
-
-//     const shippingOptions = [
-//       {
-//         id: 'free',
-//         name: 'Free Delivery',
-//         description: 'Standard delivery',
-//         cost: 0,
-//         estimated_days: '5-7 business days'
-//       },
-//       {
-//         id: 'insured',
-//         name: 'Delivery + Insurance',
-//         description: 'Protection against loss, breakage, and theft',
-//         cost: 1.99,
-//         estimated_days: '3-5 business days'
-//       },
-//       {
-//         id: 'express',
-//         name: 'Express Delivery',
-//         description: 'Priority shipping',
-//         cost: 4.99,
-//         estimated_days: '1-2 business days'
-//       }
-//     ];
-
-//     res.json({
-//       success: true,
-//       options: shippingOptions,
-//       message: 'Shipping quotes retrieved'
-//     });
-//   } catch (err) {
-//     console.error('Shipping quotes error:', err);
-//     res.status(500).json({
-//       success: false,
-//       error: 'Server error',
-//       message: err.message
-//     });
-//   }
-// });
 
 router.post('/orders/create', async (req, res) => {
   console.log('Creating order - START');
@@ -1113,7 +872,7 @@ router.post('/orders/create', async (req, res) => {
     if (shippingMethod) {
       orderData.shipping_cost_inc_tax = shippingMethod.costIncTax || shippingMethod.cost_inc_tax;
       orderData.shipping_cost_ex_tax = shippingMethod.costExTax || shippingMethod.cost_ex_tax;
-      // orderData.shipping_method = shippingMethod.name || shippingMethod.method;
+      orderData.shipping_method = shippingMethod.name || shippingMethod.method;
     }
 
     if (paymentMethod) {
