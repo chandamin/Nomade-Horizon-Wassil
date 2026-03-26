@@ -50,7 +50,7 @@ export default function CheckoutLayout({
     const handleCustomerReady = (e) => {
       if (e.detail?.customer?.airwallexCustomerId) {
         setAirwallexCustomer(e.detail.customer);
-        console.log("✅ Airwallex customer received:", e.detail.customer.airwallexCustomerId);
+        console.log("Airwallex customer received:", e.detail.customer.airwallexCustomerId);
       }
     };
     
@@ -87,7 +87,7 @@ export default function CheckoutLayout({
     }
 
     if (airwallexCustomer?.airwallexCustomerId) {
-      console.log("✅ Reusing existing Airwallex customer:", airwallexCustomer.airwallexCustomerId);
+      console.log("Reusing existing Airwallex customer:", airwallexCustomer.airwallexCustomerId);
       return airwallexCustomer;
     }
 
@@ -108,7 +108,7 @@ export default function CheckoutLayout({
     const awCustomer = await onCreateAirwallexCustomer?.(payload);
 
     if (awCustomer) {
-      console.log("✅ [AW CUSTOMER] Ready before payment:", awCustomer.airwallexCustomerId);
+      console.log("[AW CUSTOMER] Ready before payment:", awCustomer.airwallexCustomerId);
       setAirwallexCustomer(awCustomer);
       return awCustomer;
     }
@@ -503,14 +503,14 @@ export default function CheckoutLayout({
             console.warn('⚠️ Failed to clear cart after order creation:', clearErr.message);
           }
 
-          navigate("/thank-you", {
-            state: {
-              orderId: result.orderId,
-              amount: latestCart?.cartAmount,
-              currency: latestCart?.currency?.code || "EUR",
-              email: clientData?.email,
-            }
-          });
+          // navigate("/thank-you", {
+          //   state: {
+          //     orderId: result.orderId,
+          //     amount: latestCart?.cartAmount,
+          //     currency: latestCart?.currency?.code || "EUR",
+          //     email: clientData?.email,
+          //   }
+          // });
 
           // Optionally redirect or clear cart
           // window.location.href = `https://kasweb-c4.mybigcommerce.com/order-confirmation?orderId=${result.orderId}`;

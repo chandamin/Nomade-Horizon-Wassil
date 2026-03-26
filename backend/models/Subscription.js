@@ -30,7 +30,7 @@ const subscriptionSchema = new mongoose.Schema(
     },
 
     // 📦 Plan/Product Info
-    planName: String,
+    planName: String, 
     productId: Number,
     price: Number,
     currency: String,
@@ -43,10 +43,8 @@ const subscriptionSchema = new mongoose.Schema(
         "pending",
         "trialing",
         "active",
-        "paused",
         "past_due",
         "cancelled",
-        "expired",
       ],
       default: "pending",
     },

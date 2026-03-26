@@ -9,26 +9,21 @@ const { getAirwallexToken } = require('./token');
 const STORE_HASH = process.env.BC_STORE_HASH || 'eapn6crf58';
 const AIRWALLEX_BASE_URL = 'https://api-demo.airwallex.com/api/v1';
 
-function normaliseStatus(status) {
-  const value = String(status || '').toUpperCase();
-
+function normaliseStatus(airwallexStatus) {
+  if (!airwallexStatus) return 'pending';
+  
   const statusMap = {
-    DRAFT: 'pending_payment',
-    PENDING: 'pending_payment',
-    PENDING_PAYMENT: 'pending_payment',
-    IN_TRIAL: 'active',
-    TRIALING: 'active',
-    ACTIVE: 'active',
-    PAUSED: 'paused',
-    PAST_DUE: 'paused',
-    UNPAID: 'paused',
-    CANCELED: 'cancelled',
-    CANCELLED: 'cancelled',
-    ENDED: 'cancelled',
-    EXPIRED: 'cancelled',
+    'PENDING': 'pending',
+    'IN_TRIAL': 'trialing',
+    'ACTIVE': 'active',
+    'UNPAID': 'past_due',
+    'CANCELLED': 'cancelled',
   };
-
-  return statusMap[value] || 'pending_payment';
+  
+  // Handle case-insensitive input
+  const normalized = String(airwallexStatus).toUpperCase().trim();
+  
+  return statusMap[normalized] || 'pending';
 }
 
 function asDate(value) {
@@ -98,17 +93,31 @@ async function airwallexRequest(config, retry = true) {
 async function fetchAirwallexSubscription(airwallexSubscriptionId) {
   const response = await airwallexRequest({
     method: 'GET',
-    url: `/subscriptions/${airwallexSubscriptionId}`,
+    url: `https://api-demo.airwallex.com/api/v1/subscriptions/${airwallexSubscriptionId}`,
   });
 
   return response.data;
 }
 
-async function cancelAirwallexSubscription(airwallexSubscriptionId) {
+async function cancelAirwallexSubscription(airwallexSubscriptionId, options = {}) {
+  const {
+    prorationBehavior = 'PRORATED', // Default to fair prorated refund
+    requestId = crypto.randomUUID(), // Auto-generate if not provided
+  } = options;
+
+  // Validate proration_behavior
+  const VALID_PRORATION = ['ALL', 'PRORATED', 'NONE'];
+  if (!VALID_PRORATION.includes(prorationBehavior)) {
+    throw new Error(`Invalid proration_behavior: ${prorationBehavior}. Must be one of: ${VALID_PRORATION.join(', ')}`);
+  }
+
   const response = await airwallexRequest({
     method: 'POST',
-    url: `/subscriptions/${airwallexSubscriptionId}/cancel`,
-    data: {},
+    url: `https://api-demo.airwallex.com/api/v1/subscriptions/${airwallexSubscriptionId}/cancel`,
+    data: {
+      request_id: requestId,
+      proration_behavior: prorationBehavior,
+    },
   });
 
   return response.data;
@@ -226,6 +235,7 @@ async function syncLocalSubscriptionFromAirwallex(airwallexSubscription, options
     airwallexSubscription.customer_id ||
     options.airwallexCustomerId;
 
+  // Find local CustomerSubscription
   let localSubscription = await CustomerSubscription.findOne({
     airwallexSubscriptionId: externalSubscriptionId,
   });
@@ -240,27 +250,34 @@ async function syncLocalSubscriptionFromAirwallex(airwallexSubscription, options
     throw new Error('Local CustomerSubscription not found for Airwallex subscription');
   }
 
-  localSubscription.status = airwallexSubscription.status || localSubscription.status;
+  // ✅ Apply status mapping here
+  const normalizedStatus = normaliseStatus(airwallexSubscription.status);
+
+  // Update local subscription fields
+  localSubscription.status = normalizedStatus;
   localSubscription.nextBillingAt =
     asDate(airwallexSubscription.next_billing_at) || localSubscription.nextBillingAt;
   localSubscription.startedAt =
     asDate(airwallexSubscription.created_at) || localSubscription.startedAt;
-
+  
+  // Store raw Airwallex status for debugging/audit
   localSubscription.metadata = {
     ...(localSubscription.metadata || {}),
     latestAirwallexSyncAt: new Date().toISOString(),
-    airwallexRawStatus: airwallexSubscription.status,
+    airwallexRawStatus: airwallexSubscription.status, // Keep original for reference
   };
 
   await localSubscription.save();
 
+  // Upsert the admin projection (Subscription model)
   const projection = await upsertSubscriptionProjection(localSubscription, {
-    status: airwallexSubscription.status,
+    status: normalizedStatus, // ✅ Use mapped status
     cancelAtPeriodEnd: airwallexSubscription.cancel_at_period_end,
     nextBillingAt: asDate(airwallexSubscription.next_billing_at),
     lastSyncedAt: new Date(),
     metadata: {
       latestAirwallexSyncAt: new Date().toISOString(),
+      airwallexRawStatus: airwallexSubscription.status,
     },
   });
 

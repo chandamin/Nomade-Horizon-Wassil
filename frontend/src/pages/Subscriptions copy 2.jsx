@@ -10,15 +10,8 @@ export default function Subscriptions() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   
-  // ✅ Cancel modal state
+  //  Cancel modal state
   const [cancelModal, setCancelModal] = useState({ 
-    open: false, 
-    subscriptionId: null,
-    subscription: null 
-  })
-  
-  // ✅ NEW: Edit modal state
-  const [editModal, setEditModal] = useState({ 
     open: false, 
     subscriptionId: null,
     subscription: null 
@@ -90,7 +83,7 @@ export default function Subscriptions() {
     }
   }
 
-  // ✅ UPDATED: Cancel subscription with proration_behavior
+  //  UPDATED: Cancel subscription with proration_behavior
   const cancelSubscription = async (id, prorationBehavior = 'PRORATED') => {
     try {
       setRowLoading(id, true)
@@ -104,7 +97,7 @@ export default function Subscriptions() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          proration_behavior: prorationBehavior
+          proration_behavior: prorationBehavior //  Send proration to backend
         }),
       })
 
@@ -114,6 +107,7 @@ export default function Subscriptions() {
         throw new Error(data?.error || data?.details || 'Failed to cancel subscription')
       }
 
+      //  Update local state with cancelled subscription
       if (data?.subscription) {
         setSubs(prev =>
           prev.map(sub => (sub._id === id ? data.subscription : sub))
@@ -130,77 +124,37 @@ export default function Subscriptions() {
     }
   }
 
-  // ✅ NEW: Update subscription function
-  const updateSubscription = async (id, updatePayload) => {
+  const syncOrders = async (id) => {
     try {
       setRowLoading(id, true)
       setError('')
       setSuccess('')
 
-      const res = await fetch(`${API_BASE}/${id}/update`, {
-        method: 'POST',
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatePayload),
-      })
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/sync-orders/${id}`,
+        {
+          method: 'POST',
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+          },
+        }
+      )
 
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data?.error || data?.details || 'Failed to update subscription')
+        throw new Error(data?.error || 'Failed to sync orders')
       }
 
-      // Update local state with updated subscription
-      if (data?.subscription) {
-        setSubs(prev =>
-          prev.map(sub => (sub._id === id ? data.subscription : sub))
-        )
-      }
+      setSubs(prev =>
+        prev.map(sub => (sub._id === data._id ? data : sub))
+      )
 
-      setSuccess('Subscription updated successfully')
-      return true
+      setSuccess('Orders synced successfully')
     } catch (err) {
-      setError(err.message || 'Failed to update subscription')
-      return false
+      setError(err.message || 'Failed to sync orders')
     } finally {
       setRowLoading(id, false)
-    }
-  }
-
-  // ✅ NEW: Handle edit form submission
-  const handleEditSubmit = async (subscriptionId, formData) => {
-    // Build payload with only changed fields
-    const payload = {}
-    
-    if (formData.cancel_at_period_end !== undefined) {
-      payload.cancel_at_period_end = formData.cancel_at_period_end
-    }
-    
-    if (formData.collection_method) {
-      payload.collection_method = formData.collection_method
-    }
-    
-    if (formData.trial_ends_at) {
-      // Support 'NOW' to end trial immediately
-      payload.trial_ends_at = formData.trial_ends_at === 'NOW' 
-        ? 'NOW' 
-        : new Date(formData.trial_ends_at).toISOString()
-    }
-    
-    if (formData.days_until_due !== undefined) {
-      payload.days_until_due = Number(formData.days_until_due)
-    }
-    
-    if (formData.default_tax_percent !== undefined) {
-      payload.default_tax_percent = Number(formData.default_tax_percent)
-    }
-
-    const success = await updateSubscription(subscriptionId, payload)
-    
-    if (success) {
-      setEditModal({ open: false, subscriptionId: null, subscription: null })
     }
   }
 
@@ -308,21 +262,6 @@ export default function Subscriptions() {
                           {busy ? 'Working...' : 'Sync'}
                         </ActionBtn>
 
-                        {/* ✅ NEW: Edit button */}
-                        {sub.status !== 'cancelled' && (
-                          <ActionBtn
-                            color="indigo"
-                            disabled={busy}
-                            onClick={() => setEditModal({ 
-                              open: true, 
-                              subscriptionId: sub._id,
-                              subscription: sub 
-                            })}
-                          >
-                            {busy ? 'Working...' : 'Edit'}
-                          </ActionBtn>
-                        )}
-
                         {sub.status !== 'cancelled' && (
                           <ActionBtn
                             color="red"
@@ -360,7 +299,7 @@ export default function Subscriptions() {
         </table>
       </div>
 
-      {/* ✅ Cancel Modal */}
+      {/*  Cancel Modal */}
       {cancelModal.open && (
         <CancelModal
           subscription={cancelModal.subscription}
@@ -369,15 +308,6 @@ export default function Subscriptions() {
             await cancelSubscription(cancelModal.subscriptionId, proration)
             setCancelModal({ open: false, subscriptionId: null, subscription: null })
           }}
-        />
-      )}
-
-      {/* ✅ NEW: Edit Modal */}
-      {editModal.open && (
-        <EditSubscriptionModal
-          subscription={editModal.subscription}
-          onClose={() => setEditModal({ open: false, subscriptionId: null, subscription: null })}
-          onSubmit={handleEditSubmit}
         />
       )}
     </div>
@@ -403,24 +333,36 @@ function TableCell({ children }) {
 }
 
 function StatusBadge({ status }) {
-  const statusConfig = {
-    pending: { label: 'Pending', className: 'bg-gray-100 text-gray-800' },
-    pending_payment: { label: 'Pending', className: 'bg-gray-100 text-gray-800' },
-    trialing: { label: 'In Trial', className: 'bg-blue-100 text-blue-800' },
-    active: { label: 'Active', className: 'bg-green-100 text-green-800' },
-    past_due: { label: 'Past Due', className: 'bg-orange-100 text-orange-800' },
-    cancelled: { label: 'Cancelled', className: 'bg-red-100 text-red-800' },
-    paused: { label: 'Paused', className: 'bg-yellow-100 text-yellow-800' },
-    expired: { label: 'Expired', className: 'bg-gray-200 text-gray-600' },
-  };
+  const styles = {
+    pending: {
+      label: 'Pending',
+      className: 'bg-gray-100 text-gray-800',
+    },
+    trialing: {
+      label: 'In Trial',
+      className: 'bg-blue-100 text-blue-800',
+    },
+    active: {
+      label: 'Active',
+      className: 'bg-green-100 text-green-800',
+    },
+    past_due: {
+      label: 'Past Due',
+      className: 'bg-orange-100 text-orange-800',
+    },
+    cancelled: {
+      label: 'Cancelled',
+      className: 'bg-red-100 text-red-800',
+    },
+  }
 
-  const config = statusConfig[status] || statusConfig.pending;
-
+  const config = styles[status] || styles.pending;
+  
   return (
     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${config.className}`}>
       {config.label}
     </span>
-  );
+  )
 }
 
 function ActionBtn({ color, children, disabled, ...props }) {
@@ -443,7 +385,7 @@ function ActionBtn({ color, children, disabled, ...props }) {
   )
 }
 
-// Cancel Modal Component with Proration Options
+//  Cancel Modal Component with Proration Options
 function CancelModal({ subscription, onClose, onConfirm }) {
   const [proration, setProration] = useState('PRORATED')
 
@@ -529,179 +471,6 @@ function CancelModal({ subscription, onClose, onConfirm }) {
             Cancel Subscription
           </button>
         </div>
-      </div>
-    </div>
-  )
-}
-
-// ✅ NEW: Edit Subscription Modal Component
-function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
-  const [formData, setFormData] = useState({
-    cancel_at_period_end: subscription?.cancelAtPeriodEnd || false,
-    collection_method: subscription?.collectionMethod || '',
-    trial_ends_at: '',
-    days_until_due: '',
-    default_tax_percent: '',
-  })
-  const [submitting, setSubmitting] = useState(false)
-
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setSubmitting(true)
-    
-    try {
-      await onSubmit(subscription._id, formData)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">
-          Edit Subscription
-        </h3>
-        
-        {subscription && (
-          <div className="mb-4 p-3 bg-gray-50 rounded text-sm space-y-1">
-            <p className="text-gray-600">
-              <span className="font-medium">Customer:</span> {subscription.customerEmail || 'N/A'}
-            </p>
-            <p className="text-gray-600">
-              <span className="font-medium">Plan:</span> {subscription.planName || 'N/A'}
-            </p>
-            <p className="text-gray-600">
-              <span className="font-medium">Status:</span> <StatusBadge status={subscription.status} />
-            </p>
-            <p className="text-gray-600">
-              <span className="font-medium">Airwallex ID:</span> {subscription.externalSubscriptionId || 'N/A'}
-            </p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Cancel at period end toggle */}
-          <div>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.cancel_at_period_end}
-                onChange={(e) => handleChange('cancel_at_period_end', e.target.checked)}
-                className="h-4 w-4 text-indigo-600 rounded"
-              />
-              <div>
-                <span className="font-medium text-sm text-gray-900">Cancel at period end</span>
-                <p className="text-xs text-gray-500">Schedule cancellation after current billing cycle</p>
-              </div>
-            </label>
-          </div>
-
-          {/* Collection method */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Collection Method
-            </label>
-            <select
-              value={formData.collection_method}
-              onChange={(e) => handleChange('collection_method', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="">— Keep current —</option>
-              <option value="AUTO_CHARGE">Auto Charge</option>
-              <option value="CHARGE_ON_CHECKOUT">Charge on Checkout</option>
-              <option value="OUT_OF_BAND">Out of Band</option>
-            </select>
-            <p className="text-xs text-gray-500 mt-1">How payment is collected for this subscription</p>
-          </div>
-
-          {/* Trial end date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Trial End Date
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="datetime-local"
-                value={formData.trial_ends_at}
-                onChange={(e) => handleChange('trial_ends_at', e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <button
-                type="button"
-                onClick={() => handleChange('trial_ends_at', 'NOW')}
-                className="px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded border border-red-200"
-              >
-                End Now
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">Set when trial ends, or click "End Now" to terminate immediately</p>
-          </div>
-
-          {/* Days until due */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Days Until Due
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={formData.days_until_due}
-              onChange={(e) => handleChange('days_until_due', e.target.value)}
-              placeholder="e.g., 7"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">Days from invoice finalization until payment is due</p>
-          </div>
-
-          {/* Default tax percent */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Default Tax Percent
-            </label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.01"
-              value={formData.default_tax_percent}
-              onChange={(e) => handleChange('default_tax_percent', e.target.value)}
-              placeholder="e.g., 20.00"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">Tax percentage (0-100) applied to invoices (exclusive)</p>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <button 
-              type="button"
-              onClick={onClose} 
-              disabled={submitting}
-              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded border border-gray-300 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit"
-              disabled={submitting}
-              className="px-4 py-2 text-sm bg-indigo-500 text-white rounded hover:bg-indigo-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   )

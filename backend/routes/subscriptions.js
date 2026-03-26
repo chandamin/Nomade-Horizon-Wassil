@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const dayjs = require('dayjs');
 
 const Subscription = require('../models/Subscription');
 const CustomerSubscription = require('../models/CustomerSubscription');
@@ -287,50 +288,111 @@ router.post('/:id/sync', async (req, res) => {
  */
 router.post('/:id/cancel', async (req, res) => {
   try {
+    const { id } = req.params;
+    const { proration_behavior } = req.body;
+
     logRoute('POST /:id/cancel hit', {
-      params: req.params,
+      subscriptionId: id,
+      proration_behavior,
     });
 
-    const projection = await Subscription.findById(req.params.id);
+    // 🔍 Validate proration_behavior
+    const VALID_PRORATION = ['ALL', 'PRORATED', 'NONE'];
+    if (!proration_behavior || !VALID_PRORATION.includes(proration_behavior)) {
+      return res.status(400).json({
+        error: `proration_behavior is required and must be one of: ${VALID_PRORATION.join(', ')}`,
+        code: 'INVALID_PRORATION_BEHAVIOR',
+      });
+    }
+
+    // 🔍 Find subscription projection
+    const projection = await Subscription.findById(id);
 
     logRoute('cancel projection lookup', {
       found: !!projection,
-      id: req.params.id,
+      id,
+      externalSubscriptionId: projection?.externalSubscriptionId,
     });
 
     if (!projection) {
-      return res.status(404).json({ error: 'Subscription not found' });
+      return res.status(404).json({ 
+        error: 'Subscription not found',
+        code: 'SUBSCRIPTION_NOT_FOUND',
+      });
     }
 
     if (!projection.externalSubscriptionId) {
       return res.status(400).json({
         error: 'Subscription does not have externalSubscriptionId',
+        code: 'MISSING_EXTERNAL_ID',
       });
     }
 
+    // 🔍 Check if already cancelled
+    if (projection.status === 'cancelled') {
+      return res.json({
+        success: true,
+        already_cancelled: true,
+        message: 'Subscription is already cancelled',
+        subscription: projection,
+      });
+    }
+
+    // 🔍 Call Airwallex cancel with proration_behavior
     logRoute('calling Airwallex cancel', {
       externalSubscriptionId: projection.externalSubscriptionId,
+      proration_behavior,
     });
 
     const airwallexResponse = await cancelAirwallexSubscription(
-      projection.externalSubscriptionId
+      projection.externalSubscriptionId,
+      {
+        prorationBehavior: proration_behavior,
+        // requestId is auto-generated in subscriptionAdmin.js
+      }
     );
 
-    logRoute('Airwallex cancel response received', airwallexResponse);
+    logRoute('Airwallex cancel response received', {
+      status: airwallexResponse.status,
+      subscription_id: airwallexResponse.id,
+      cancel_requested_at: airwallexResponse.cancel_requested_at,
+      ends_at: airwallexResponse.ends_at,
+    });
 
+    // 🔍 Update MongoDB Projection (Subscription model)
     projection.status = 'cancelled';
     projection.lastSyncedAt = new Date();
     projection.syncStatus = 'ok';
     projection.syncError = null;
+    // Capture Airwallex cancellation timestamps
+    if (airwallexResponse.cancel_requested_at) {
+      projection.metadata = {
+        ...(projection.metadata || {}),
+        cancelledAt: airwallexResponse.cancel_requested_at,
+        endsAt: airwallexResponse.ends_at,
+        prorationBehavior: proration_behavior,
+      };
+    }
     await projection.save();
 
+    // 🔍 Update MongoDB CustomerSubscription (main subscription record)
     const updatedCustomerSub = await CustomerSubscription.findOneAndUpdate(
       { airwallexSubscriptionId: projection.externalSubscriptionId },
       {
         $set: {
           status: 'cancelled',
           nextBillingAt: null,
+          cancelledAt: airwallexResponse.cancel_requested_at 
+            ? dayjs(airwallexResponse.cancel_requested_at).toDate() 
+            : new Date(),
+          endedAt: airwallexResponse.ends_at 
+            ? dayjs(airwallexResponse.ends_at).toDate() 
+            : null,
           'metadata.cancelledFromAdminAt': new Date().toISOString(),
+          'metadata.prorationBehavior': proration_behavior,
+          lastSyncedAt: new Date(),
+          syncStatus: 'ok',
+          syncError: null,
         },
       },
       { new: true }
@@ -338,18 +400,48 @@ router.post('/:id/cancel', async (req, res) => {
 
     logRoute('local cancel persisted', {
       projectionId: projection._id,
-      updatedCustomerSubscriptionId: updatedCustomerSub?._id || null,
+      updatedCustomerSubscriptionId: updatedCustomerSub?._id,
+      status: updatedCustomerSub?.status,
+      cancelledAt: updatedCustomerSub?.cancelledAt,
     });
 
+    // 🔍 Return success response
     return res.json({
       success: true,
       subscription: projection,
-      airwallex: airwallexResponse,
+      customerSubscription: updatedCustomerSub,
+      airwallex: {
+        id: airwallexResponse.id,
+        status: airwallexResponse.status,
+        cancel_requested_at: airwallexResponse.cancel_requested_at,
+        ends_at: airwallexResponse.ends_at,
+        proration_behavior,
+      },
     });
+
   } catch (err) {
     logError('POST /:id/cancel failed', err);
+    
+    // Handle Airwallex-specific errors
+    if (err.response?.status === 404) {
+      return res.status(404).json({
+        error: 'Subscription not found in Airwallex',
+        code: 'AIRWALLEX_NOT_FOUND',
+        details: err.response.data,
+      });
+    }
+    
+    if (err.response?.status === 400) {
+      return res.status(400).json({
+        error: err.response.data?.message || 'Invalid request to Airwallex',
+        code: 'AIRWALLEX_VALIDATION_ERROR',
+        details: err.response.data,
+      });
+    }
+
     return res.status(500).json({
       error: 'Failed to cancel subscription',
+      code: 'CANCEL_ERROR',
       details: err.response?.data || err.message,
     });
   }
@@ -398,68 +490,184 @@ router.patch('/:id', async (req, res) => {
  * OPTIONAL AIRWALLEX UPDATE BRIDGE
  * POST /api/subscriptions/:id/update-airwallex
  */
-router.post('/:id/update-airwallex', async (req, res) => {
+router.post('/:id/update', async (req, res) => {
   try {
-    logRoute('POST /:id/update-airwallex hit', {
-      params: req.params,
+    logRoute('POST /:id/update hit', {
+      subscriptionId: req.params.id,
       body: req.body,
     });
 
-    const { payload = {} } = req.body;
+    const { id } = req.params;
+    const {
+      cancel_at_period_end,
+      collection_method,
+      days_until_due,
+      default_invoice_template,
+      default_tax_percent,
+      duration,
+      legal_entity_id,
+      linked_payment_account_id,
+      metadata,
+      payment_options,
+      payment_source_id,
+      trial_ends_at,
+    } = req.body;
 
-    const projection = await Subscription.findById(req.params.id);
-
-    logRoute('update-airwallex projection lookup', {
-      found: !!projection,
-      id: req.params.id,
+    // 🔍 STEP 1: Validate subscription exists in MongoDB
+    const subscription = await Subscription.findById(id);
+    
+    logRoute('update subscription lookup', {
+      found: !!subscription,
+      id,
+      externalSubscriptionId: subscription?.externalSubscriptionId,
     });
 
-    if (!projection) {
-      return res.status(404).json({ error: 'Subscription not found' });
-    }
-
-    if (!projection.externalSubscriptionId) {
-      return res.status(400).json({
-        error: 'Subscription does not have externalSubscriptionId',
+    if (!subscription) {
+      return res.status(404).json({ 
+        error: 'Subscription not found',
+        code: 'SUBSCRIPTION_NOT_FOUND',
       });
     }
 
+    if (!subscription.externalSubscriptionId) {
+      return res.status(400).json({
+        error: 'Subscription does not have externalSubscriptionId',
+        code: 'MISSING_EXTERNAL_ID',
+      });
+    }
+
+    // 🔍 STEP 2: Build Airwallex payload (only include provided fields)
+    const airwallexPayload = {
+      request_id: crypto.randomUUID(), // Auto-generate for idempotency
+      ...(cancel_at_period_end !== undefined && { cancel_at_period_end }),
+      ...(collection_method && { collection_method }),
+      ...(days_until_due !== undefined && { days_until_due }),
+      ...(default_invoice_template && { default_invoice_template }),
+      ...(default_tax_percent !== undefined && { default_tax_percent }),
+      ...(duration && { duration }),
+      ...(legal_entity_id && { legal_entity_id }),
+      ...(linked_payment_account_id && { linked_payment_account_id }),
+      ...(metadata && { metadata }),
+      ...(payment_options && { payment_options }),
+      ...(payment_source_id && { payment_source_id }),
+      ...(trial_ends_at && { trial_ends_at }),
+    };
+
+    // 🔍 STEP 3: Validate enum values (optional but recommended)
+    const VALID_COLLECTION_METHODS = ['AUTO_CHARGE', 'CHARGE_ON_CHECKOUT', 'OUT_OF_BAND'];
+    const VALID_PERIOD_UNITS = ['DAY', 'WEEK', 'MONTH', 'YEAR'];
+    
+    if (collection_method && !VALID_COLLECTION_METHODS.includes(collection_method)) {
+      return res.status(400).json({
+        error: `Invalid collection_method. Must be one of: ${VALID_COLLECTION_METHODS.join(', ')}`,
+        code: 'INVALID_COLLECTION_METHOD',
+      });
+    }
+    
+    if (duration?.period_unit && !VALID_PERIOD_UNITS.includes(duration.period_unit)) {
+      return res.status(400).json({
+        error: `Invalid duration.period_unit. Must be one of: ${VALID_PERIOD_UNITS.join(', ')}`,
+        code: 'INVALID_PERIOD_UNIT',
+      });
+    }
+
+    // 🔍 STEP 4: Call Airwallex update endpoint
     logRoute('calling Airwallex update', {
-      externalSubscriptionId: projection.externalSubscriptionId,
-      payload,
+      externalSubscriptionId: subscription.externalSubscriptionId,
+      payload: airwallexPayload,
     });
 
-    const airwallexResponse = await updateAirwallexSubscription(
-      projection.externalSubscriptionId,
-      payload
+    const { updateAirwallexSubscription } = require('../lib/airwallex/subscriptionAdmin');
+    
+    const airwallexRes = await updateAirwallexSubscription(
+      subscription.externalSubscriptionId,
+      airwallexPayload
     );
 
-    logRoute('Airwallex update response', airwallexResponse);
-
-    const latest = await fetchAirwallexSubscription(projection.externalSubscriptionId);
-
-    logRoute('Airwallex latest fetched after update', {
-      id: latest?.id,
-      status: latest?.status,
+    logRoute('Airwallex update response received', {
+      status: airwallexRes.status,
+      subscription_id: airwallexRes.id,
+      updated_at: airwallexRes.updated_at,
     });
 
-    const result = await syncLocalSubscriptionFromAirwallex(latest);
+    // 🔍 STEP 5: Sync response to MongoDB (Subscription projection)
+    const { normaliseStatus, asDate } = require('../lib/airwallex/subscriptionAdmin');
+    
+    subscription.status = normaliseStatus(airwallexRes.status);
+    subscription.nextBillingAt = asDate(airwallexRes.next_billing_at) || subscription.nextBillingAt;
+    subscription.cancelAtPeriodEnd = airwallexRes.cancel_at_period_end;
+    subscription.collectionMethod = airwallexRes.collection_method;
+    subscription.paymentSourceId = airwallexRes.payment_source_id;
+    subscription.lastSyncedAt = new Date();
+    subscription.syncStatus = 'ok';
+    subscription.syncError = null;
+    
+    // Store raw Airwallex fields in metadata for audit
+    subscription.metadata = {
+      ...(subscription.metadata || {}),
+      latestAirwallexUpdateAt: new Date().toISOString(),
+      airwallexRawStatus: airwallexRes.status,
+    };
+    
+    await subscription.save();
 
-    logRoute('local sync completed after update', {
-      projectionId: result.projection?._id,
-      projectionStatus: result.projection?.status,
+    // 🔍 STEP 6: Sync to CustomerSubscription as well
+    const updatedCustomerSub = await CustomerSubscription.findOneAndUpdate(
+      { airwallexSubscriptionId: subscription.externalSubscriptionId },
+      {
+        $set: {
+          status: normaliseStatus(airwallexRes.status),
+          nextBillingAt: asDate(airwallexRes.next_billing_at),
+          'metadata.lastAirwallexUpdateAt': new Date().toISOString(),
+          'metadata.airwallexRawStatus': airwallexRes.status,
+        },
+      },
+      { new: true }
+    );
+
+    logRoute('local update persisted', {
+      subscriptionId: subscription._id,
+      updatedCustomerSubscriptionId: updatedCustomerSub?._id,
+      status: subscription.status,
     });
 
+    // 🔍 STEP 7: Return success response
     return res.json({
       success: true,
-      subscription: result.projection,
-      customerSubscription: result.localSubscription,
-      airwallex: airwallexResponse,
+      subscription,
+      customerSubscription: updatedCustomerSub,
+      airwallex: {
+        id: airwallexRes.id,
+        status: airwallexRes.status,
+        updated_at: airwallexRes.updated_at,
+        next_billing_at: airwallexRes.next_billing_at,
+        collection_method: airwallexRes.collection_method,
+      },
     });
+
   } catch (err) {
-    logError('POST /:id/update-airwallex failed', err);
+    logError('POST /:id/update failed', err);
+    
+    // Handle Airwallex-specific errors
+    if (err.response?.status === 404) {
+      return res.status(404).json({
+        error: 'Subscription not found in Airwallex',
+        code: 'AIRWALLEX_NOT_FOUND',
+        details: err.response.data,
+      });
+    }
+    
+    if (err.response?.status === 400) {
+      return res.status(400).json({
+        error: err.response.data?.message || 'Invalid request to Airwallex',
+        code: 'AIRWALLEX_VALIDATION_ERROR',
+        details: err.response.data,
+      });
+    }
+
     return res.status(500).json({
-      error: 'Failed to update Airwallex subscription',
+      error: 'Failed to update subscription',
+      code: 'UPDATE_ERROR',
       details: err.response?.data || err.message,
     });
   }

@@ -57,12 +57,37 @@ useEffect(() => {
       setLoading(true);
       setError("");
 
+      const currency = cart?.currency?.code || "EUR";
+
+      // 1. Create a payment customer (cus_) required for payment consent
+      let paymentCustomerId = null;
+      if (airwallexCustomerId && clientData?.email) {
+        try {
+          const cusRes = await fetch(
+            `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/payment-customers`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+              body: JSON.stringify({ email: clientData.email }),
+            }
+          );
+          if (cusRes.ok) {
+            const cusData = await cusRes.json();
+            paymentCustomerId = cusData.id;
+            console.log("💳 Payment customer (cus_):", paymentCustomerId);
+          } else {
+            console.warn("⚠️ Failed to create payment customer:", await cusRes.text());
+          }
+        } catch (cusErr) {
+          console.warn("⚠️ Payment customer creation error:", cusErr.message);
+        }
+      }
+
       console.log("💳 [PAYMENT_INTENT_CREATE] Request payload:", {
         amount: Number(cart.cartAmount) + Number(deliveryData?.price || 0),
-        currency: cart?.currency?.code || "EUR",
+        currency,
         merchant_order_id: cart.id,
-        customer_id: airwallexCustomerId || null,
-        hasAirwallexCustomerId: !!airwallexCustomerId,
+        payment_customer_id: paymentCustomerId,
       });
 
       const response = await fetch(
@@ -76,9 +101,9 @@ useEffect(() => {
           },
           body: JSON.stringify({
             amount: Number(cart.cartAmount) + Number(deliveryData?.price || 0),
-            currency: cart?.currency?.code || "EUR",
+            currency,
             merchant_order_id: cart.id,
-            ...(airwallexCustomerId && { customer_id: airwallexCustomerId }),
+            ...(paymentCustomerId && { payment_customer_id: paymentCustomerId }),
           }),
         }
       );
@@ -102,6 +127,13 @@ useEffect(() => {
         client_secret: result.client_secret,
         currency: result.currency,
         methods: ["card"],
+        // Tell the dropIn to create and verify a merchant-triggered consent automatically
+        ...(paymentCustomerId && {
+          payment_consent: {
+            next_triggered_by: "merchant",
+            merchant_trigger_reason: "unscheduled",
+          },
+        }),
       });
 
       if (!element) {
@@ -131,19 +163,23 @@ useEffect(() => {
         console.log("   event.detail keys:", event?.detail ? Object.keys(event.detail) : []);
         console.log("   event.detail.payment_method:", event?.detail?.payment_method);
 
-        // Extract the payment_method.id from event (preferred) - has prefix like att_xxx
-        // Note: GET payment-intents doesn't return payment_method.id, so we MUST get it from event
+        // Extract the payment method ID (must start with mtd_) from the success event
         let paymentMethodId =
           event?.detail?.payment_method?.id ||
           event?.detail?.intent?.payment_method?.id ||
           event?.detail?.intent?.latest_payment_attempt?.payment_method?.id;
 
+        // Filter out non-mtd_ IDs (e.g. att_ attempt IDs are not valid)
+        if (paymentMethodId && !paymentMethodId.startsWith('mtd_')) {
+          paymentMethodId = null;
+        }
+
         console.log("💳 [STEP 2] paymentMethodId from event:", paymentMethodId);
 
-        // If not in event, fetch the payment intent (but API might not return payment_method.id)
+        // If not in event, fetch the payment intent to get the mtd_ payment method ID
         if (!paymentMethodId && intentId) {
           try {
-            console.log("💳 [STEP 2b] Fetching payment intent to get payment_method.id...");
+            console.log("💳 [STEP 2b] Fetching payment intent to get payment_method id...");
             const fetchRes = await fetch(
               `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/payment-intents/${intentId}`,
               {
@@ -159,12 +195,17 @@ useEffect(() => {
               const fetchedIntent = await fetchRes.json();
               console.log("📥 Fetched PaymentIntent:", JSON.stringify(fetchedIntent, null, 2));
 
-              // API might not return payment_method.id, so use attempt ID as fallback
-              paymentMethodId =
-                fetchedIntent?.latest_payment_attempt?.payment_method?.id ||
-                fetchedIntent?.latest_payment_attempt?.id; // Use attempt ID as external_id
+              // Try all known paths that may return an mtd_ payment method ID
+              const candidates = [
+                fetchedIntent?.payment_method_id,
+                fetchedIntent?.payment_method?.id,
+                fetchedIntent?.latest_payment_attempt?.payment_method_id,
+                fetchedIntent?.latest_payment_attempt?.payment_method?.id,
+              ];
 
-              console.log("💳 [STEP 2c] Extracted ID for PaymentSource:", paymentMethodId);
+              paymentMethodId = candidates.find(id => id?.startsWith('mtd_')) || null;
+
+              console.log("💳 [STEP 2c] Extracted mtd_ ID for PaymentSource:", paymentMethodId);
             } else {
               console.warn("⚠️ Failed to fetch payment intent:", fetchRes.status);
             }
@@ -181,17 +222,12 @@ useEffect(() => {
             console.log(":arrows_counterclockwise: [STEP 3] Creating Payment Source for AUTO_CHARGE...");
             console.log("   billing_customer_id:", airwallexCustomerId);
             console.log("   external_id:", paymentMethodId || intentId);
-            console.log("   linked_payment_account_id env:", import.meta.env.VITE_AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID);
 
             const requestBody = {
               billing_customer_id: airwallexCustomerId,
               payment_method_id: paymentMethodId || intentId,
+              ...(paymentCustomerId && { payment_customer_id: paymentCustomerId }),
             };
-
-            // Only add linked_payment_account_id if it's set
-            if (import.meta.env.VITE_AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID) {
-              requestBody.linked_payment_account_id = import.meta.env.VITE_AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID;
-            }
 
             console.log("   Request body:", JSON.stringify(requestBody));
 
@@ -239,20 +275,20 @@ useEffect(() => {
         onPlaceOrder?.(successPayload);
       });
 
-element.on("error", (event) => {
-const message =
-event?.detail?.error?.message ||
-event?.detail?.message ||
-"Payment failed";
+      element.on("error", (event) => {
+        const message =
+        event?.detail?.error?.message ||
+        event?.detail?.message ||
+        "Payment failed";
 
-setError(message);
+        setError(message);
 
-onContinue?.({
-status: "FAILED",
-paymentIntentId: result.id,
-clientSecret: result.client_secret,
-});
-});
+        onContinue?.({
+        status: "FAILED",
+        paymentIntentId: result.id,
+        clientSecret: result.client_secret,
+        });
+      });
       // element.on("success", async (event) => {
       //   if (successHandledRef.current) return;
       //   successHandledRef.current = true;
