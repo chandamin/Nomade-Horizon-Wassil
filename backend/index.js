@@ -44,6 +44,7 @@ app.use(cors({
       'https://airwall.kaswebtechsolutions.com',
       'checkout.nomade-horizon.com',
       'https://checkout.nomade-horizon.com',
+      'apicheckout.nomade-horizon.com',
       // Add ngrok pattern - allows any ngrok-free.dev subdomain
       /https:\/\/[a-z0-9-]+\.ngrok-free\.dev$/,
     ].filter(Boolean); // remove undefined/null values
