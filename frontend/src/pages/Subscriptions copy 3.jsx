@@ -10,14 +10,14 @@ export default function Subscriptions() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   
-  // ✅ Cancel modal state
+  //  Cancel modal state
   const [cancelModal, setCancelModal] = useState({ 
     open: false, 
     subscriptionId: null,
     subscription: null 
   })
   
-  // ✅ NEW: Edit modal state
+  //  NEW: Edit modal state
   const [editModal, setEditModal] = useState({ 
     open: false, 
     subscriptionId: null,
@@ -90,7 +90,7 @@ export default function Subscriptions() {
     }
   }
 
-  // ✅ UPDATED: Cancel subscription with proration_behavior
+  //  UPDATED: Cancel subscription with proration_behavior
   const cancelSubscription = async (id, prorationBehavior = 'PRORATED') => {
     try {
       setRowLoading(id, true)
@@ -130,7 +130,7 @@ export default function Subscriptions() {
     }
   }
 
-  // ✅ NEW: Update subscription function
+  //  NEW: Update subscription function
   const updateSubscription = async (id, updatePayload) => {
     try {
       setRowLoading(id, true)
@@ -169,41 +169,36 @@ export default function Subscriptions() {
     }
   }
 
-  // ✅ NEW: Handle edit form submission
+  //  NEW: Handle edit form submission
   const handleEditSubmit = async (subscriptionId, formData) => {
-    // Build payload with only changed/provided fields
+    // Build payload with only changed fields
     const payload = {}
-
+    
     if (formData.cancel_at_period_end !== undefined) {
       payload.cancel_at_period_end = formData.cancel_at_period_end
     }
-
+    
     if (formData.collection_method) {
       payload.collection_method = formData.collection_method
     }
-
-    if (formData.payment_source_id) {
-      payload.payment_source_id = formData.payment_source_id
-    }
-
+    
     if (formData.trial_ends_at) {
-      // 'NOW' ends the trial immediately — send current UTC time
-      payload.trial_ends_at = formData.trial_ends_at === 'NOW'
-        ? new Date().toISOString()
+      // Support 'NOW' to end trial immediately
+      payload.trial_ends_at = formData.trial_ends_at === 'NOW' 
+        ? 'NOW' 
         : new Date(formData.trial_ends_at).toISOString()
     }
-
-    // Only include numeric fields if user actually entered a value
-    if (formData.days_until_due !== '') {
+    
+    if (formData.days_until_due !== undefined) {
       payload.days_until_due = Number(formData.days_until_due)
     }
-
-    if (formData.default_tax_percent !== '') {
+    
+    if (formData.default_tax_percent !== undefined) {
       payload.default_tax_percent = Number(formData.default_tax_percent)
     }
 
     const success = await updateSubscription(subscriptionId, payload)
-
+    
     if (success) {
       setEditModal({ open: false, subscriptionId: null, subscription: null })
     }
@@ -313,7 +308,7 @@ export default function Subscriptions() {
                           {busy ? 'Working...' : 'Sync'}
                         </ActionBtn>
 
-                        {/* ✅ NEW: Edit button */}
+                        {/*  NEW: Edit button */}
                         {sub.status !== 'cancelled' && (
                           <ActionBtn
                             color="indigo"
@@ -365,7 +360,7 @@ export default function Subscriptions() {
         </table>
       </div>
 
-      {/* ✅ Cancel Modal */}
+      {/*  Cancel Modal */}
       {cancelModal.open && (
         <CancelModal
           subscription={cancelModal.subscription}
@@ -377,7 +372,7 @@ export default function Subscriptions() {
         />
       )}
 
-      {/* ✅ NEW: Edit Modal */}
+      {/*  NEW: Edit Modal */}
       {editModal.open && (
         <EditSubscriptionModal
           subscription={editModal.subscription}
@@ -539,48 +534,19 @@ function CancelModal({ subscription, onClose, onConfirm }) {
   )
 }
 
-// ✅ NEW: Edit Subscription Modal Component
+// NEW: Edit Subscription Modal Component
 function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     cancel_at_period_end: subscription?.cancelAtPeriodEnd || false,
     collection_method: subscription?.collectionMethod || '',
-    payment_source_id: '',
     trial_ends_at: '',
     days_until_due: '',
     default_tax_percent: '',
   })
   const [submitting, setSubmitting] = useState(false)
-  const [paymentSources, setPaymentSources] = useState([])
-  const [sourcesLoading, setSourcesLoading] = useState(false)
-  const [sourcesError, setSourcesError] = useState('')
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    // Auto-fetch payment sources when switching to AUTO_CHARGE
-    if (field === 'collection_method' && value === 'AUTO_CHARGE') {
-      fetchPaymentSources()
-    }
-  }
-
-  const fetchPaymentSources = async () => {
-    setSourcesLoading(true)
-    setSourcesError('')
-    try {
-      const res = await fetch(`${API_BASE}/${subscription._id}/payment-sources`, {
-        headers: { 'ngrok-skip-browser-warning': 'true' },
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed to fetch payment sources')
-      setPaymentSources(data.payment_sources || [])
-      // Auto-select if only one source available
-      if (data.payment_sources?.length === 1) {
-        setFormData(prev => ({ ...prev, payment_source_id: data.payment_sources[0].id }))
-      }
-    } catch (err) {
-      setSourcesError(err.message)
-    } finally {
-      setSourcesLoading(false)
-    }
   }
 
   const handleSubmit = async (e) => {
@@ -652,42 +618,6 @@ function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
             </select>
             <p className="text-xs text-gray-500 mt-1">How payment is collected for this subscription</p>
           </div>
-
-          {/* Payment source — required when switching to AUTO_CHARGE */}
-          {formData.collection_method === 'AUTO_CHARGE' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Payment Source <span className="text-red-500">*</span>
-              </label>
-              {sourcesLoading ? (
-                <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
-                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-500 inline-block"></span>
-                  Loading saved payment methods…
-                </div>
-              ) : sourcesError ? (
-                <div className="text-sm text-red-600 py-1">{sourcesError}</div>
-              ) : paymentSources.length === 0 ? (
-                <div className="text-sm text-amber-600 py-1 bg-amber-50 px-3 rounded border border-amber-200">
-                  No saved payment sources found for this customer.
-                </div>
-              ) : (
-                <select
-                  value={formData.payment_source_id}
-                  onChange={(e) => handleChange('payment_source_id', e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">— Select a payment source —</option>
-                  {paymentSources.map(src => (
-                    <option key={src.id} value={src.id}>
-                      {src.id} {src.external_id ? `· ${src.external_id}` : ''} {src.created_at ? `· Added ${new Date(src.created_at).toLocaleDateString()}` : ''}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <p className="text-xs text-gray-500 mt-1">Saved card on file for this customer</p>
-            </div>
-          )}
 
           {/* Trial end date */}
           <div>

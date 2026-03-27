@@ -1,15 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const dayjs = require('dayjs');
-const utc = require('dayjs/plugin/utc');
-dayjs.extend(utc);
 
 const Subscription = require('../models/Subscription');
 const CustomerSubscription = require('../models/CustomerSubscription');
 const SubscriptionCustomer = require('../models/SubscriptionCustomer');
-
-const axios = require('axios');
-const { getAirwallexToken } = require('../lib/airwallex/token');
 
 const {
   fetchAirwallexSubscription,
@@ -492,47 +487,6 @@ router.patch('/:id', async (req, res) => {
 });
 
 /**
- * GET /api/subscriptions/:id/payment-sources
- * Fetches available Airwallex payment sources for the subscription's billing customer.
- * Used by the admin UI to populate the AUTO_CHARGE payment source dropdown.
- */
-router.get('/:id/payment-sources', async (req, res) => {
-  try {
-    const subscription = await Subscription.findById(req.params.id);
-
-    if (!subscription) {
-      return res.status(404).json({ error: 'Subscription not found' });
-    }
-
-    const billingCustomerId = subscription.airwallexCustomerId;
-
-    if (!billingCustomerId) {
-      return res.status(400).json({ error: 'Subscription has no airwallexCustomerId' });
-    }
-
-    const token = await getAirwallexToken();
-
-    const response = await axios.get(
-      'https://api-demo.airwallex.com/api/v1/payment_sources',
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { billing_customer_id: billingCustomerId, page_size: 50 },
-      }
-    );
-
-    const sources = response.data?.items || [];
-
-    return res.json({ payment_sources: sources });
-  } catch (err) {
-    logError('GET /:id/payment-sources failed', err);
-    return res.status(500).json({
-      error: 'Failed to fetch payment sources',
-      details: err.response?.data || err.message,
-    });
-  }
-});
-
-/**
  * OPTIONAL AIRWALLEX UPDATE BRIDGE
  * POST /api/subscriptions/:id/update-airwallex
  */
@@ -583,50 +537,20 @@ router.post('/:id/update', async (req, res) => {
     }
 
     // 🔍 STEP 2: Build Airwallex payload (only include provided fields)
-
-    // AUTO_CHARGE requires a payment_source_id (psrc_)
-    if (collection_method === 'AUTO_CHARGE' && !payment_source_id) {
-      return res.status(400).json({
-        error: 'payment_source_id (psrc_...) is required when switching to AUTO_CHARGE.',
-        code: 'PAYMENT_SOURCE_REQUIRED',
-      });
-    }
-
-    const trialEndsAtParsed = trial_ends_at ? dayjs.utc(trial_ends_at) : null;
-    if (trial_ends_at && !trialEndsAtParsed.isValid()) {
-      return res.status(400).json({
-        error: 'Invalid trial_ends_at date format. Use ISO 8601 (e.g. 2026-04-01 or 2026-04-01T00:00:00Z).',
-        code: 'INVALID_TRIAL_ENDS_AT',
-      });
-    }
-    // Airwallex requires "YYYY-MM-DDTHH:mm:ss+0000" format (not .toISOString())
-    const trialEndsAtIso = trialEndsAtParsed
-      ? trialEndsAtParsed.startOf('day').format('YYYY-MM-DDTHH:mm:ss') + '+0000'
-      : null;
-
     const airwallexPayload = {
       request_id: crypto.randomUUID(), // Auto-generate for idempotency
       ...(cancel_at_period_end !== undefined && { cancel_at_period_end }),
       ...(collection_method && { collection_method }),
-      ...(days_until_due !== undefined && { days_until_due: Number(days_until_due) }),
+      ...(days_until_due !== undefined && { days_until_due }),
       ...(default_invoice_template && { default_invoice_template }),
-      ...(default_tax_percent !== undefined && { default_tax_percent: Number(default_tax_percent) }),
+      ...(default_tax_percent !== undefined && { default_tax_percent }),
       ...(duration && { duration }),
       ...(legal_entity_id && { legal_entity_id }),
       ...(linked_payment_account_id && { linked_payment_account_id }),
       ...(metadata && { metadata }),
       ...(payment_options && { payment_options }),
-      // AUTO_CHARGE → must provide payment_source_id
-      // CHARGE_ON_CHECKOUT / OUT_OF_BAND → must explicitly null payment_source_id
-      // no collection_method change → omit payment_source_id unless caller supplied one
-      ...(collection_method === 'AUTO_CHARGE'
-        ? { payment_source_id }                           // required; validated below
-        : collection_method                               // switching away from AUTO_CHARGE
-          ? { payment_source_id: null }
-          : payment_source_id                             // no method change, but psrc provided
-            ? { payment_source_id }
-            : {}),
-      ...(trialEndsAtIso && { trial_ends_at: trialEndsAtIso }),
+      ...(payment_source_id && { payment_source_id }),
+      ...(trial_ends_at && { trial_ends_at }),
     };
 
     // 🔍 STEP 3: Validate enum values (optional but recommended)
@@ -653,8 +577,8 @@ router.post('/:id/update', async (req, res) => {
       payload: airwallexPayload,
     });
 
-    const { updateAirwallexSubscription, normaliseStatus, asDate } = require('../lib/airwallex/subscriptionAdmin');
-
+    const { updateAirwallexSubscription } = require('../lib/airwallex/subscriptionAdmin');
+    
     const airwallexRes = await updateAirwallexSubscription(
       subscription.externalSubscriptionId,
       airwallexPayload
@@ -667,6 +591,7 @@ router.post('/:id/update', async (req, res) => {
     });
 
     // 🔍 STEP 5: Sync response to MongoDB (Subscription projection)
+    const { normaliseStatus, asDate } = require('../lib/airwallex/subscriptionAdmin');
     
     subscription.status = normaliseStatus(airwallexRes.status);
     subscription.nextBillingAt = asDate(airwallexRes.next_billing_at) || subscription.nextBillingAt;

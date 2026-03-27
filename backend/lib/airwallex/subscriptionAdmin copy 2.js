@@ -285,7 +285,6 @@ async function syncLocalSubscriptionFromAirwallex(airwallexSubscription, options
 }
 
 module.exports = {
-  asDate,
   normaliseStatus,
   fetchAirwallexSubscription,
   cancelAirwallexSubscription,
