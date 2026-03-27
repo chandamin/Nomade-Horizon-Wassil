@@ -39,11 +39,12 @@ async function getAirwallexToken() {
 
 router.get('/plans', async (req, res) => {
   try {
-    const { interval, currency } = req.query;
+    const { interval, currency, status } = req.query;
 
     const query = {};
     if (interval) query.interval = interval;
     if (currency) query.currency = currency;
+    if (status) query.status = status;
 
     const plans = await SubscriptionPlan
       .find(query)

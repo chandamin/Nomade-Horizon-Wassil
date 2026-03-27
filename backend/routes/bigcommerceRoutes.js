@@ -6,22 +6,16 @@ const MANAGEMENT_API_TOKEN = process.env.BC_API_TOKEN;
 const FRONTEND_CHECKOUT_URL = process.env.FRONTEND_CHECKOUT_URL || 'http://localhost:5173/checkout';
 const VIP_PRODUCT_ID = 210;
 const SubscriptionCustomer = require('../models/SubscriptionCustomer');
+const {
+  findDistinctSubscriptionProducts,
+  getEnabledSubscriptionProductIds,
+} = require('../lib/subscriptionProducts');
 
 const bcHeaders = {
   'X-Auth-Token': MANAGEMENT_API_TOKEN,
   'Content-Type': 'application/json',
   'Accept': 'application/json'
 };
-
-const SUBSCRIPTION_PRODUCT_IDS = (
-  process.env.SUBSCRIPTION_PRODUCT_IDS || ''
-)
-  .split(',')
-  .map((id) => Number(id.trim()))
-  .filter(Boolean);
-
-
-
 
 async function updateOrderStatus(orderId, statusId, storeHash, apiToken) {
   try {
@@ -182,16 +176,6 @@ async function sendOrderConfirmationEmail(order, customerEmail) {
   } catch (emailError) {
     console.warn('Email sending error:', emailError.message);
   }
-}
-
-function findSubscriptionProduct(cart, subscriptionProductIds = []) {
-  const physicalItems = cart?.lineItems?.physicalItems || [];
-  const digitalItems = cart?.lineItems?.digitalItems || [];
-  const allItems = [...physicalItems, ...digitalItems];
-
-  return allItems.find((item) =>
-    subscriptionProductIds.includes(Number(item.product_id))
-  );
 }
 
 router.get('/cart', async (req, res) => {
@@ -1486,62 +1470,72 @@ router.post('/subscription-customers/map', async (req, res) => {
       });
     }
 
-    const subscriptionProduct = findSubscriptionProduct(
+    const subscriptionProductIds = await getEnabledSubscriptionProductIds();
+    const subscriptionProducts = findDistinctSubscriptionProducts(
       cart,
-      SUBSCRIPTION_PRODUCT_IDS
+      subscriptionProductIds
     );
 
-    if (!subscriptionProduct) {
+    if (subscriptionProducts.length === 0) {
       return res.json({
         success: true,
         saved: false,
         message: 'No subscription product found. Mapping skipped.',
+        customers: [],
+        customer: null,
       });
     }
 
-    const doc = await SubscriptionCustomer.findOneAndUpdate(
-      {
-        bigcommerceCustomerId: bigcommerceCustomer.id,
-        subscriptionProductId: Number(subscriptionProduct.product_id),
-      },
-      {
-        $set: {
+    const customers = [];
+
+    for (const subscriptionProduct of subscriptionProducts) {
+      const doc = await SubscriptionCustomer.findOneAndUpdate(
+        {
           bigcommerceCustomerId: bigcommerceCustomer.id,
-          bigcommerceEmail: bigcommerceCustomer.email,
-          bigcommerceFirstName: bigcommerceCustomer.firstName,
-          bigcommerceLastName: bigcommerceCustomer.lastName,
-          bigcommercePhone: bigcommerceCustomer.phone,
-          bigcommerceCompany: bigcommerceCustomer.company,
-
-          airwallexCustomerId: airwallexCustomer.airwallexCustomerId,
-          airwallexName: airwallexCustomer.name,
-          airwallexEmail: airwallexCustomer.email,
-          airwallexType: airwallexCustomer.type,
-          airwallexPhoneNumber: airwallexCustomer.phone_number,
-
-          cartId: cart.id,
-          orderId: orderId || null,
-
           subscriptionProductId: Number(subscriptionProduct.product_id),
-          subscriptionProductName: subscriptionProduct.name,
-          isSubscriptionCustomer: true,
+        },
+        {
+          $set: {
+            bigcommerceCustomerId: bigcommerceCustomer.id,
+            bigcommerceEmail: bigcommerceCustomer.email,
+            bigcommerceFirstName: bigcommerceCustomer.firstName,
+            bigcommerceLastName: bigcommerceCustomer.lastName,
+            bigcommercePhone: bigcommerceCustomer.phone,
+            bigcommerceCompany: bigcommerceCustomer.company,
 
-          metadata: {
-            source: 'bigcommerce-checkout',
+            airwallexCustomerId: airwallexCustomer.airwallexCustomerId,
+            airwallexName: airwallexCustomer.name,
+            airwallexEmail: airwallexCustomer.email,
+            airwallexType: airwallexCustomer.type,
+            airwallexPhoneNumber: airwallexCustomer.phone_number,
+
+            cartId: cart.id,
+            orderId: orderId || null,
+
+            subscriptionProductId: Number(subscriptionProduct.product_id),
+            subscriptionProductName: subscriptionProduct.name,
+            isSubscriptionCustomer: true,
+
+            metadata: {
+              source: 'bigcommerce-checkout',
+            },
           },
         },
-      },
-      {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true,
-      }
-    );
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true,
+        }
+      );
+
+      customers.push(doc);
+    }
 
     return res.status(201).json({
       success: true,
       saved: true,
-      customer: doc,
+      customers,
+      customer: customers[0] || null,
     });
   } catch (err) {
     console.error('Subscription customer mapping error:', err);

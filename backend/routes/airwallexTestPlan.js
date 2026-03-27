@@ -7,6 +7,10 @@ const CustomerSubscription = require('../models/CustomerSubscription.js');
 const dayjs = require('dayjs');
 const crypto = require('crypto');
 const utc = require('dayjs/plugin/utc');  //  ADD UTC PLUGIN
+const {
+  findDistinctSubscriptionProducts,
+  getEnabledSubscriptionProductIds,
+} = require('../lib/subscriptionProducts');
 dayjs.extend(utc);     // EXTEND DAYJS WITH UTC
 
 
@@ -37,24 +41,14 @@ async function getAirwallexToken() {
   }
 }
 
-function findSubscriptionProduct(cart, subscriptionProductIds = []) {
-  const physicalItems = cart?.lineItems?.physicalItems || [];
-  const digitalItems = cart?.lineItems?.digitalItems || [];
-  const allItems = [...physicalItems, ...digitalItems];
-
-  return allItems.find((item) =>
-    subscriptionProductIds.includes(Number(item.product_id))
-  );
-}
-
-
 router.get('/plans', async (req, res) => {
   try {
-    const { interval, currency } = req.query;
+    const { interval, currency, status } = req.query;
 
     const query = {};
     if (interval) query.interval = interval;
     if (currency) query.currency = currency;
+    if (status) query.status = status;
 
     const plans = await SubscriptionPlan
       .find(query)
@@ -799,67 +793,61 @@ router.post('/subscriptions/provision', async (req, res) => {
       });
     }
 
-    const subscriptionProductIds = (
-      process.env.SUBSCRIPTION_PRODUCT_IDS || ''
-    )
-      .split(',')
-      .map((id) => Number(id.trim()))
-      .filter(Boolean);
-
-    const subscriptionProduct = findSubscriptionProduct(
+    const subscriptionProductIds = await getEnabledSubscriptionProductIds();
+    const subscriptionProducts = findDistinctSubscriptionProducts(
       cart,
       subscriptionProductIds
     );
 
-    if (!subscriptionProduct) {
+    if (subscriptionProducts.length === 0) {
       return res.json({
         success: true,
         provisioned: false,
         message: 'No subscription product found in order cart',
+        subscriptions: [],
+        subscription: null,
       });
     }
+    const token = await getAirwallexToken();
+    const { upsertSubscriptionProjection } = require('../lib/airwallex/subscriptionAdmin');
+    const subscriptions = [];
+    const errors = [];
 
-    const plan = await SubscriptionPlan.findOne({
-      bigcommerceProductId: Number(subscriptionProduct.product_id),
-    });
+    for (const subscriptionProduct of subscriptionProducts) {
+      const productId = Number(subscriptionProduct.product_id);
+      try {
+        const plan = await SubscriptionPlan.findOne({
+          bigcommerceProductId: productId,
+        });
 
-    if (!plan) {
-      return res.status(404).json({
-        error: 'No SubscriptionPlan found for BigCommerce product',
-      });
-    }
-    if (plan.status === 'disabled' || plan.active === false) {
-      return res.status(400).json({
-        error: 'SubscriptionPlan is disabled',
-      });
-    }
+      if (!plan) {
+        errors.push({
+          productId,
+          error: 'No SubscriptionPlan found for BigCommerce product',
+        });
+        continue;
+      }
+      if (plan.status === 'disabled' || plan.active === false) {
+        errors.push({
+          productId,
+          error: 'SubscriptionPlan is disabled',
+        });
+        continue;
+      }
 
     // const existing = await CustomerSubscription.findOne({
     //   bigcommerceProductId: Number(subscriptionProduct.product_id),
     // });
 
-    const existing = await CustomerSubscription.findOne({
-      airwallexCustomerId: airwallexCustomerId,
-      airwallexProductId: plan.airwallexProductId,
-      // status: { $in: ['active', 'trialing', 'pending'] }, // Only block if active/trialing
-    });
-
-    console.log('Existing subscription check:', {
-      airwallexCustomerId,
-      airwallexProductId: plan.airwallexProductId,
-      existing,
-    });
-
-    if (existing) {
-      return res.json({
-        success: true,
-        provisioned: false,
-        message: 'Subscription already provisioned for this order',
-        subscription: existing,
+      const existing = await CustomerSubscription.findOne({
+        airwallexCustomerId,
+        airwallexProductId: plan.airwallexProductId,
       });
-    }
 
-    const token = await getAirwallexToken();
+      if (existing) {
+        subscriptions.push(existing);
+        continue;
+      }
 
     let trialEndsAt = null;
     if (plan.trialDays && plan.trialDays > 0) {
@@ -899,7 +887,7 @@ router.post('/subscriptions/provision', async (req, res) => {
         metadata: {
           bigcommerceOrderId: String(orderId),
           bigcommerceCustomerId: String(bigcommerceCustomer.id),
-          bigcommerceProductId: String(subscriptionProduct.product_id),
+          bigcommerceProductId: String(productId),
         },
       },
       {
@@ -950,7 +938,7 @@ router.post('/subscriptions/provision', async (req, res) => {
     const saved = await CustomerSubscription.create({
       bigcommerceOrderId: Number(orderId),
       bigcommerceCustomerId: Number(bigcommerceCustomer.id),
-      bigcommerceProductId: Number(subscriptionProduct.product_id),
+      bigcommerceProductId: productId,
 
       airwallexCustomerId,
       airwallexProductId: plan.airwallexProductId,
@@ -977,8 +965,6 @@ router.post('/subscriptions/provision', async (req, res) => {
       },
     });
 
-    const { upsertSubscriptionProjection } = require('../lib/airwallex/subscriptionAdmin');
-
     const subscriptionProjection = await upsertSubscriptionProjection(
       saved,
       {
@@ -992,10 +978,32 @@ router.post('/subscriptions/provision', async (req, res) => {
       externalSubscriptionId: subscriptionProjection.externalSubscriptionId,
     });
 
+        subscriptions.push(saved);
+      } catch (productErr) {
+        errors.push({
+          productId,
+          error: productErr.response?.data || productErr.message,
+        });
+      }
+    }
+
+    if (subscriptions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        provisioned: false,
+        error: 'Failed to provision any subscriptions for this order',
+        subscriptions: [],
+        subscription: null,
+        errors,
+      });
+    }
+
     return res.status(201).json({
       success: true,
       provisioned: true,
-      subscription: saved,
+      subscriptions,
+      subscription: subscriptions[0] || null,
+      errors,
     });
   } catch (err) {
     console.error(

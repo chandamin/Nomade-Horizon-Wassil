@@ -43,6 +43,15 @@ export default function CheckoutLayout({
   const [shippingOptions, setShippingOptions] = useState([]);
   const [orderComplete, setOrderComplete] = useState(false);
   const [createdOrder, setCreatedOrder] = useState(null);
+  const VIP_PRODUCT_ID = 210; // replace
+  const fallbackSubscriptionProductIds = [...new Set([
+    VIP_PRODUCT_ID,
+    ...(import.meta.env.VITE_SUBSCRIPTION_PRODUCT_IDS || '')
+      .split(',')
+      .map((id) => Number(id.trim()))
+      .filter((id) => Number.isInteger(id) && id > 0),
+  ])];
+  const [subscriptionProductIds, setSubscriptionProductIds] = useState(fallbackSubscriptionProductIds);
 
 
   // Listen for Airwallex customer from ClientStep
@@ -58,8 +67,26 @@ export default function CheckoutLayout({
     return () => window.removeEventListener('airwallexCustomerReady', handleCustomerReady);
   }, []);
 
-  const VIP_PRODUCT_ID = 210; // replace
   const [isVipLoading, setIsVipLoading] = useState(false);
+
+  const getMappedSubscriptionProducts = (cartToCheck = cart) => {
+    const allItems = [
+      ...(cartToCheck?.lineItems?.physicalItems || []),
+      ...(cartToCheck?.lineItems?.digitalItems || []),
+    ];
+    const seen = new Set();
+
+    return allItems.filter((item) => {
+      const productId = Number(item.product_id);
+
+      if (!subscriptionProductIds.includes(productId) || seen.has(productId)) {
+        return false;
+      }
+
+      seen.add(productId);
+      return true;
+    });
+  };
 
 
   // const vipSelected = !!cart?.lineItems?.physicalItems?.some(
@@ -74,14 +101,52 @@ export default function CheckoutLayout({
   const DISCOUNT_DURATION = 10 * 60; // 10 minutes in seconds
   const [timeLeft, setTimeLeft] = useState(DISCOUNT_DURATION);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadEnabledPlans = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans?status=enabled`,
+          {
+            headers: {
+              Accept: 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(`Failed to load enabled plans: ${res.status}`);
+        }
+
+        const plans = await res.json();
+        const ids = [...new Set(
+          (Array.isArray(plans) ? plans : [])
+            .map((plan) => Number(plan.bigcommerceProductId))
+            .filter((id) => Number.isInteger(id) && id > 0)
+        )];
+
+        if (mounted) {
+          setSubscriptionProductIds(ids);
+        }
+      } catch (err) {
+        console.warn('Failed to load enabled subscription plans, using fallback product IDs:', err.message);
+      }
+    };
+
+    loadEnabledPlans();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
 
   const ensureAirwallexCustomerForSubscription = async (cartToCheck = cart) => {
-    const subscriptionProduct = [
-      ...(cartToCheck?.lineItems?.physicalItems || []),
-      ...(cartToCheck?.lineItems?.digitalItems || []),
-    ].find((item) => Number(item.product_id) === VIP_PRODUCT_ID);
+    const subscriptionProducts = getMappedSubscriptionProducts(cartToCheck);
 
-    if (!subscriptionProduct) {
+    if (subscriptionProducts.length === 0) {
       console.log("ℹ️ No subscription product in cart, Airwallex customer not needed yet");
       return null;
     }
@@ -99,7 +164,7 @@ export default function CheckoutLayout({
     };
 
     console.log("👤 [AW CUSTOMER] Ensuring Airwallex customer before payment", {
-      hasSubscriptionProduct: true,
+      subscriptionProductCount: subscriptionProducts.length,
       email: payload.email,
       hasClientData: !!clientData?.email,
       hasBigcommerceCustomer: !!bigcommerceCustomer?.id,
@@ -309,18 +374,15 @@ export default function CheckoutLayout({
 
     let awCustomer = airwallexCustomer;
 
-    const subscriptionProduct = [
-      ...(latestCart?.lineItems?.physicalItems || []),
-      ...(latestCart?.lineItems?.digitalItems || []),
-    ].find((item) => Number(item.product_id) === VIP_PRODUCT_ID);
+    const subscriptionProducts = getMappedSubscriptionProducts(latestCart);
 
-    if (subscriptionProduct && !bigcommerceCustomer?.id) {
+    if (subscriptionProducts.length > 0 && !bigcommerceCustomer?.id) {
       setIsPlacingOrder(false);
       alert("Customer details are missing. Please go back to the first step and try again.");
       return;
     }
 
-    if (subscriptionProduct) {
+    if (subscriptionProducts.length > 0) {
       try {
         console.log('🔁 Subscription product found in final cart. Starting mapping flow...');
 
@@ -342,8 +404,14 @@ export default function CheckoutLayout({
             bigcommerceCustomer,
             airwallexCustomer: awCustomer,
           });
+          const mappedCustomers = mappingResult?.customers || (
+            mappingResult?.customer ? [mappingResult.customer] : []
+          );
 
-          console.log(' Subscription customer mapped:', mappingResult);
+          console.log(' Subscription customer mapped:', {
+            count: mappedCustomers.length,
+            productIds: mappedCustomers.map((customer) => Number(customer.subscriptionProductId)),
+          });
         } else {
           console.warn('⚠️ Missing Airwallex customer or BigCommerce customer, skipping mapping');
         }
@@ -468,7 +536,7 @@ export default function CheckoutLayout({
         if (result.success) {
           console.log(' Order created:', result);
 
-          if (subscriptionProduct && awCustomer && bigcommerceCustomer) {
+          if (subscriptionProducts.length > 0 && awCustomer && bigcommerceCustomer) {
             try {
               console.log('📤 [CHECKOUTLAYOUT] Calling provision with:', {
                 orderId: result.orderId,
@@ -476,6 +544,7 @@ export default function CheckoutLayout({
                 paymentSourceIdPrefix: paymentSourceId?.substring(0, 4),
                 hasAwCustomer: !!awCustomer,
                 hasBigCommerceCustomer: !!bigcommerceCustomer,
+                subscriptionProductIds: subscriptionProducts.map((item) => Number(item.product_id)),
               });
               const subscriptionProvisionResult = await onProvisionSubscription?.({
                 orderId: result.orderId,
@@ -484,8 +553,14 @@ export default function CheckoutLayout({
                 airwallexCustomer: awCustomer,
                 paymentSourceId,
               });
+              const provisionedSubscriptions = subscriptionProvisionResult?.subscriptions || (
+                subscriptionProvisionResult?.subscription ? [subscriptionProvisionResult.subscription] : []
+              );
 
-              console.log('Subscription provisioned:', subscriptionProvisionResult);
+              console.log('Subscription provisioned:', {
+                count: provisionedSubscriptions.length,
+                errors: subscriptionProvisionResult?.errors || [],
+              });
             } catch (subErr) {
               console.warn('⚠️ Subscription provisioning failed:', subErr.message);
             }
