@@ -9,19 +9,17 @@ export default function Subscriptions() {
   const [actionLoading, setActionLoading] = useState({})
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  
-  // ✅ Cancel modal state
-  const [cancelModal, setCancelModal] = useState({ 
-    open: false, 
+
+  const [cancelModal, setCancelModal] = useState({
+    open: false,
     subscriptionId: null,
-    subscription: null 
+    subscription: null,
   })
-  
-  // ✅ NEW: Edit modal state
-  const [editModal, setEditModal] = useState({ 
-    open: false, 
+
+  const [editModal, setEditModal] = useState({
+    open: false,
     subscriptionId: null,
-    subscription: null 
+    subscription: null,
   })
 
   useEffect(() => {
@@ -32,7 +30,7 @@ export default function Subscriptions() {
     try {
       setLoading(true)
       setError('')
-      
+
       const res = await fetch(API_BASE, {
         headers: {
           'ngrok-skip-browser-warning': 'true',
@@ -54,7 +52,7 @@ export default function Subscriptions() {
   }
 
   const setRowLoading = (id, value) => {
-    setActionLoading(prev => ({ ...prev, [id]: value }))
+    setActionLoading((prev) => ({ ...prev, [id]: value }))
   }
 
   const syncSubscription = async (id) => {
@@ -77,9 +75,7 @@ export default function Subscriptions() {
       }
 
       if (data?.subscription) {
-        setSubs(prev =>
-          prev.map(sub => (sub._id === id ? data.subscription : sub))
-        )
+        setSubs((prev) => prev.map((sub) => (sub._id === id ? data.subscription : sub)))
       }
 
       setSuccess('Subscription synced successfully')
@@ -90,7 +86,6 @@ export default function Subscriptions() {
     }
   }
 
-  // ✅ UPDATED: Cancel subscription with proration_behavior
   const cancelSubscription = async (id, prorationBehavior = 'PRORATED') => {
     try {
       setRowLoading(id, true)
@@ -103,8 +98,8 @@ export default function Subscriptions() {
           'ngrok-skip-browser-warning': 'true',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          proration_behavior: prorationBehavior
+        body: JSON.stringify({
+          proration_behavior: prorationBehavior,
         }),
       })
 
@@ -115,9 +110,7 @@ export default function Subscriptions() {
       }
 
       if (data?.subscription) {
-        setSubs(prev =>
-          prev.map(sub => (sub._id === id ? data.subscription : sub))
-        )
+        setSubs((prev) => prev.map((sub) => (sub._id === id ? data.subscription : sub)))
       } else {
         await loadSubscriptions()
       }
@@ -130,7 +123,6 @@ export default function Subscriptions() {
     }
   }
 
-  // ✅ NEW: Update subscription function
   const updateSubscription = async (id, updatePayload) => {
     try {
       setRowLoading(id, true)
@@ -152,11 +144,8 @@ export default function Subscriptions() {
         throw new Error(data?.error || data?.details || 'Failed to update subscription')
       }
 
-      // Update local state with updated subscription
       if (data?.subscription) {
-        setSubs(prev =>
-          prev.map(sub => (sub._id === id ? data.subscription : sub))
-        )
+        setSubs((prev) => prev.map((sub) => (sub._id === id ? data.subscription : sub)))
       }
 
       setSuccess('Subscription updated successfully')
@@ -169,9 +158,7 @@ export default function Subscriptions() {
     }
   }
 
-  // ✅ NEW: Handle edit form submission
   const handleEditSubmit = async (subscriptionId, formData) => {
-    // Build payload with only changed/provided fields
     const payload = {}
 
     if (formData.cancel_at_period_end !== undefined) {
@@ -187,13 +174,12 @@ export default function Subscriptions() {
     }
 
     if (formData.trial_ends_at) {
-      // 'NOW' ends the trial immediately — send current UTC time
-      payload.trial_ends_at = formData.trial_ends_at === 'NOW'
-        ? new Date().toISOString()
-        : new Date(formData.trial_ends_at).toISOString()
+      payload.trial_ends_at =
+        formData.trial_ends_at === 'NOW'
+          ? new Date().toISOString()
+          : new Date(formData.trial_ends_at).toISOString()
     }
 
-    // Only include numeric fields if user actually entered a value
     if (formData.days_until_due !== '') {
       payload.days_until_due = Number(formData.days_until_due)
     }
@@ -210,7 +196,7 @@ export default function Subscriptions() {
   }
 
   const filteredSubs = useMemo(() => {
-    return subs.filter(sub => {
+    return subs.filter((sub) => {
       const email = sub.customerEmail || ''
       const plan = sub.planName || ''
       const externalId = sub.externalSubscriptionId || ''
@@ -225,147 +211,212 @@ export default function Subscriptions() {
   }, [subs, search])
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading subscriptions…</div>
+    return <div className="p-4 sm:p-6 md:p-8 text-center text-sm sm:text-base text-gray-500">Loading subscriptions…</div>
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Subscriptions</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          Manage customer subscriptions and sync with Airwallex
-        </p>
+        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Subscriptions</h1>
+        <p className="mt-1 text-sm text-gray-600">Manage customer subscriptions and sync with Airwallex</p>
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 mb-4">
-          {error}
-        </div>
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       ) : null}
 
       {success ? (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 mb-4">
-          {success}
-        </div>
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{success}</div>
       ) : null}
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <input
           type="text"
           placeholder="Search by customer email, plan, or Airwallex subscription id..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full md:w-1/2 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 md:max-w-xl"
         />
 
         <button
           onClick={loadSubscriptions}
-          className="px-4 py-2 rounded-lg bg-gray-800 text-white text-sm hover:bg-gray-900 transition"
+          className="w-full rounded-lg bg-gray-800 px-4 py-2 text-sm text-white transition hover:bg-gray-900 md:w-auto"
         >
           Refresh List
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-100">
-            <tr>
-              <TableHead>Email</TableHead>
-              <TableHead>Plan</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>External ID</TableHead>
-              <TableHead>Next Billing</TableHead>
-              <TableHead>Actions</TableHead>
-            </tr>
-          </thead>
-
-          <tbody className="divide-y divide-gray-100">
-            {filteredSubs.length > 0 ? (
-              filteredSubs.map(sub => {
-                const busy = !!actionLoading[sub._id]
-
-                return (
-                  <tr key={sub._id} className="hover:bg-gray-50">
-                    <TableCell>{sub.customerEmail || '-'}</TableCell>
-                    <TableCell>{sub.planName || '-'}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={sub.status} />
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs text-gray-600 break-all">
-                        {sub.externalSubscriptionId || '-'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {sub?.metadata?.nextBillingAt
-                        ? new Date(sub.metadata.nextBillingAt).toLocaleString()
-                        : sub?.nextBillingAt 
-                        ? new Date(sub.nextBillingAt).toLocaleString()
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        <ActionBtn
-                          color="blue"
-                          disabled={busy}
-                          onClick={() => syncSubscription(sub._id)}
-                        >
-                          {busy ? 'Working...' : 'Sync'}
-                        </ActionBtn>
-
-                        {/* ✅ NEW: Edit button */}
-                        {sub.status !== 'cancelled' && (
-                          <ActionBtn
-                            color="indigo"
-                            disabled={busy}
-                            onClick={() => setEditModal({ 
-                              open: true, 
-                              subscriptionId: sub._id,
-                              subscription: sub 
-                            })}
-                          >
-                            {busy ? 'Working...' : 'Edit'}
-                          </ActionBtn>
-                        )}
-
-                        {sub.status !== 'cancelled' && (
-                          <ActionBtn
-                            color="red"
-                            disabled={busy}
-                            onClick={() => setCancelModal({ 
-                              open: true, 
-                              subscriptionId: sub._id,
-                              subscription: sub 
-                            })}
-                          >
-                            {busy ? 'Working...' : 'Cancel'}
-                          </ActionBtn>
-                        )}
-
-                        {/* <ActionBtn
-                          color="indigo"
-                          disabled={busy}
-                          onClick={() => syncOrders(sub._id)}
-                        >
-                          {busy ? 'Working...' : 'Sync Orders'}
-                        </ActionBtn> */}
-                      </div>
-                    </TableCell>
-                  </tr>
-                )
-              })
-            ) : (
+      <div className="hidden overflow-hidden rounded-xl bg-white shadow md:block">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-100">
               <tr>
-                <td colSpan="6" className="text-center py-6 text-gray-500">
-                  No subscriptions found
-                </td>
+                <TableHead>Email</TableHead>
+                <TableHead>Plan</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>External ID</TableHead>
+                <TableHead>Next Billing</TableHead>
+                <TableHead>Actions</TableHead>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody className="divide-y divide-gray-100">
+              {filteredSubs.length > 0 ? (
+                filteredSubs.map((sub) => {
+                  const busy = !!actionLoading[sub._id]
+
+                  return (
+                    <tr key={sub._id} className="hover:bg-gray-50">
+                      <TableCell>{sub.customerEmail || '-'}</TableCell>
+                      <TableCell>{sub.planName || '-'}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={sub.status} />
+                      </TableCell>
+                      <TableCell>
+                        <span className="break-all text-xs text-gray-600">{sub.externalSubscriptionId || '-'}</span>
+                      </TableCell>
+                      <TableCell>
+                        {sub?.metadata?.nextBillingAt
+                          ? new Date(sub.metadata.nextBillingAt).toLocaleString()
+                          : sub?.nextBillingAt
+                            ? new Date(sub.nextBillingAt).toLocaleString()
+                            : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-2">
+                          <ActionBtn color="blue" disabled={busy} onClick={() => syncSubscription(sub._id)}>
+                            {busy ? 'Working...' : 'Sync'}
+                          </ActionBtn>
+
+                          {sub.status !== 'cancelled' && (
+                            <ActionBtn
+                              color="indigo"
+                              disabled={busy}
+                              onClick={() =>
+                                setEditModal({
+                                  open: true,
+                                  subscriptionId: sub._id,
+                                  subscription: sub,
+                                })
+                              }
+                            >
+                              {busy ? 'Working...' : 'Edit'}
+                            </ActionBtn>
+                          )}
+
+                          {sub.status !== 'cancelled' && (
+                            <ActionBtn
+                              color="red"
+                              disabled={busy}
+                              onClick={() =>
+                                setCancelModal({
+                                  open: true,
+                                  subscriptionId: sub._id,
+                                  subscription: sub,
+                                })
+                              }
+                            >
+                              {busy ? 'Working...' : 'Cancel'}
+                            </ActionBtn>
+                          )}
+                        </div>
+                      </TableCell>
+                    </tr>
+                  )
+                })
+              ) : (
+                <tr>
+                  <td colSpan="6" className="py-6 text-center text-gray-500">
+                    No subscriptions found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* ✅ Cancel Modal */}
+      <div className="space-y-4 md:hidden">
+        {filteredSubs.length > 0 ? (
+          filteredSubs.map((sub) => {
+            const busy = !!actionLoading[sub._id]
+
+            return (
+              <div key={sub._id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="space-y-3">
+                  <InfoRow label="Email" value={sub.customerEmail || '-'} />
+                  <InfoRow label="Plan" value={sub.planName || '-'} />
+                  <div>
+                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">Status</p>
+                    <StatusBadge status={sub.status} />
+                  </div>
+                  <InfoRow
+                    label="External ID"
+                    value={sub.externalSubscriptionId || '-'}
+                    valueClassName="break-all text-xs text-gray-600"
+                  />
+                  <InfoRow
+                    label="Next Billing"
+                    value={
+                      sub?.metadata?.nextBillingAt
+                        ? new Date(sub.metadata.nextBillingAt).toLocaleString()
+                        : sub?.nextBillingAt
+                          ? new Date(sub.nextBillingAt).toLocaleString()
+                          : '-'
+                    }
+                  />
+
+                  <div>
+                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Actions</p>
+                    <div className="flex flex-wrap gap-2">
+                      <ActionBtn color="blue" disabled={busy} onClick={() => syncSubscription(sub._id)}>
+                        {busy ? 'Working...' : 'Sync'}
+                      </ActionBtn>
+
+                      {sub.status !== 'cancelled' && (
+                        <ActionBtn
+                          color="indigo"
+                          disabled={busy}
+                          onClick={() =>
+                            setEditModal({
+                              open: true,
+                              subscriptionId: sub._id,
+                              subscription: sub,
+                            })
+                          }
+                        >
+                          {busy ? 'Working...' : 'Edit'}
+                        </ActionBtn>
+                      )}
+
+                      {sub.status !== 'cancelled' && (
+                        <ActionBtn
+                          color="red"
+                          disabled={busy}
+                          onClick={() =>
+                            setCancelModal({
+                              open: true,
+                              subscriptionId: sub._id,
+                              subscription: sub,
+                            })
+                          }
+                        >
+                          {busy ? 'Working...' : 'Cancel'}
+                        </ActionBtn>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        ) : (
+          <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500 shadow-sm">
+            No subscriptions found
+          </div>
+        )}
+      </div>
+
       {cancelModal.open && (
         <CancelModal
           subscription={cancelModal.subscription}
@@ -377,7 +428,6 @@ export default function Subscriptions() {
         />
       )}
 
-      {/* ✅ NEW: Edit Modal */}
       {editModal.open && (
         <EditSubscriptionModal
           subscription={editModal.subscription}
@@ -389,21 +439,24 @@ export default function Subscriptions() {
   )
 }
 
-/* ---------- UI Components ---------- */
-
 function TableHead({ children }) {
   return (
-    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+    <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
       {children}
     </th>
   )
 }
 
 function TableCell({ children }) {
+  return <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{children}</td>
+}
+
+function InfoRow({ label, value, valueClassName = 'text-sm text-gray-900 break-words' }) {
   return (
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-      {children}
-    </td>
+    <div>
+      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
+      <p className={valueClassName}>{value}</p>
+    </div>
   )
 }
 
@@ -417,15 +470,11 @@ function StatusBadge({ status }) {
     cancelled: { label: 'Cancelled', className: 'bg-red-100 text-red-800' },
     paused: { label: 'Paused', className: 'bg-yellow-100 text-yellow-800' },
     expired: { label: 'Expired', className: 'bg-gray-200 text-gray-600' },
-  };
+  }
 
-  const config = statusConfig[status] || statusConfig.pending;
+  const config = statusConfig[status] || statusConfig.pending
 
-  return (
-    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${config.className}`}>
-      {config.label}
-    </span>
-  );
+  return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${config.className}`}>{config.label}</span>
 }
 
 function ActionBtn({ color, children, disabled, ...props }) {
@@ -434,33 +483,28 @@ function ActionBtn({ color, children, disabled, ...props }) {
     red: 'bg-red-500 hover:bg-red-600',
     indigo: 'bg-indigo-500 hover:bg-indigo-600',
   }
-  
+
   return (
     <button
       {...props}
       disabled={disabled}
-      className={`px-3 py-1 text-white text-xs rounded transition ${
-        colors[color]
-      } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+      className={`rounded px-3 py-2 text-xs text-white transition sm:py-1 ${colors[color]} ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
     >
       {children}
     </button>
   )
 }
 
-// Cancel Modal Component with Proration Options
 function CancelModal({ subscription, onClose, onConfirm }) {
   const [proration, setProration] = useState('PRORATED')
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">
-          Cancel Subscription
-        </h3>
-        
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-4 shadow-xl sm:p-6">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">Cancel Subscription</h3>
+
         {subscription && (
-          <div className="mb-4 p-3 bg-gray-50 rounded text-sm">
+          <div className="mb-4 rounded bg-gray-50 p-3 text-sm">
             <p className="text-gray-600">
               <span className="font-medium">Customer:</span> {subscription.customerEmail || 'N/A'}
             </p>
@@ -473,34 +517,32 @@ function CancelModal({ subscription, onClose, onConfirm }) {
           </div>
         )}
 
-        <p className="text-sm text-gray-600 mb-4">
-          Choose how to handle refunds for the current billing period:
-        </p>
-        
-        <div className="space-y-3 mb-6">
+        <p className="mb-4 text-sm text-gray-600">Choose how to handle refunds for the current billing period:</p>
+
+        <div className="mb-6 space-y-3">
           {[
-            { 
-              value: 'ALL', 
-              label: 'Full refund', 
+            {
+              value: 'ALL',
+              label: 'Full refund',
               desc: 'Refund entire current period charge',
-              color: 'text-green-600'
+              color: 'text-green-600',
             },
-            { 
-              value: 'PRORATED', 
-              label: 'Prorated refund', 
+            {
+              value: 'PRORATED',
+              label: 'Prorated refund',
               desc: 'Refund unused portion only (recommended)',
-              color: 'text-blue-600'
+              color: 'text-blue-600',
             },
-            { 
-              value: 'NONE', 
-              label: 'No refund', 
+            {
+              value: 'NONE',
+              label: 'No refund',
               desc: 'Keep current period charge',
-              color: 'text-red-600'
+              color: 'text-red-600',
             },
-          ].map(option => (
-            <label 
-              key={option.value} 
-              className={`flex items-start gap-3 p-3 border rounded cursor-pointer hover:bg-gray-50 transition ${
+          ].map((option) => (
+            <label
+              key={option.value}
+              className={`flex cursor-pointer items-start gap-3 rounded border p-3 transition hover:bg-gray-50 ${
                 proration === option.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
               }`}
             >
@@ -513,23 +555,23 @@ function CancelModal({ subscription, onClose, onConfirm }) {
                 className="mt-1"
               />
               <div>
-                <span className={`font-medium text-sm ${option.color}`}>{option.label}</span>
+                <span className={`text-sm font-medium ${option.color}`}>{option.label}</span>
                 <p className="text-xs text-gray-500">{option.desc}</p>
               </div>
             </label>
           ))}
         </div>
-        
-        <div className="flex justify-end gap-3">
-          <button 
-            onClick={onClose} 
-            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded border border-gray-300"
+
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            onClick={onClose}
+            className="w-full rounded border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 sm:w-auto"
           >
             Keep Subscription
           </button>
-          <button 
+          <button
             onClick={() => onConfirm(proration)}
-            className="px-4 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition"
+            className="w-full rounded bg-red-500 px-4 py-2 text-sm text-white transition hover:bg-red-600 sm:w-auto"
           >
             Cancel Subscription
           </button>
@@ -539,7 +581,6 @@ function CancelModal({ subscription, onClose, onConfirm }) {
   )
 }
 
-// ✅ NEW: Edit Subscription Modal Component
 function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     cancel_at_period_end: subscription?.cancelAtPeriodEnd || false,
@@ -555,8 +596,7 @@ function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
   const [sourcesError, setSourcesError] = useState('')
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    // Auto-fetch payment sources when switching to AUTO_CHARGE
+    setFormData((prev) => ({ ...prev, [field]: value }))
     if (field === 'collection_method' && value === 'AUTO_CHARGE') {
       fetchPaymentSources()
     }
@@ -572,9 +612,8 @@ function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed to fetch payment sources')
       setPaymentSources(data.payment_sources || [])
-      // Auto-select if only one source available
       if (data.payment_sources?.length === 1) {
-        setFormData(prev => ({ ...prev, payment_source_id: data.payment_sources[0].id }))
+        setFormData((prev) => ({ ...prev, payment_source_id: data.payment_sources[0].id }))
       }
     } catch (err) {
       setSourcesError(err.message)
@@ -586,7 +625,7 @@ function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
-    
+
     try {
       await onSubmit(subscription._id, formData)
     } finally {
@@ -595,14 +634,12 @@ function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">
-          Edit Subscription
-        </h3>
-        
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-4 shadow-xl sm:p-6">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">Edit Subscription</h3>
+
         {subscription && (
-          <div className="mb-4 p-3 bg-gray-50 rounded text-sm space-y-1">
+          <div className="mb-4 space-y-1 rounded bg-gray-50 p-3 text-sm">
             <p className="text-gray-600">
               <span className="font-medium">Customer:</span> {subscription.customerEmail || 'N/A'}
             </p>
@@ -612,62 +649,57 @@ function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
             <p className="text-gray-600">
               <span className="font-medium">Status:</span> <StatusBadge status={subscription.status} />
             </p>
-            <p className="text-gray-600">
+            <p className="break-all text-gray-600">
               <span className="font-medium">Airwallex ID:</span> {subscription.externalSubscriptionId || 'N/A'}
             </p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Cancel at period end toggle */}
           <div>
-            <label className="flex items-center gap-3 cursor-pointer">
+            <label className="flex cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
                 checked={formData.cancel_at_period_end}
                 onChange={(e) => handleChange('cancel_at_period_end', e.target.checked)}
-                className="h-4 w-4 text-indigo-600 rounded"
+                className="mt-0.5 h-4 w-4 rounded text-indigo-600"
               />
               <div>
-                <span className="font-medium text-sm text-gray-900">Cancel at period end</span>
+                <span className="text-sm font-medium text-gray-900">Cancel at period end</span>
                 <p className="text-xs text-gray-500">Schedule cancellation after current billing cycle</p>
               </div>
             </label>
           </div>
 
-          {/* Collection method */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Collection Method
-            </label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Collection Method</label>
             <select
               value={formData.collection_method}
               onChange={(e) => handleChange('collection_method', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">— Keep current —</option>
               <option value="AUTO_CHARGE">Auto Charge</option>
               <option value="CHARGE_ON_CHECKOUT">Charge on Checkout</option>
               <option value="OUT_OF_BAND">Out of Band</option>
             </select>
-            <p className="text-xs text-gray-500 mt-1">How payment is collected for this subscription</p>
+            <p className="mt-1 text-xs text-gray-500">How payment is collected for this subscription</p>
           </div>
 
-          {/* Payment source — required when switching to AUTO_CHARGE */}
           {formData.collection_method === 'AUTO_CHARGE' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
                 Payment Source <span className="text-red-500">*</span>
               </label>
               {sourcesLoading ? (
-                <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
-                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-500 inline-block"></span>
+                <div className="flex items-center gap-2 py-2 text-sm text-gray-500">
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-indigo-500"></span>
                   Loading saved payment methods…
                 </div>
               ) : sourcesError ? (
-                <div className="text-sm text-red-600 py-1">{sourcesError}</div>
+                <div className="py-1 text-sm text-red-600">{sourcesError}</div>
               ) : paymentSources.length === 0 ? (
-                <div className="text-sm text-amber-600 py-1 bg-amber-50 px-3 rounded border border-amber-200">
+                <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-600">
                   No saved payment sources found for this customer.
                 </div>
               ) : (
@@ -675,64 +707,56 @@ function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
                   value={formData.payment_source_id}
                   onChange={(e) => handleChange('payment_source_id', e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">— Select a payment source —</option>
-                  {paymentSources.map(src => (
+                  {paymentSources.map((src) => (
                     <option key={src.id} value={src.id}>
-                      {src.id} {src.external_id ? `· ${src.external_id}` : ''} {src.created_at ? `· Added ${new Date(src.created_at).toLocaleDateString()}` : ''}
+                      {src.id} {src.external_id ? `· ${src.external_id}` : ''}{' '}
+                      {src.created_at ? `· Added ${new Date(src.created_at).toLocaleDateString()}` : ''}
                     </option>
                   ))}
                 </select>
               )}
-              <p className="text-xs text-gray-500 mt-1">Saved card on file for this customer</p>
+              <p className="mt-1 text-xs text-gray-500">Saved card on file for this customer</p>
             </div>
           )}
 
-          {/* Trial end date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Trial End Date
-            </label>
-            <div className="flex gap-2">
+            <label className="mb-1 block text-sm font-medium text-gray-700">Trial End Date</label>
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 type="datetime-local"
                 value={formData.trial_ends_at}
                 onChange={(e) => handleChange('trial_ends_at', e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <button
                 type="button"
                 onClick={() => handleChange('trial_ends_at', 'NOW')}
-                className="px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded border border-red-200"
+                className="w-full rounded border border-red-200 px-3 py-2 text-xs text-red-600 hover:bg-red-50 sm:w-auto"
               >
                 End Now
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Set when trial ends, or click "End Now" to terminate immediately</p>
+            <p className="mt-1 text-xs text-gray-500">Set when trial ends, or click &quot;End Now&quot; to terminate immediately</p>
           </div>
 
-          {/* Days until due */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Days Until Due
-            </label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Days Until Due</label>
             <input
               type="number"
               min="0"
               value={formData.days_until_due}
               onChange={(e) => handleChange('days_until_due', e.target.value)}
               placeholder="e.g., 7"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
-            <p className="text-xs text-gray-500 mt-1">Days from invoice finalization until payment is due</p>
+            <p className="mt-1 text-xs text-gray-500">Days from invoice finalization until payment is due</p>
           </div>
 
-          {/* Default tax percent */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Default Tax Percent
-            </label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Default Tax Percent</label>
             <input
               type="number"
               min="0"
@@ -741,29 +765,28 @@ function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
               value={formData.default_tax_percent}
               onChange={(e) => handleChange('default_tax_percent', e.target.value)}
               placeholder="e.g., 20.00"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
-            <p className="text-xs text-gray-500 mt-1">Tax percentage (0-100) applied to invoices (exclusive)</p>
+            <p className="mt-1 text-xs text-gray-500">Tax percentage (0-100) applied to invoices (exclusive)</p>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <button 
+          <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
+            <button
               type="button"
-              onClick={onClose} 
+              onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded border border-gray-300 disabled:opacity-50"
+              className="w-full rounded border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50 sm:w-auto"
             >
               Cancel
             </button>
-            <button 
+            <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 text-sm bg-indigo-500 text-white rounded hover:bg-indigo-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded bg-indigo-500 px-4 py-2 text-sm text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {submitting ? (
                 <>
-                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                  <span className="h-4 w-4 animate-spin rounded-full border-b-2 border-white"></span>
                   Saving...
                 </>
               ) : (
