@@ -43,6 +43,7 @@ app.use(cors({
       'http://192.168.29.30:5173',
       'https://airwall.kaswebtechsolutions.com',
       'checkout.nomade-horizon.com',
+      'http://checkout.nomade-horizon.com',
       'https://checkout.nomade-horizon.com',
       'apicheckout.nomade-horizon.com',
       'http://apicheckout.nomade-horizon.com',
@@ -66,6 +67,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
 }));
+
+app.options('*', cors(corsOptions));
 
 /**
  * ---------------------------------------
