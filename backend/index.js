@@ -6,6 +6,44 @@ const connectDB = require('./db/mongo');
 
 const app = express();
 
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      process.env.FRONTEND_URL?.replace(/\/$/, ''), // remove trailing slash
+      process.env.BACKEND_URL?.replace(/\/$/, ''),
+      'https://airwall.kaswebtechsolutions.com',
+      'http://localhost:5173',
+      'http://192.168.29.30:5173',
+      'https://airwall.kaswebtechsolutions.com',
+      'http://checkout.nomade-horizon.com',
+      'https://checkout.nomade-horizon.com',
+      'http://apicheckout.nomade-horizon.com',
+      // Add ngrok pattern - allows any ngrok-free.dev subdomain
+      /https:\/\/[a-z0-9-]+\.ngrok-free\.dev$/,
+    ].filter(Boolean); // remove undefined/null values
+
+    if (allowedOrigins.some(pattern => 
+      typeof pattern === 'string' 
+        ? origin === pattern 
+        : pattern.test(origin)
+    )) {
+      callback(null, true);
+    } else {
+      console.warn('🚫 CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+}));
+
+app.options('*', cors(corsOptions));
+
 app.use(express.json({
   verify: (req, res, buf) => {
     req.rawBody = buf.toString('utf8');
@@ -30,45 +68,7 @@ app.use((req, res, next) => {
 //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
 // }));
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      process.env.FRONTEND_URL?.replace(/\/$/, ''), // remove trailing slash
-      process.env.BACKEND_URL?.replace(/\/$/, ''),
-      'https://airwall.kaswebtechsolutions.com',
-      'http://localhost:5173',
-      'http://192.168.29.30:5173',
-      'https://airwall.kaswebtechsolutions.com',
-      'checkout.nomade-horizon.com',
-      'http://checkout.nomade-horizon.com',
-      'https://checkout.nomade-horizon.com',
-      'apicheckout.nomade-horizon.com',
-      'http://apicheckout.nomade-horizon.com',
-      // Add ngrok pattern - allows any ngrok-free.dev subdomain
-      /https:\/\/[a-z0-9-]+\.ngrok-free\.dev$/,
-    ].filter(Boolean); // remove undefined/null values
 
-    if (allowedOrigins.some(pattern => 
-      typeof pattern === 'string' 
-        ? origin === pattern 
-        : pattern.test(origin)
-    )) {
-      callback(null, true);
-    } else {
-      console.warn('🚫 CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-}));
-
-app.options('*', cors(corsOptions));
 
 /**
  * ---------------------------------------
