@@ -13,13 +13,12 @@ const {
 } = require('../lib/subscriptionProducts');
 dayjs.extend(utc);     // EXTEND DAYJS WITH UTC
 
-
-
+const TEST_BASE = process.env.AIRWALLEX_BASE_URL || 'https://api-demo.airwallex.com';
 
 async function getAirwallexToken() {
   try {
     const res = await axios.post(
-      'https://api-demo.airwallex.com/api/v1/authentication/login',
+      `${TEST_BASE}/api/v1/authentication/login`,
       {}, //  EMPTY BODY
       {
         headers: {
@@ -105,7 +104,7 @@ router.post('/plans', async (req, res) => {
 
     // 2️⃣ Create Product
     const productRes = await axios.post(
-      'https://api-demo.airwallex.com/api/v1/products/create',
+      `${TEST_BASE}/api/v1/products/create`,
       {
         request_id: crypto.randomUUID(),
         name,
@@ -117,7 +116,7 @@ router.post('/plans', async (req, res) => {
 
     // 3️⃣ Create Price
     const priceRes = await axios.post(
-      'https://api-demo.airwallex.com/api/v1/prices/create',
+      `${TEST_BASE}/api/v1/prices/create`,
       {
         request_id: crypto.randomUUID(),
         product_id: productRes.data.id,
@@ -183,7 +182,7 @@ router.put('/plans/:id', async (req, res) => {
 
     // 2️⃣ Update Airwallex Product
     await axios.post(
-      `https://api-demo.airwallex.com/api/v1/products/${plan.airwallexProductId}/update`,
+      `${TEST_BASE}/api/v1/products/${plan.airwallexProductId}/update`,
       {
         request_id: crypto.randomUUID(),
         ...(name && { name }),
@@ -261,7 +260,7 @@ router.post('/billing-customers', async (req, res) => {
     try {
       //  CORRECT ENDPOINT: /api/v1/billing_customers (NOT /list)
       const listRes = await axios.get(
-        'https://api-demo.airwallex.com/api/v1/billing_customers',
+        `${TEST_BASE}/api/v1/billing_customers`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -322,7 +321,7 @@ router.post('/billing-customers', async (req, res) => {
     // ➕ STEP 3: Create new customer if not found
     console.log('🆕 Creating new Airwallex customer for:', email);
     const airwallexRes = await axios.post(
-      'https://api-demo.airwallex.com/api/v1/billing_customers/create',
+      `${TEST_BASE}/api/v1/billing_customers/create`,
       {
         request_id: crypto.randomUUID(),
         ...(name && { name }),
@@ -413,7 +412,7 @@ router.post('/billing-customers', async (req, res) => {
 //     const token = await getAirwallexToken();
 
 //     const airwallexRes = await axios.post(
-//       'https://api-demo.airwallex.com/api/v1/billing_customers/create',
+//       `${TEST_BASE}/api/v1/billing_customers/create`,
 //       {
 //         request_id: crypto.randomUUID(),
 //         ...(name && { name }),
@@ -490,7 +489,7 @@ router.post('/create-checkout', async (req, res) => {
       .format('YYYY-MM-DDTHH:mm:ssZZ');
 
     const checkoutRes = await axios.post(
-      'https://api-demo.airwallex.com/api/v1/billing_checkouts/create',
+      `${TEST_BASE}/api/v1/billing_checkouts/create`,
       {
         request_id: requestId,
         mode: 'SUBSCRIPTION',
@@ -546,7 +545,7 @@ router.post('/payment-customers', async (req, res) => {
     // Search for existing payment customer by merchant_customer_id (email)
     try {
       const searchRes = await axios.get(
-        'https://api-demo.airwallex.com/api/v1/pa/customers',
+        `${TEST_BASE}/api/v1/pa/customers`,
         {
           headers: { Authorization: `Bearer ${token}` },
           params: { merchant_customer_id: email, page_size: 5 },
@@ -566,7 +565,7 @@ router.post('/payment-customers', async (req, res) => {
 
     // Create new payment customer
     const createRes = await axios.post(
-      'https://api-demo.airwallex.com/api/v1/pa/customers/create',
+      `${TEST_BASE}/api/v1/pa/customers/create`,
       {
         request_id: crypto.randomUUID(),
         merchant_customer_id: email,
@@ -601,7 +600,7 @@ router.post('/payment-consents', async (req, res) => {
     const token = await getAirwallexToken();
 
     const consentRes = await axios.post(
-      'https://api-demo.airwallex.com/api/v1/pa/payment_consents/create',
+      `${TEST_BASE}/api/v1/pa/payment_consents/create`,
       {
         request_id: crypto.randomUUID(),
         customer_id: payment_customer_id,
@@ -645,7 +644,7 @@ router.post('/payment-intents', async (req, res) => {
     const token = await getAirwallexToken();
 
     const airwallexRes = await axios.post(
-      "https://api-demo.airwallex.com/api/v1/pa/payment_intents/create",
+      `${TEST_BASE}/api/v1/pa/payment_intents/create`,
       {
         request_id: crypto.randomUUID(),
         amount,
@@ -691,7 +690,7 @@ router.get('/payment-intents/:id', async (req, res) => {
     const token = await getAirwallexToken();
 
     const airwallexRes = await axios.get(
-      `https://api-demo.airwallex.com/api/v1/pa/payment_intents/${req.params.id}`,
+      `${TEST_BASE}/api/v1/pa/payment_intents/${req.params.id}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -863,7 +862,7 @@ router.post('/subscriptions/provision', async (req, res) => {
     }
 
     const subscriptionRes = await axios.post(
-      'https://api-demo.airwallex.com/api/v1/subscriptions/create',
+      `${TEST_BASE}/api/v1/subscriptions/create`,
       {
         request_id: crypto.randomUUID(),
         billing_customer_id: airwallexCustomerId,
@@ -1061,7 +1060,7 @@ router.post('/payment-sources/create', async (req, res) => {
         try {
           const token = await getAirwallexToken();
           const consentsRes = await axios.get(
-            'https://api-demo.airwallex.com/api/v1/pa/payment_consents',
+            `${TEST_BASE}/api/v1/pa/payment_consents`,
             {
               headers: { Authorization: `Bearer ${token}` },
               params: { customer_id: payment_customer_id, page_size: 20 },
@@ -1110,7 +1109,7 @@ router.post('/payment-sources/create', async (req, res) => {
     
     try {
       const listRes = await axios.get(
-        'https://api-demo.airwallex.com/api/v1/payment_sources',
+        `${TEST_BASE}/api/v1/payment_sources`,
         {
           headers: { Authorization: `Bearer ${token}` },
           params: {
@@ -1146,7 +1145,7 @@ router.post('/payment-sources/create', async (req, res) => {
       // Continue to create if listing fails (fail-safe)
     }
     const airwallexRes = await axios.post(
-      "https://api-demo.airwallex.com/api/v1/payment_sources/create",
+      `${TEST_BASE}/api/v1/payment_sources/create`,
       {
         request_id: crypto.randomUUID(),
         billing_customer_id,

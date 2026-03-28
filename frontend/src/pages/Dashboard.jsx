@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 const DASHBOARD_API = `${import.meta.env.VITE_BACKEND_URL}/api/dashboard`
 
-export default function Dashboard() {
+export default function Dashboard({ environment = 'sandbox' }) {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
@@ -105,7 +105,14 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+              environment === 'live' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+            }`}>
+              {environment === 'live' ? 'Live' : 'Sandbox'}
+            </span>
+          </div>
           <p className="text-gray-500 mt-1">
             Overview of subscriptions and recent activity
           </p>

@@ -19,6 +19,7 @@ export default function SellingPlans({ environment }) {
   
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
 
     async function loadPlans() {
       try {
@@ -39,6 +40,7 @@ export default function SellingPlans({ environment }) {
         if (mounted) setPlans(data);
       } catch (err) {
         console.error("Failed to load plans:", err);
+        if (mounted) setPlans([]);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -46,7 +48,7 @@ export default function SellingPlans({ environment }) {
 
     loadPlans();
     return () => (mounted = false);
-  }, []);
+  }, [API]);
 
 
 
@@ -55,9 +57,14 @@ export default function SellingPlans({ environment }) {
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Selling Plans
-        </h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Selling Plans</h1>
+          <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-semibold ${
+            environment === 'live' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {environment === 'live' ? 'Live' : 'Sandbox'}
+          </span>
+        </div>
 
         <button
           onClick={() => setShowForm(true)}
@@ -100,7 +107,7 @@ export default function SellingPlans({ environment }) {
                         onClick={async () => {
                           const updated = await updatePlan(plan._id, {
                             active: plan.status !== 'enabled',
-                          });
+                          }, environment);
 
                           setPlans(prev =>
                             prev.map(p =>
