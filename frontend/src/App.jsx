@@ -25,7 +25,9 @@ function Layout() {
 
   return (
     <div className="flex min-h-screen">
-      {!isCheckout && !hideSidebar && <Sidebar />}
+      {!isCheckout && !hideSidebar && (
+        <Sidebar environment={environment} setEnvironment={handleEnvironmentChange} />
+      )}
 
       <main
         className={`flex-1 ${
@@ -34,34 +36,6 @@ function Layout() {
             : 'bg-gradient-to-br from-white via-gray-50 to-gray-100 p-8'
         }`}
       >
-        {!isCheckout && !hideSidebar && (
-          <div className="flex justify-end mb-6">
-            <div className="flex items-center gap-2 bg-white rounded-lg shadow px-4 py-2 text-sm">
-              <span className="text-gray-500 font-medium">Environment:</span>
-              <button
-                onClick={() => handleEnvironmentChange('sandbox')}
-                className={`px-3 py-1 rounded-md font-semibold transition ${
-                  environment === 'sandbox'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                Sandbox
-              </button>
-              <span className="text-gray-300">|</span>
-              <button
-                onClick={() => handleEnvironmentChange('live')}
-                className={`px-3 py-1 rounded-md font-semibold transition ${
-                  environment === 'live'
-                    ? 'bg-green-100 text-green-800'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                Live
-              </button>
-            </div>
-          </div>
-        )}
 
         <Routes>
           <Route path="/" element={<Dashboard environment={environment} />} />

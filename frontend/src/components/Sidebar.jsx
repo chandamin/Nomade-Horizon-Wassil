@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { useState, useEffect} from 'react'
+import { useState } from 'react'
 import {
   LayoutDashboard,
   Users,
@@ -17,22 +17,15 @@ const navItems = [
   { name: 'Subscriptions', path: '/subscriptions', icon: Repeat },
 ]
 
-function Sidebar({ setEnvironment }) {
+function Sidebar({ environment = 'sandbox', setEnvironment }) {
   const [collapsed, setCollapsed] = useState(false)
-  const [isLive, setIsLive] = useState(false)
-  // const [isLive, setIsLive] = useState(false)
 
-  // Load environment from locatStorage
-  useEffect(() => {
-    const savedEnv = localStorage.getItem('environment') || 'sandbox';
-    setIsLive(savedEnv === 'live')
-  }, [])
+  const isLive = environment === 'live'
 
   const handleEnvironmentToggle = (checked) => {
     const newEnv = checked ? 'live' : 'sandbox';
-    setIsLive(checked);
-    localStorage.setItem('environment', newEnv);
-    setEnvironment(newEnv);
+    localStorage.setItem('adminEnvironment', newEnv);
+    setEnvironment?.(newEnv);
   }
 
 
