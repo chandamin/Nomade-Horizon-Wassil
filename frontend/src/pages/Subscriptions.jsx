@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { authHeaders, handleUnauthorized } from '../utils/auth'
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api/subscriptions`
 
@@ -31,11 +32,9 @@ export default function Subscriptions({ environment = 'sandbox' }) {
       setLoading(true)
       setError('')
 
-      const res = await fetch(API_BASE, {
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
-      })
+      const res = await fetch(API_BASE, { headers: authHeaders() })
+
+      if (res.status === 401) return handleUnauthorized()
 
       const data = await res.json()
 
@@ -63,10 +62,10 @@ export default function Subscriptions({ environment = 'sandbox' }) {
 
       const res = await fetch(`${API_BASE}/${id}/sync`, {
         method: 'POST',
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
+        headers: authHeaders(),
       })
+
+      if (res.status === 401) return handleUnauthorized()
 
       const data = await res.json()
 
@@ -94,14 +93,13 @@ export default function Subscriptions({ environment = 'sandbox' }) {
 
       const res = await fetch(`${API_BASE}/${id}/cancel`, {
         method: 'POST',
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-          'Content-Type': 'application/json',
-        },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           proration_behavior: prorationBehavior,
         }),
       })
+
+      if (res.status === 401) return handleUnauthorized()
 
       const data = await res.json()
 
@@ -131,12 +129,11 @@ export default function Subscriptions({ environment = 'sandbox' }) {
 
       const res = await fetch(`${API_BASE}/${id}/update`, {
         method: 'POST',
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-          'Content-Type': 'application/json',
-        },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify(updatePayload),
       })
+
+      if (res.status === 401) return handleUnauthorized()
 
       const data = await res.json()
 
@@ -712,8 +709,9 @@ function EditSubscriptionModal({ subscription, onClose, onSubmit }) {
     setSourcesError('')
     try {
       const res = await fetch(`${API_BASE}/${subscription._id}/payment-sources`, {
-        headers: { 'ngrok-skip-browser-warning': 'true' },
+        headers: authHeaders(),
       })
+      if (res.status === 401) return handleUnauthorized()
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed to fetch payment sources')
       setPaymentSources(data.payment_sources || [])

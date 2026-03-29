@@ -124,16 +124,23 @@ app.use((req, res, next) => {
  * Routes
  * ---------------------------------------
  */
+const requireSession = require('./middleware/requireSession');
+
+// Public routes (no auth required)
+app.use('/api/admin-auth', require('./routes/adminAuth'));
 app.use('/api/webhooks', require('./routes/webhooks'));
 app.use('/api', require('./routes/auth'));
 app.use('/api', require('./routes/bigcommerceRoutes'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/dashboard', require('./routes/dashboard'));
-app.use('/api/subscriptions', require('./routes/subscriptions'));
-app.use('/api/sync-orders', require('./routes/syncOrders'));
-// app.use('/api/airwallex', require('./routes/airwallexTest'));
+
+// Airwallex plan/checkout routes — partial auth (plan CRUD protected inside each router)
 app.use('/api/selling-plans', require('./routes/airwallexLivePlan'));
 app.use('/api/subscription-plans', require('./routes/airwallexTestPlan'));
+
+// Admin-only routes — all endpoints require valid JWT
+app.use('/api/admin', requireSession, require('./routes/admin'));
+app.use('/api/dashboard', requireSession, require('./routes/dashboard'));
+app.use('/api/subscriptions', requireSession, require('./routes/subscriptions'));
+app.use('/api/sync-orders', requireSession, require('./routes/syncOrders'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });

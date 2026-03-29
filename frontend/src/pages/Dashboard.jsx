@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { authHeaders, handleUnauthorized } from '../utils/auth'
 
 const DASHBOARD_API = `${import.meta.env.VITE_BACKEND_URL}/api/dashboard`
 
@@ -26,13 +27,11 @@ export default function Dashboard({ environment = 'sandbox' }) {
 
       console.log('[Dashboard.jsx] Fetching dashboard from:', DASHBOARD_API)
 
-      const res = await fetch(DASHBOARD_API, {
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
-      })
+      const res = await fetch(DASHBOARD_API, { headers: authHeaders() })
 
       console.log('[Dashboard.jsx] Dashboard response status:', res.status)
+
+      if (res.status === 401) return handleUnauthorized()
 
       const jsonData = await res.json()
 

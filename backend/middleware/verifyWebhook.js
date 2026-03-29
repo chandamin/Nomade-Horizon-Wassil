@@ -24,11 +24,10 @@ module.exports = function verifyWebhook(req, res, next) {
     .replace(/,\s*"hash"\s*:\s*"[^"]+"/, '')
     .replace(/"hash"\s*:\s*"[^"]+",\s*/, '');
 
-  // const expectedHash = crypto
-  //   .createHash('sha1')
-  //   .update(rawWithoutHash)
-  //   .digest('hex');
-  const expectedHash = receivedHash;
+  const expectedHash = crypto
+    .createHash('sha1')
+    .update(rawWithoutHash)
+    .digest('hex');
 
   if (expectedHash !== receivedHash) {
     console.error('Invalid webhook hash');

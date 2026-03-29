@@ -1,6 +1,7 @@
 const express = require('express')
 const axios = require('axios');
 const router = express.Router()
+const requireSession = require('../middleware/requireSession');
 const SubscriptionPlan = require('../models/SubscriptionPlan.js');
 const CustomerSubscription = require('../models/CustomerSubscription.js');
 const dayjs = require('dayjs');
@@ -39,7 +40,7 @@ async function getAirwallexToken() {
 }
 
 
-router.get('/plans', async (req, res) => {
+router.get('/plans', requireSession, async (req, res) => {
   try {
     const { interval, currency, status } = req.query;
 
@@ -63,7 +64,7 @@ router.get('/plans', async (req, res) => {
 /**
  * CREATE AIRWALLEX PRODUCT and PRICE
  */
-router.post('/plans', async (req, res) => {
+router.post('/plans', requireSession, async (req, res) => {
   try {
     const {
       name,
@@ -140,7 +141,7 @@ router.post('/plans', async (req, res) => {
 /**
  * UPDATE AIRWALLEX PRODUCT
  */
-router.put('/plans/:id', async (req, res) => {
+router.put('/plans/:id', requireSession, async (req, res) => {
   try {
     const { name, description, active, metadata, unit } = req.body;
 

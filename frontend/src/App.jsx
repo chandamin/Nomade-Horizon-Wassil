@@ -8,11 +8,13 @@ import SellingPlans from './pages/SellingPlans';
 import CreatePlan from './pages/CreatePlan';
 import Checkout from './pages/Checkout';
 import ThankYou from "./pages/ThankYou";
+import Login from './pages/Login';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function Layout() {
   const location = useLocation();
   const isCheckout = location.pathname === '/checkout';
-  const hideSidebar = location.pathname === '/thank-you';
+  const hideSidebar = location.pathname === '/thank-you' || location.pathname === '/login';
 
   const [environment, setEnvironment] = useState(
     () => localStorage.getItem('adminEnvironment') || 'sandbox'
@@ -38,17 +40,17 @@ function Layout() {
       >
 
         <Routes>
-          <Route path="/" element={<Dashboard environment={environment} />} />
-          <Route path="/dashboard" element={<Dashboard environment={environment} />} />
-          <Route path="/subscriptions" element={<Subscriptions environment={environment} />} />
-          {/* <Route path="/customers" element={<Customers />} /> */}
-          <Route
-            path="/selling-plans"
-            element={<SellingPlans environment={environment} />}
-          />
-          <Route path="/subscription-plan" element={<CreatePlan />} />
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
           <Route path="/thank-you" element={<ThankYou />} />
           <Route path="/checkout" element={<Checkout />} />
+
+          {/* Protected admin routes */}
+          <Route path="/" element={<ProtectedRoute><Dashboard environment={environment} /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard environment={environment} /></ProtectedRoute>} />
+          <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions environment={environment} /></ProtectedRoute>} />
+          <Route path="/selling-plans" element={<ProtectedRoute><SellingPlans environment={environment} /></ProtectedRoute>} />
+          <Route path="/subscription-plan" element={<ProtectedRoute><CreatePlan /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

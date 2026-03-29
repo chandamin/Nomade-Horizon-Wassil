@@ -1,3 +1,91 @@
 [2026-03-29T06:49:22.044Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
 [2026-03-29T06:49:23.063Z] MongoDB connected
 [2026-03-29T06:49:23.077Z] Server running on port 4000
+[2026-03-29T07:22:39.594Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:22:40.369Z] MongoDB connected
+[2026-03-29T07:22:40.394Z] Server running on port 4000
+[2026-03-29T07:23:05.749Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:23:06.612Z] MongoDB connected
+[2026-03-29T07:23:06.628Z] Server running on port 4000
+[2026-03-29T07:23:34.814Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:23:35.584Z] MongoDB connected
+[2026-03-29T07:23:35.595Z] Server running on port 4000
+[2026-03-29T07:23:53.396Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:23:54.118Z] MongoDB connected
+[2026-03-29T07:23:54.133Z] Server running on port 4000
+[2026-03-29T07:24:15.528Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:24:16.209Z] MongoDB connected
+[2026-03-29T07:24:16.227Z] Server running on port 4000
+[2026-03-29T07:28:25.246Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:28:25.962Z] MongoDB connected
+[2026-03-29T07:28:25.971Z] Server running on port 4000
+[2026-03-29T07:28:34.917Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:28:35.605Z] MongoDB connected
+[2026-03-29T07:28:35.621Z] Server running on port 4000
+[2026-03-29T07:28:45.705Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:28:46.365Z] MongoDB connected
+[2026-03-29T07:28:46.374Z] Server running on port 4000
+[2026-03-29T07:29:00.751Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:29:01.398Z] MongoDB connected
+[2026-03-29T07:29:01.409Z] Server running on port 4000
+[2026-03-29T07:29:12.974Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:29:13.677Z] MongoDB connected
+[2026-03-29T07:29:13.690Z] Server running on port 4000
+[2026-03-29T07:29:21.995Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:29:22.781Z] MongoDB connected
+[2026-03-29T07:29:22.792Z] Server running on port 4000
+[2026-03-29T07:29:40.364Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:29:41.059Z] MongoDB connected
+[2026-03-29T07:29:41.069Z] Server running on port 4000
+[2026-03-29T07:29:52.071Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:29:52.778Z] MongoDB connected
+[2026-03-29T07:29:52.791Z] Server running on port 4000
+[2026-03-29T07:29:59.877Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:30:00.649Z] MongoDB connected
+[2026-03-29T07:30:00.658Z] Server running on port 4000
+[2026-03-29T07:30:26.895Z] MONGO_URI: mongodb+srv://kaswebtester:z76V3IozxvPsZNh9@cluster0.ws8o83f.mongodb.net/subscription-app
+[2026-03-29T07:30:27.578Z] MongoDB connected
+[2026-03-29T07:30:27.593Z] Server running on port 4000
+[2026-03-29T07:31:13.160Z] [dashboard] 2026-03-29T07:31:13.159Z GET / hit [object Object]
+[2026-03-29T07:31:13.265Z] [dashboard] 2026-03-29T07:31:13.264Z subscriptions fetched [object Object]
+[2026-03-29T07:31:13.369Z] [dashboard] 2026-03-29T07:31:13.369Z response prepared [object Object]
+[2026-03-29T07:32:00.647Z] MongoDB connected
+[2026-03-29T07:32:00.665Z] Server running on port 4000
+[2026-03-29T07:49:30.812Z] MongoDB connected
+[2026-03-29T07:49:30.835Z] Server running on port 4000
+[2026-03-29T07:50:29.978Z] [dashboard] 2026-03-29T07:50:29.977Z GET / hit [object Object]
+[2026-03-29T07:50:30.025Z] [dashboard] 2026-03-29T07:50:30.025Z subscriptions fetched [object Object]
+[2026-03-29T07:50:30.070Z] [dashboard] 2026-03-29T07:50:30.068Z response prepared [object Object]
+[2026-03-29T07:50:30.084Z] [dashboard] 2026-03-29T07:50:30.083Z GET / hit [object Object]
+[2026-03-29T07:50:30.128Z] [dashboard] 2026-03-29T07:50:30.127Z subscriptions fetched [object Object]
+[2026-03-29T07:50:30.184Z] [dashboard] 2026-03-29T07:50:30.183Z response prepared [object Object]
+[2026-03-29T07:50:39.503Z] [subscriptions] 2026-03-29T07:50:39.503Z GET / hit [object Object]
+[2026-03-29T07:50:39.504Z] [subscriptions] 2026-03-29T07:50:39.504Z GET / mongo query [object Object]
+[2026-03-29T07:50:39.625Z] [subscriptions] 2026-03-29T07:50:39.569Z GET / result [object Object]
+[2026-03-29T07:50:39.683Z] [subscriptions] 2026-03-29T07:50:39.682Z GET / hit [object Object]
+[2026-03-29T07:50:39.683Z] [subscriptions] 2026-03-29T07:50:39.683Z GET / mongo query [object Object]
+[2026-03-29T07:50:39.732Z] [subscriptions] 2026-03-29T07:50:39.732Z GET / result [object Object]
+[2026-03-29T07:50:43.310Z] [dashboard] 2026-03-29T07:50:43.309Z GET / hit [object Object]
+[2026-03-29T07:50:43.359Z] [dashboard] 2026-03-29T07:50:43.358Z subscriptions fetched [object Object]
+[2026-03-29T07:50:43.407Z] [dashboard] 2026-03-29T07:50:43.406Z response prepared [object Object]
+[2026-03-29T07:50:43.420Z] [dashboard] 2026-03-29T07:50:43.419Z GET / hit [object Object]
+[2026-03-29T07:50:43.469Z] [dashboard] 2026-03-29T07:50:43.468Z subscriptions fetched [object Object]
+[2026-03-29T07:50:43.521Z] [dashboard] 2026-03-29T07:50:43.520Z response prepared [object Object]
+[2026-03-29T07:50:51.769Z] [subscriptions] 2026-03-29T07:50:51.769Z GET / hit [object Object]
+[2026-03-29T07:50:51.770Z] [subscriptions] 2026-03-29T07:50:51.770Z GET / mongo query [object Object]
+[2026-03-29T07:50:51.819Z] [subscriptions] 2026-03-29T07:50:51.818Z GET / result [object Object]
+[2026-03-29T07:50:51.829Z] [subscriptions] 2026-03-29T07:50:51.829Z GET / hit [object Object]
+[2026-03-29T07:50:51.830Z] [subscriptions] 2026-03-29T07:50:51.829Z GET / mongo query [object Object]
+[2026-03-29T07:50:51.875Z] [subscriptions] 2026-03-29T07:50:51.875Z GET / result [object Object]
+[2026-03-29T07:51:03.700Z] [dashboard] 2026-03-29T07:51:03.700Z GET / hit [object Object]
+[2026-03-29T07:51:03.739Z] [dashboard] 2026-03-29T07:51:03.738Z subscriptions fetched [object Object]
+[2026-03-29T07:51:03.782Z] [dashboard] 2026-03-29T07:51:03.781Z response prepared [object Object]
+[2026-03-29T07:51:03.789Z] [dashboard] 2026-03-29T07:51:03.789Z GET / hit [object Object]
+[2026-03-29T07:51:03.830Z] [dashboard] 2026-03-29T07:51:03.829Z subscriptions fetched [object Object]
+[2026-03-29T07:51:03.872Z] [dashboard] 2026-03-29T07:51:03.871Z response prepared [object Object]
+[2026-03-29T07:54:29.107Z] MongoDB connected
+[2026-03-29T07:54:29.123Z] Server running on port 4000
+[2026-03-29T07:54:42.221Z] MongoDB connected
+[2026-03-29T07:54:42.233Z] Server running on port 4000
+[2026-03-29T07:55:05.176Z] MongoDB connected
+[2026-03-29T07:55:05.190Z] Server running on port 4000

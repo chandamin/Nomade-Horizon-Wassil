@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import {
   LayoutDashboard,
@@ -7,8 +7,10 @@ import {
   Package,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from 'lucide-react'
 import Switch from 'react-switch'
+import { removeToken } from '../utils/auth'
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -19,8 +21,14 @@ const navItems = [
 
 function Sidebar({ environment = 'sandbox', setEnvironment }) {
   const [collapsed, setCollapsed] = useState(false)
+  const navigate = useNavigate()
 
   const isLive = environment === 'live'
+
+  const handleLogout = () => {
+    removeToken()
+    navigate('/login', { replace: true })
+  }
 
   const handleEnvironmentToggle = (checked) => {
     const newEnv = checked ? 'live' : 'sandbox';
@@ -103,6 +111,20 @@ function Sidebar({ environment = 'sandbox', setEnvironment }) {
           </NavLink>
         ))}
       </nav>
+
+      {/* Logout */}
+      <div className="absolute bottom-6 w-full px-3">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 w-full px-3 py-3 rounded-lg transition
+            text-gray-300 hover:bg-gray-700 hover:text-white"
+        >
+          <LogOut size={20} />
+          {!collapsed && (
+            <span className="text-sm font-medium">Logout</span>
+          )}
+        </button>
+      </div>
     </aside>
   )
 }
