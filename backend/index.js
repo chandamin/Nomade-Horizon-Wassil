@@ -1,5 +1,18 @@
 require('dotenv').config();
 
+const fs = require('fs');
+const path = require('path');
+
+// Write all stdout/stderr to a log file so errors are visible on shared hosting
+const logFile = fs.createWriteStream(path.join(__dirname, 'app.log'), { flags: 'a' });
+const logWithTime = (msg) => logFile.write(`[${new Date().toISOString()}] ${msg}\n`);
+const _origLog = console.log.bind(console);
+const _origErr = console.error.bind(console);
+console.log = (...args) => { const m = args.join(' '); _origLog(m); logWithTime(m); };
+console.error = (...args) => { const m = args.join(' '); _origErr(m); logWithTime('ERROR: ' + m); };
+process.on('uncaughtException', (err) => { logWithTime('UNCAUGHT: ' + err.stack); process.exit(1); });
+process.on('unhandledRejection', (err) => { logWithTime('UNHANDLED: ' + (err?.stack || err)); });
+
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./db/mongo');
@@ -104,7 +117,6 @@ app.use((req, res, next) => {
 //   credentials: true,
 //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
 // }));
-
 
 
 /**
