@@ -677,3 +677,11 @@ Require stack:
 [2026-03-30T06:13:43.995Z] ERROR: Received: bc0e48eb2d80d4cabccd81edfa95d0f4ec07ad43
 [2026-03-30T06:33:14.785Z] MongoDB connected
 [2026-03-30T06:33:14.806Z] Server running on port 4000
+[2026-03-30T06:34:40.199Z] MongoDB connected
+[2026-03-30T06:34:40.222Z] Server running on port 4000
+[2026-03-30T07:13:44.637Z] ERROR: Invalid webhook hash
+[2026-03-30T07:13:44.642Z] ERROR: Expected: fac621471a752ef99e66f84668cbbceae06ece32
+[2026-03-30T07:13:44.643Z] ERROR: Received: bc0e48eb2d80d4cabccd81edfa95d0f4ec07ad43
+[2026-03-30T07:13:44.653Z] ERROR: Invalid webhook hash
+[2026-03-30T07:13:44.653Z] ERROR: Expected: fac621471a752ef99e66f84668cbbceae06ece32
+[2026-03-30T07:13:44.653Z] ERROR: Received: bc0e48eb2d80d4cabccd81edfa95d0f4ec07ad43
