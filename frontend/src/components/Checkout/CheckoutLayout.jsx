@@ -7,8 +7,8 @@ import ThankYouStep from "./ThankYouStep";
 import { useNavigate } from "react-router-dom";
 
 
-export default function CheckoutLayout({ 
-  cart, 
+export default function CheckoutLayout({
+  cart,
   onCustomerCreate,
   onShippingAddress,
   onFetchShippingOptions,
@@ -62,7 +62,7 @@ export default function CheckoutLayout({
         console.log("Airwallex customer received:", e.detail.customer.airwallexCustomerId);
       }
     };
-    
+
     window.addEventListener('airwallexCustomerReady', handleCustomerReady);
     return () => window.removeEventListener('airwallexCustomerReady', handleCustomerReady);
   }, []);
@@ -199,7 +199,7 @@ export default function CheckoutLayout({
       console.warn("Failed to parse stored Airwallex payment result", err);
     }
   }, []);
-  
+
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
@@ -212,7 +212,7 @@ export default function CheckoutLayout({
   const seconds = String(timeLeft % 60).padStart(2, "0");
 
   const validUntilDate = new Date();
-  validUntilDate.setDate(validUntilDate.getDate() + 1);
+  validUntilDate.setDate(validUntilDate.getDate());
   const formattedDate = validUntilDate.toLocaleDateString("en-GB");
 
   const handleVipToggle = async (checked) => {
@@ -256,16 +256,16 @@ export default function CheckoutLayout({
 
     console.log(":floppy_disk: Saving FRESH form data:", newClientData);
     setClientData(newClientData);
-    
+
     // :white_check_mark: Step 2: Create/fetch customer in background (optional)
     if (onCustomerCreate && cart?.id) {
       try {
         console.log(':bust_in_silhouette: Checking customer in BigCommerce for email:', newClientData.email);
         const result = await onCustomerCreate(clientFormData, cart.id);
-        
+
         if (result && result.customerId) {
           console.log(':white_check_mark: Customer found/created. ID:', result.customerId);
-          
+
           // :key: CRITICAL FIX: Only merge SAFE fields from API
           // DO NOT overwrite firstName/lastName/email from API!
           setClientData(prev => ({
@@ -277,7 +277,7 @@ export default function CheckoutLayout({
             ...(prev.company || !result.customerData?.company ? {} : { company: result.customerData.company }),
             // :x: NEVER do: ...result.customerData (it overwrites name/email!)
           }));
-          
+
           setCustomerId(result.customerId);
           setBigcommerceCustomer(result.customerData || null);
         }
@@ -286,7 +286,7 @@ export default function CheckoutLayout({
         // Continue checkout even if customer API fails
       }
     }
-    
+
     // :white_check_mark: Step 3: Move to next step
     setActiveStep("delivery");
   };
@@ -295,14 +295,14 @@ export default function CheckoutLayout({
   const handleDeliveryContinue = async (deliveryFormData) => {
     // Store delivery data locally
     setDeliveryData(deliveryFormData);
-    
+
     // Save address to BigCommerce if we have the handler and customer ID
     if (onShippingAddress && customerId) {
       setIsSavingAddress(true);
       try {
         console.log('🏠 Saving shipping address...');
         const addressResult = await onShippingAddress(deliveryFormData, customerId, clientData);
-        
+
         if (addressResult) {
           console.log('Address saved:', addressResult.addressId);
           // Update delivery data with address ID
@@ -320,7 +320,7 @@ export default function CheckoutLayout({
       } finally {
         setIsSavingAddress(false);
       }
-    } 
+    }
 
     try {
       await ensureAirwallexCustomerForSubscription(cart);
@@ -330,7 +330,7 @@ export default function CheckoutLayout({
       return;
     }
 
-    
+
     // Move to payment step
     setActiveStep("payment");
   };
@@ -349,7 +349,7 @@ export default function CheckoutLayout({
     //   paymentIntentId: paymentData?.paymentIntentId,
     //   isPlacingOrder,
     // });
-    
+
     if (isPlacingOrder) {
       console.log("🚫 Blocked duplicate call");
       return;
@@ -360,7 +360,7 @@ export default function CheckoutLayout({
 
     setIsPlacingOrder(true);
 
-   
+
     let latestCart = cart;
 
     try {
@@ -386,7 +386,7 @@ export default function CheckoutLayout({
       try {
         console.log('🔁 Subscription product found in final cart. Starting mapping flow...');
 
-    
+
 
         if (!awCustomer) {
           awCustomer = await onCreateAirwallexCustomer?.({
@@ -397,7 +397,7 @@ export default function CheckoutLayout({
           if (awCustomer) {
             setAirwallexCustomer(awCustomer);
           }
-        } 
+        }
         if (awCustomer && bigcommerceCustomer) {
           const mappingResult = await onMapSubscriptionCustomer?.({
             cart: latestCart,
@@ -422,7 +422,7 @@ export default function CheckoutLayout({
       console.log('ℹ️ No subscription product in final cart. Skipping Mongo mapping.');
     }
 
-    
+
 
     console.log("💳 paymentData from state:", paymentData);
     console.log("💳 paymentResultArg:", paymentResultArg);
@@ -433,14 +433,14 @@ export default function CheckoutLayout({
 
     const paymentMethod = isPaymentSuccessful
       ? {
-          name: "Airwallex Credit Card",
-          method: "airwallex",
-          paid: true,
-          transaction_id: intentId,
-          amount: latestCart?.cartAmount || 0,
-          currency: latestCart?.currency?.code || "EUR",
-        }
-    : null;
+        name: "Airwallex Credit Card",
+        method: "airwallex",
+        paid: true,
+        transaction_id: intentId,
+        amount: latestCart?.cartAmount || 0,
+        currency: latestCart?.currency?.code || "EUR",
+      }
+      : null;
 
     console.log("💳 Derived paymentMethod:", paymentMethod);
 
@@ -473,16 +473,16 @@ export default function CheckoutLayout({
             value: opt.valueId,
           })) || [],
         })),
-        paymentMethod:paymentMethod,
+        paymentMethod: paymentMethod,
         shippingMethod: deliveryData?.shippingOptionId
           ? {
-              id: deliveryData.shippingOptionId,
-              name: deliveryData.methodLabel || deliveryData.method,
-              costIncTax: deliveryData.price || 0,
-              costExTax: deliveryData.price || 0,
-            }
+            id: deliveryData.shippingOptionId,
+            name: deliveryData.methodLabel || deliveryData.method,
+            costIncTax: deliveryData.price || 0,
+            costExTax: deliveryData.price || 0,
+          }
           : null,
-        
+
       };
       // Add shipping address if available
       if (deliveryData.address) {
@@ -597,7 +597,7 @@ export default function CheckoutLayout({
       } else {
         throw new Error(`HTTP ${response.status}: ${responseText.substring(0, 100)}`);
       }
-      } catch (error) {
+    } catch (error) {
       console.error('❌ Order creation error:', error);
       alert(`Failed to create order: ${error.message}`);
     } finally {
@@ -653,7 +653,7 @@ export default function CheckoutLayout({
                 Félicitations, votre promo a été appliquée.
               </p>
               <p className="nr-date-time-txt-sec text-[13px] md:text-[16px] mt-[5px]">
-                Il vous reste <span className="text-[#f4d54c] font-[600]">{minutes}:{seconds}</span> pour en bénéficier. 
+                Il vous reste <span className="text-[#f4d54c] font-[600]">{minutes}:{seconds}</span> pour en bénéficier.
                 Valable ce <b>{formattedDate}</b>
               </p>
             </div>
@@ -687,8 +687,8 @@ export default function CheckoutLayout({
             />
 
             {/* PAYMENT STEP with cart prop */}
-            <PaymentStep 
-              active={activeStep === "payment"} 
+            <PaymentStep
+              active={activeStep === "payment"}
               data={paymentData}
               onContinue={(data) => setPaymentData(data)}
               isDisabled={activeStep !== "payment"}
@@ -703,7 +703,7 @@ export default function CheckoutLayout({
             {activeStep === "payment" && (
               <>
 
-              {/* <button
+                {/* <button
                   type="button"
                   onClick={handlePlaceOrder}
                   // disabled={isPlacingOrder}
@@ -743,11 +743,11 @@ export default function CheckoutLayout({
                     PROCESSING ORDER...
                   </div>
                 )}
-               
-                
+
+
                 <div className="text-xs text-gray-600 text-center mt-3 flex items-center gap-[5px] justify-center">
-                  <img src="../images/ssl.webp" alt="lock" className="h-[15px]"/>
-                   Secure 256-bit SSL encryption
+                  <img src="../images/ssl.webp" alt="lock" className="h-[15px]" />
+                  Secure 256-bit SSL encryption
                 </div>
 
                 <div className="flex justify-center gap-6 mt-4">
@@ -773,15 +773,15 @@ export default function CheckoutLayout({
 
                     <div className="nr-checkbox-wr-cntnt flex gap-[10px] items-center">
                       <div className="nr-checkbox-outer">
-                      <input
-                        type="checkbox"
-                        id="vip-club"
-                        name="vip-club"
-                        className="nr-checkbox"
-                        checked={vipSelected}
-                        disabled={isVipLoading}
-                        onChange={(e) => handleVipToggle(e.target.checked)}
-                      />
+                        <input
+                          type="checkbox"
+                          id="vip-club"
+                          name="vip-club"
+                          className="nr-checkbox"
+                          checked={vipSelected}
+                          disabled={isVipLoading}
+                          onChange={(e) => handleVipToggle(e.target.checked)}
+                        />
                       </div>
                       <label htmlFor="vip-club" className="text-[16px] text-white">
                         VIP CLUB ACCESS - HIKE SUMMIT
@@ -820,14 +820,14 @@ export default function CheckoutLayout({
         {/* ================= RIGHT COLUMN ================= */}
         <aside className="nr-rght-prt w-100 lg:w-[33.3333333333%] md:w-[41.6666666667%] mt-[38px] md:pl-[15px] pl-0">
           {/* Pass cart prop to OrderSummary */}
-          <OrderSummary 
-            deliveryPrice={deliveryData?.price ?? 0} 
-            cart={cart} 
+          <OrderSummary
+            deliveryPrice={deliveryData?.price ?? 0}
+            cart={cart}
           />
           {/* first-part */}
           <div className="nr-rght-bottom-info-cntnt pt-[30px] pb-[30px] border-b ">
             <div className="nr-info-hed-prt flex gap-[8px] items-center text-[18px] font-[600] pb-[8px]">
-              <img src="../images/shield-2.webp" alt="shield" className="h-[40px] w-[40px] object-contain"/>
+              <img src="../images/shield-2.webp" alt="shield" className="h-[40px] w-[40px] object-contain" />
               <h3>Service Client</h3>
             </div>
             <p className="pb-[20px] text-[15px] text-[#747474]">Nous répondons à vos questions du lundi au vendredi de 9h à 18h.</p>
@@ -845,7 +845,7 @@ export default function CheckoutLayout({
           {/* second-part */}
           <div className="nr-rght-bottom-info-cntnt py-[30px] border-b">
             <div className="nr-info-hed-prt flex gap-[8px] items-center text-[18px] font-[600] pb-[8px]">
-              <img src="../images/calendar-2.webp" alt="shield" className="h-[40px] w-[40px] object-contain"/>
+              <img src="../images/calendar-2.webp" alt="shield" className="h-[40px] w-[40px] object-contain" />
               <h3>Satisfait ou remboursé 30 jours</h3>
             </div>
             <p className="text-[15px] text-[#747474]">Insatisfait ? Remboursement facile et sans condition. Votre satisfaction est notre priorité.</p>
@@ -853,7 +853,7 @@ export default function CheckoutLayout({
           {/* third-part */}
           <div className="nr-rght-bottom-info-cntnt py-[30px] border-b">
             <div className="nr-info-hed-prt flex gap-[8px] items-center text-[18px] font-[600] pb-[8px]">
-              <img src="../images/delivery-truck-icon.webp" alt="shield" className="h-[40px] w-[40px] object-contain"/>
+              <img src="../images/delivery-truck-icon.webp" alt="shield" className="h-[40px] w-[40px] object-contain" />
               <h3>Expédition en 48h</h3>
             </div>
             <p className="text-[15px] text-[#747474]">Bénéficiez d'une expédition ultra-rapide avec suivi en seulement 48 heures.</p>
@@ -867,7 +867,7 @@ export default function CheckoutLayout({
               </div>
               <div className="flex justify-between w-100 mt-[13px] mb-[26px]">
                 <p className="text-[14px] font-[600]">Nicolas D. - Paris</p>
-                <img src="../images/star.webp" alt="star" className="object-contain"/>
+                <img src="../images/star.webp" alt="star" className="object-contain" />
               </div>
             </div>
             {/* Second Review */}
@@ -877,7 +877,7 @@ export default function CheckoutLayout({
               </div>
               <div className="flex justify-between w-100 mt-[13px] mb-[26px]">
                 <p className="text-[14px] font-[600]">Marie P. - Marseille</p>
-                <img src="../images/star.webp" alt="star" className="object-contain"/>
+                <img src="../images/star.webp" alt="star" className="object-contain" />
               </div>
             </div>
           </div>

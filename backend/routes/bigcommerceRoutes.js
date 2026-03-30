@@ -3,7 +3,7 @@ const router = express.Router();
 
 const STORE_HASH = 'eapn6crf58';
 const MANAGEMENT_API_TOKEN = process.env.BC_API_TOKEN;
-const FRONTEND_CHECKOUT_URL = process.env.FRONTEND_CHECKOUT_URL || 'http://localhost:5173/checkout';
+const FRONTEND_CHECKOUT_URL = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '') + '/checkout';
 const VIP_PRODUCT_ID = 210;
 const SubscriptionCustomer = require('../models/SubscriptionCustomer');
 const {

@@ -66,7 +66,7 @@ const ThankYouStep = ({
       <div className="mx-auto max-w-[1366px] px-6 pt-8 pb-12">
         <div className="mb-10 flex justify-center">
           <img
-            src="/logo.png"
+            src="../images/logo_final_1764933550__59613.original (1).png"
             alt="Store logo"
             className="h-14 w-auto object-contain"
           />
@@ -87,9 +87,9 @@ const ThankYouStep = ({
                 An email will be sent containing information about your purchase.
                 If you have any questions about your purchase, email us at{" "}
                 <span className="break-all">
-                  tester1.kaswebtechsolutions@gmail.com
+                  help@nomade-horizon.com
                 </span>{" "}
-                or call us at 08897554884.
+                or call us at +44 330 054 5774.
               </p>
 
               <p>
@@ -161,10 +161,10 @@ const ThankYouStep = ({
                             (d) =>
                               (d.id || d.product_id) === (item.id || item.product_id)
                           ) && (
-                            <div className="text-[22px] text-[#3b82f6]">
-                              Digital Item
-                            </div>
-                          )}
+                              <div className="text-[22px] text-[#3b82f6]">
+                                Digital Item
+                              </div>
+                            )}
                         </div>
 
                         <div className="whitespace-nowrap text-[26px] text-black">
