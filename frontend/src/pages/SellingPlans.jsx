@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { authHeaders, handleUnauthorized } from '../utils/auth'
 
 // const API = `${import.meta.env.VITE_BACKEND_URL}/api/selling-plans`
 // const API = `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans`
@@ -19,16 +20,16 @@ export default function SellingPlans({ environment }) {
   
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
 
     async function loadPlans() {
       try {
         const res = await fetch(API, {
-          headers: {
-            "ngrok-skip-browser-warning": "true",
-            Accept: "application/json",
-          },
+          headers: { ...authHeaders(), Accept: "application/json" },
         });
         console.log("API: ", API);
+
+        if (res.status === 401) { handleUnauthorized(); return; }
 
         const text = await res.text();
         console.log("RAW RESPONSE:", text);
@@ -39,6 +40,7 @@ export default function SellingPlans({ environment }) {
         if (mounted) setPlans(data);
       } catch (err) {
         console.error("Failed to load plans:", err);
+        if (mounted) setPlans([]);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -46,7 +48,7 @@ export default function SellingPlans({ environment }) {
 
     loadPlans();
     return () => (mounted = false);
-  }, []);
+  }, [API]);
 
 
 
@@ -55,9 +57,14 @@ export default function SellingPlans({ environment }) {
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Selling Plans
-        </h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Selling Plans</h1>
+          <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-semibold ${
+            environment === 'live' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {environment === 'live' ? 'Live' : 'Sandbox'}
+          </span>
+        </div>
 
         <button
           onClick={() => setShowForm(true)}
@@ -100,7 +107,7 @@ export default function SellingPlans({ environment }) {
                         onClick={async () => {
                           const updated = await updatePlan(plan._id, {
                             active: plan.status !== 'enabled',
-                          });
+                          }, environment);
 
                           setPlans(prev =>
                             prev.map(p =>
@@ -184,7 +191,7 @@ function CreatePlanForm({ onClose, onCreated, environment }) {
 
     const res = await fetch(API, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
         amount: Number(form.amount),
@@ -192,6 +199,8 @@ function CreatePlanForm({ onClose, onCreated, environment }) {
         bigcommerceProductId: Number(form.bigcommerceProductId),
       }),
     })
+
+    if (res.status === 401) { handleUnauthorized(); return; }
 
     const created = await res.json()
     if (!res.ok) {
@@ -303,12 +312,11 @@ async function updatePlan(id, payload, environment) {
   console.log("APILive Or not: ", API);
   const res = await fetch(`${API}/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
-    },
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+
+  if (res.status === 401) { handleUnauthorized(); return; }
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error);

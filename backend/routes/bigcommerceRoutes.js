@@ -1053,6 +1053,29 @@ router.post('/orders/create', async (req, res) => {
       return res.status(400).json({ success: false, error: 'At least one product is required' });
     }
 
+    // Fetch authoritative prices from BigCommerce — never trust client-submitted prices
+    const verifiedProducts = await Promise.all(
+      products.map(async (product) => {
+        const productId = product.product_id || product.productId;
+        const bcProductRes = await fetch(
+          `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/catalog/products/${productId}`,
+          { headers: bcHeaders }
+        );
+        if (!bcProductRes.ok) {
+          throw new Error(`Could not verify price for product ${productId}`);
+        }
+        const bcProduct = await bcProductRes.json();
+        const serverPrice = bcProduct.data?.price ?? bcProduct.data?.sale_price;
+        return {
+          product_id: productId,
+          quantity: product.quantity || 1,
+          price_inc_tax: serverPrice,
+          price_ex_tax: serverPrice,
+          product_options: product.product_options || [],
+        };
+      })
+    );
+
     const orderData = {
       customer_id: parseInt(customerId, 10),
       status_id: statusId,
@@ -1069,13 +1092,7 @@ router.post('/orders/create', async (req, res) => {
         email: billingAddress.email || '',
         phone: billingAddress.phone || ''
       },
-      products: products.map(product => ({
-        product_id: product.product_id || product.productId,
-        quantity: product.quantity || 1,
-        price_inc_tax: product.priceIncTax || product.price_inc_tax,
-        price_ex_tax: product.priceExTax || product.price_ex_tax,
-        product_options: product.product_options || []
-      }))
+      products: verifiedProducts,
     };
 
     if (shippingAddress) {

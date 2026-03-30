@@ -11,6 +11,7 @@ const formatPrice = (value, currency = "EUR") => {
   }
 };
 
+
 const getItemImage = (item) => {
   return (
     item?.imageUrl ||

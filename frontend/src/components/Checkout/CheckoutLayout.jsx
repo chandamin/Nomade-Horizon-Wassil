@@ -578,17 +578,19 @@ export default function CheckoutLayout({
             console.warn('⚠️ Failed to clear cart after order creation:', clearErr.message);
           }
 
-          // navigate("/thank-you", {
-          //   state: {
-          //     orderId: result.orderId,
-          //     amount: latestCart?.cartAmount,
-          //     currency: latestCart?.currency?.code || "EUR",
-          //     email: clientData?.email,
-          //   }
-          // });
-
-          // Optionally redirect or clear cart
-          // window.location.href = `https://kasweb-c4.mybigcommerce.com/order-confirmation?orderId=${result.orderId}`;
+          navigate("/thank-you", {
+            state: {
+              order: {
+                orderId: result.orderId,
+                id: result.orderId,
+              },
+              customer: {
+                firstName: clientData?.firstName || clientData?.first_name || '',
+                first_name: clientData?.firstName || clientData?.first_name || '',
+              },
+              cart: latestCart,
+            },
+          });
         } else {
           throw new Error(result.error || 'Failed to create order');
         }

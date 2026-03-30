@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -7,16 +8,28 @@ import SellingPlans from './pages/SellingPlans';
 import CreatePlan from './pages/CreatePlan';
 import Checkout from './pages/Checkout';
 import ThankYou from "./pages/ThankYou";
+import Login from './pages/Login';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function Layout() {
   const location = useLocation();
   const isCheckout = location.pathname === '/checkout';
-  const hideSidebar = location.pathname === '/thank-you';
+  const hideSidebar = location.pathname === '/thank-you' || location.pathname === '/login';
+
+  const [environment, setEnvironment] = useState(
+    () => localStorage.getItem('adminEnvironment') || 'sandbox'
+  );
+
+  const handleEnvironmentChange = (env) => {
+    setEnvironment(env);
+    localStorage.setItem('adminEnvironment', env);
+  };
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar only if NOT checkout */}
-      {!isCheckout && !hideSidebar && <Sidebar />}
+      {!isCheckout && !hideSidebar && (
+        <Sidebar environment={environment} setEnvironment={handleEnvironmentChange} />
+      )}
 
       <main
         className={`flex-1 ${
@@ -25,23 +38,25 @@ function Layout() {
             : 'bg-gradient-to-br from-white via-gray-50 to-gray-100 p-8'
         }`}
       >
+
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/subscriptions" element={<Subscriptions />} />
-          {/* <Route path="/customers" element={<Customers />} /> */}
-          <Route
-            path="/selling-plans"
-            element={<SellingPlans />}
-          />
-          <Route path="/subscription-plan" element={<CreatePlan />} />
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
           <Route path="/thank-you" element={<ThankYou />} />
           <Route path="/checkout" element={<Checkout />} />
+
+          {/* Protected admin routes */}
+          <Route path="/" element={<ProtectedRoute><Dashboard environment={environment} /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard environment={environment} /></ProtectedRoute>} />
+          <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions environment={environment} /></ProtectedRoute>} />
+          <Route path="/selling-plans" element={<ProtectedRoute><SellingPlans environment={environment} /></ProtectedRoute>} />
+          <Route path="/subscription-plan" element={<ProtectedRoute><CreatePlan /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>
   );
 }
+
 export default function App() {
   return (
     <BrowserRouter>

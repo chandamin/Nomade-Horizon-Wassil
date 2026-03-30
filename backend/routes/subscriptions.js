@@ -613,7 +613,16 @@ router.post('/:id/update', async (req, res) => {
       ...(default_tax_percent !== undefined && { default_tax_percent: Number(default_tax_percent) }),
       ...(duration && { duration }),
       ...(legal_entity_id && { legal_entity_id }),
-      ...(linked_payment_account_id && { linked_payment_account_id }),
+      // OUT_OF_BAND → must explicitly null linked_payment_account_id
+      // AUTO_CHARGE / CHARGE_ON_CHECKOUT → required; use provided value or fall back to env
+      // no collection_method change → include if provided, else omit
+      ...(collection_method === 'OUT_OF_BAND'
+        ? { linked_payment_account_id: null }
+        : (collection_method === 'AUTO_CHARGE' || collection_method === 'CHARGE_ON_CHECKOUT')
+          ? { linked_payment_account_id: linked_payment_account_id || process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID }
+          : linked_payment_account_id
+            ? { linked_payment_account_id }
+            : {}),
       ...(metadata && { metadata }),
       ...(payment_options && { payment_options }),
       // AUTO_CHARGE → must provide payment_source_id

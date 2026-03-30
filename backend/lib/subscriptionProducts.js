@@ -1,33 +1,12 @@
 const SubscriptionPlan = require('../models/SubscriptionPlan');
 
-function parseSubscriptionProductIds(input = '') {
+async function getEnabledSubscriptionProductIds() {
+  const plans = await SubscriptionPlan.find({ status: 'enabled' }).select('bigcommerceProductId');
   return [...new Set(
-    String(input)
-      .split(',')
-      .map((value) => Number(value.trim()))
+    plans
+      .map((plan) => Number(plan.bigcommerceProductId))
       .filter((value) => Number.isInteger(value) && value > 0)
   )];
-}
-
-function getEnvSubscriptionProductIds() {
-  return parseSubscriptionProductIds(process.env.SUBSCRIPTION_PRODUCT_IDS || '');
-}
-
-async function getEnabledSubscriptionProductIds() {
-  try {
-    const plans = await SubscriptionPlan.find({ status: 'enabled' }).select('bigcommerceProductId');
-    return [...new Set(
-      plans
-        .map((plan) => Number(plan.bigcommerceProductId))
-        .filter((value) => Number.isInteger(value) && value > 0)
-    )];
-  } catch (err) {
-    console.warn(
-      '[subscriptionProducts] failed to load enabled plans, falling back to SUBSCRIPTION_PRODUCT_IDS:',
-      err.message
-    );
-    return getEnvSubscriptionProductIds();
-  }
 }
 
 function findDistinctSubscriptionProducts(cart, subscriptionProductIds = []) {
@@ -51,6 +30,4 @@ function findDistinctSubscriptionProducts(cart, subscriptionProductIds = []) {
 module.exports = {
   findDistinctSubscriptionProducts,
   getEnabledSubscriptionProductIds,
-  getEnvSubscriptionProductIds,
-  parseSubscriptionProductIds,
 };
