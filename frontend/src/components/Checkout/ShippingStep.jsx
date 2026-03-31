@@ -469,7 +469,7 @@ export default function ShippingStep({
                     key={option.id}
                     className={
                       isInsuranceOption
-                        ? "flex items-start justify-between border-2 border-green-400 border-dashed bg-green-100 rounded p-4 cursor-pointer hover:bg-green-50 mb-2"
+                        ? "flex items-start justify-between border-2 border rounded p-4 cursor-pointer hover:bg-gray-50 mb-2"
                         : "flex items-center justify-between border rounded p-4 mb-2 cursor-pointer hover:bg-gray-50"
                     }
                   >

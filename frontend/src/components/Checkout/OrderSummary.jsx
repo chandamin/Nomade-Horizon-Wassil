@@ -1,4 +1,4 @@
-export default function OrderSummary({ cart, deliveryPrice = 1.99 }) {
+export default function OrderSummary({ cart, deliveryPrice = 1.99, hiddenProductIds = [210], }) {
   // Default values if cart is not provided (for development/testing)
   const defaultCart = {
     lineItems: {
@@ -34,8 +34,11 @@ export default function OrderSummary({ cart, deliveryPrice = 1.99 }) {
     ? displayCart.lineItems.digitalItems
     : [];
 
-  const items = [...physicalItems, ...digitalItems];
+  const allItems = [...physicalItems, ...digitalItems];
 
+  const items = allItems.filter(
+    (item) => !hiddenProductIds.includes(Number(item.product_id))
+  );
   // console.log("OrderSummary cart items:", items);
 
   // Calculate prices
@@ -110,11 +113,11 @@ export default function OrderSummary({ cart, deliveryPrice = 1.99 }) {
                     Quantity: {quantity}
                   </div>
 
-                  {Number(item.product_id) === 210 && (
+                  {/* {Number(item.product_id) === 210 && (
                     <div className="text-xs text-green-600 mt-1">
                       30-day free trial
                     </div>
-                  )}
+                  )} */}
                 </div>
 
                 {/* PRODUCT PRICE */}

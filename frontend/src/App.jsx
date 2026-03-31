@@ -35,7 +35,7 @@ function Layout() {
         className={`flex-1 ${
           isCheckout
             ? 'p-0 bg-white'
-            : 'bg-gradient-to-br from-white via-gray-50 to-gray-100 p-8'
+            : 'bg-gradient-to-br from-white via-gray-50 to-gray-100'
         }`}
       >
 

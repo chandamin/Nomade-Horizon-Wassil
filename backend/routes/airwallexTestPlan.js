@@ -920,10 +920,10 @@ router.post('/subscriptions/provision', async (req, res) => {
 
     //  Verify trial was applied
     if (plan.trialDays > 0) {
-      if (subscriptionRes.data?.status === 'trialing') {
+      if (subscriptionRes.data?.status === 'IN_TRIAL') {
         console.log(' Trial successfully applied! Status: trialing');
       } else {
-        console.warn('⚠️ Expected status "trialing" but got:', subscriptionRes.data?.status);
+        console.warn('⚠️ Expected status "IN_TRIAL" but got:', subscriptionRes.data?.status);
       }
       
       if (subscriptionRes.data?.trial_ends_at) {

@@ -39,11 +39,19 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
+    <>
+      <div className="flex justify-center py-[10px]">
+        <img
+          src="../images/logo_final_1764933550__59613.original (1).png"
+          alt="Store logo"
+          className="h-14 w-auto object-contain"
+        />
+    </div>
+   <div className="h-[calc(100%-76px)] bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-white text-3xl font-bold">Ascend</h1>
+          <h1 className="text-white text-3xl font-bold">Nomade Horizon</h1>
           <p className="text-gray-400 text-sm mt-1">Subscriptions At Convenience</p>
         </div>
 
@@ -100,5 +108,6 @@ export default function Login() {
         </div>
       </div>
     </div>
+    </>
   );
 }
