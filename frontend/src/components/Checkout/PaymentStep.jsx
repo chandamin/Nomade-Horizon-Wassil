@@ -111,7 +111,7 @@ export default function PaymentStep({
         setIntent(result);
 
         await init({
-          env: "demo",
+          env: "prod",
           enabledElements: ["payments"],
         });
 
@@ -246,7 +246,7 @@ export default function PaymentStep({
               if (sourceRes.ok) {
                 const sourceData = JSON.parse(responseText);
                 paymentSourceId = sourceData.paymentSource?.id;
-                console.log("✅ [STEP 4] PaymentSource created:", paymentSourceId);
+                console.log(" [STEP 4] PaymentSource created:", paymentSourceId);
               } else {
                 console.warn("⚠️ Failed to create PaymentSource:", sourceRes.status, responseText);
               }
@@ -386,11 +386,11 @@ export default function PaymentStep({
             🔒 Paiement sécurisé - Vos informations sont 100% confidentielles.
           </div>
 
-          {intent?.id && (
+          {/* {intent?.id && (
             <div className="text-xs text-gray-500 mt-3 md:pl-[58.5px]">
               Payment reference: {intent.id}
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </section>

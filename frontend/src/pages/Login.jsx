@@ -18,7 +18,11 @@ export default function Login() {
     try {
       const res = await fetch(LOGIN_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+              'Content-Type': 'application/json',
+              Accept: "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
         body: JSON.stringify(form),
       });
 

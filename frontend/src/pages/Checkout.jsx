@@ -58,7 +58,7 @@ export default function Checkout() {
   }, [searchParams]);
 
 
-  const VIP_PRODUCT_ID = 210; // replace with real BC product ID
+  const VIP_PRODUCT_ID = 268; // replace with real BC product ID
 
 const refreshCart = async (cartId) => {
   await fetchCartById(cartId);

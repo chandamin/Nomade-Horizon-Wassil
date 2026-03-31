@@ -1,4 +1,4 @@
-export default function OrderSummary({ cart, deliveryPrice = 1.99, hiddenProductIds = [210], }) {
+export default function OrderSummary({ cart, deliveryPrice = 1.99, hiddenProductIds = [268], }) {
   // Default values if cart is not provided (for development/testing)
   const defaultCart = {
     lineItems: {
@@ -61,7 +61,7 @@ export default function OrderSummary({ cart, deliveryPrice = 1.99, hiddenProduct
         <button
           onClick={() =>
             (window.location.href =
-              "https://kasweb-c4.mybigcommerce.com/cart.php")
+              "https://nomade-horizon.com/cart.php")
           }
           className="text-[#476bef] hover:text-[#002fe1]"
         >

@@ -18,6 +18,7 @@ const cors = require('cors');
 const connectDB = require('./db/mongo');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // const cors = require('cors');
 
