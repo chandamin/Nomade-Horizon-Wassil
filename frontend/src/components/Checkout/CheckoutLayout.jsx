@@ -107,7 +107,8 @@ export default function CheckoutLayout({
     const loadEnabledPlans = async () => {
       try {
         const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans?status=enabled`,
+          // `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/plans?status=enabled`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/public/enabled-product-ids`,
           {
             headers: {
               Accept: 'application/json',

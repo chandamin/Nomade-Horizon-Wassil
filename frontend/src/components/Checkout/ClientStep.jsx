@@ -66,12 +66,12 @@ export default function ClientStep({
       // Check if email exists in BigCommerce
       const emailCheck = await checkEmailExists(form.email);
       
-      if (!emailCheck.valid) {
-        setEmailError(emailCheck.message);
-        setLoading(false);
-        setIsValidating(false);
-        return;
-      }
+      // if (!emailCheck.valid) {
+      //   setEmailError(emailCheck.message);
+      //   setLoading(false);
+      //   setIsValidating(false);
+      //   return;
+      // }
 
       const fullName = `${form.firstName} ${form.lastName}`.trim();
       const awCustomer = await createOrFindAirwallexCustomer(form.email, fullName);
@@ -96,42 +96,75 @@ export default function ClientStep({
   };
 
   // Check if email exists in BigCommerce
+  // const checkEmailExists = async (email) => {
+  //   try {
+  //     const response = await fetch(
+  //       // `${import.meta.env.VITE_BACKEND_URL}/api/customers/search?email=${encodeURIComponent(email)}`
+        
+  //       `${import.meta.env.VITE_BACKEND_URL}/api/customers/search?email=${encodeURIComponent(email)}`,
+  //         {
+  //           method: 'GET',
+  //           headers: {
+  //             'Accept': 'application/json',
+  //             'ngrok-skip-browser-warning': 'true'
+  //           }
+  //         }
+  //     );
+      
+  //     if (response.ok) {
+  //       const result = await response.json();
+        
+  //       if (result.exists) {
+  //         return {
+  //           valid: true,
+  //           exists: !!result.exists,
+  //           customer: result.customer || null,
+  //           // message: "An account already exists with this email. Please use a different email or log in."
+  //         };
+  //       }
+        
+  //       return { valid: true, exists: false };
+  //     }
+      
+  //     // If API fails, still allow checkout but warn user
+  //     console.warn('Email check API failed, continuing anyway');
+  //     return { valid: true };
+      
+  //   } catch (error) {
+  //     console.error('Email check error:', error);
+  //     // Don't block checkout if API is down
+  //     return { valid: true };
+  //   }
+  // };
   const checkEmailExists = async (email) => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/customers/search?email=${encodeURIComponent(email)}`
-        
-        // `${import.meta.env.VITE_BACKEND_URL}/api/customers/search?email=${encodeURIComponent(email)}`,
-        //   {
-        //     method: 'GET',
-        //     headers: {
-        //       'Accept': 'application/json',
-        //       'ngrok-skip-browser-warning': 'true'
-        //     }
-        //   }
+        `${import.meta.env.VITE_BACKEND_URL}/api/customers/search?email=${encodeURIComponent(email)}`,
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+        }
       );
-      
+
       if (response.ok) {
         const result = await response.json();
-        
-        if (result.exists) {
-          return {
-            valid: false,
-            message: "An account already exists with this email. Please use a different email or log in."
-          };
-        }
-        
-        return { valid: true };
+        console.log('customer search result:', result);
+
+        return {
+          valid: true,
+          exists: !!result.exists,
+          customer: result.customer || null,
+        };
       }
-      
-      // If API fails, still allow checkout but warn user
+
       console.warn('Email check API failed, continuing anyway');
-      return { valid: true };
-      
+      return { valid: true, exists: false };
     } catch (error) {
       console.error('Email check error:', error);
-      // Don't block checkout if API is down
-      return { valid: true };
+      return { valid: true, exists: false };
     }
   };
 
