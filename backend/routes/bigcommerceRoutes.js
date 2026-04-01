@@ -180,6 +180,7 @@ async function sendOrderConfirmationEmail(order, customerEmail) {
 }
 
 router.get('/cart', async (req, res) => {
+  console.log("api cart called")
   const { cartId } = req.query;
 
   if (!cartId) {
@@ -253,6 +254,7 @@ router.get('/cart', async (req, res) => {
 });
 
 router.get('/cart-data', async (req, res) => {
+  console.log('api cart-data called');
   const { cartId } = req.query;
 
   if (!cartId) {
@@ -398,6 +400,7 @@ router.post('/customers', async (req, res) => {
 });
 
 router.get('/customers/search', async (req, res) => {
+  console.log('Search Customer by Email',req);
   try {
     let { email } = req.query;
 
