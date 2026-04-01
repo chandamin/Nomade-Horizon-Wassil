@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from 'react-router-dom';
 import CheckoutLayout from "../components/Checkout/CheckoutLayout";
 
-export function ErrorPage() {
-  useEffect(() => {
-    window.location.replace("https://nomade-horizon.com/cart.php");
-  }, []);
+// export function ErrorPage() {
+//   useEffect(() => {
+//     window.location.replace("https://nomade-horizon.com/cart.php");
+//   }, []);
 
-  return null;
-}
+//   return null;
+// }
 
 export default function Checkout() {
   const [cart, setCart] = useState(null);
@@ -559,26 +559,26 @@ const removeVipFromCart = async (cartId) => {
     );
   }
 
-  // if (error) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <div className="max-w-md p-6 bg-red-50 border border-red-200 rounded-lg text-center">
-  //         <h2 className="text-xl font-semibold text-red-800 mb-2">Checkout Error</h2>
-  //         <p className="text-red-600 mb-4">{error}</p>
-  //         <a 
-  //           href="https://nomade-horizon.com/cart.php" 
-  //           className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-  //         >
-  //           Return to Cart
-  //         </a>
-  //       </div>
-  //     </div>
-  //   );
-  // }
   if (error) {
-    window.location.replace("https://nomade-horizon.com/cart.php");
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="max-w-md p-6 bg-red-50 border border-red-200 rounded-lg text-center">
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Checkout Error</h2>
+          <p className="text-red-600 mb-4">{error}</p>
+          <a 
+            href="https://nomade-horizon.com/cart.php" 
+            className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Return to Cart
+          </a>
+        </div>
+      </div>
+    );
   }
+  // if (error) {
+  //   window.location.replace("https://nomade-horizon.com/cart.php");
+  //   return null;
+  // }
 
   console.log("Cart Data: ",cart);
 
