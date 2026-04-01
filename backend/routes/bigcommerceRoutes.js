@@ -436,6 +436,8 @@ router.get('/customers/search', async (req, res) => {
       const customer = searchResult.data[0];
       console.log('Customer found:', customer.id);
 
+      console.log("Email Search result:", JSON.stringify(searchResult));
+
       return res.json({
         success: true,
         exists: true,

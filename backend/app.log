@@ -6849,3 +6849,442 @@ Require stack:
 [2026-04-01T09:08:39.574Z] Server running on port 4000
 [2026-04-01T09:08:44.158Z] MongoDB connected
 [2026-04-01T09:08:44.173Z] Server running on port 4000
+[2026-04-01T09:18:29.853Z] MongoDB connected
+[2026-04-01T09:18:29.870Z] Server running on port 4000
+[2026-04-01T09:22:55.467Z] api cart-data called
+[2026-04-01T09:22:57.165Z] api cart-data called
+[2026-04-01T09:23:09.515Z] Customer search results: [object Object]
+[2026-04-01T09:23:09.515Z]  Found existing Airwallex customer: bcus_sgpdmbrtqhh63y2sfus
+[2026-04-01T09:23:09.665Z] Search Customer by Email [object Object]
+[2026-04-01T09:23:09.666Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T09:23:10.274Z] Customer found: 1
+[2026-04-01T09:36:47.352Z] MongoDB connected
+[2026-04-01T09:36:47.388Z] Server running on port 4000
+[2026-04-01T09:37:34.114Z] api cart-data called
+[2026-04-01T09:37:37.052Z] api cart-data called
+[2026-04-01T09:37:44.085Z] Customer search results: [object Object]
+[2026-04-01T09:37:44.087Z]  Found existing Airwallex customer: bcus_sgpdmbrtqhh63y2sfus
+[2026-04-01T09:37:44.308Z] Search Customer by Email [object Object]
+[2026-04-01T09:37:44.309Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T09:37:44.943Z] Customer found: 1
+[2026-04-01T09:38:44.316Z] MongoDB connected
+[2026-04-01T09:38:44.325Z] Server running on port 4000
+[2026-04-01T09:43:18.172Z] api cart-data called
+[2026-04-01T09:43:19.558Z] api cart-data called
+[2026-04-01T09:43:24.313Z] Search Customer by Email [object Object]
+[2026-04-01T09:43:24.314Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T09:43:24.917Z] Customer found: 1
+[2026-04-01T09:43:42.332Z] api cart-data called
+[2026-04-01T09:43:44.015Z] api cart-data called
+[2026-04-01T09:43:51.319Z] Search Customer by Email [object Object]
+[2026-04-01T09:43:51.320Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T09:43:51.945Z] Customer found: 1
+[2026-04-01T09:44:33.373Z] api cart-data called
+[2026-04-01T09:44:34.755Z] api cart-data called
+[2026-04-01T09:44:40.042Z] Customer search results: [object Object]
+[2026-04-01T09:44:40.043Z]  Found existing Airwallex customer: bcus_sgpdmbrtqhh63y2sfus
+[2026-04-01T09:44:40.197Z] Search Customer by Email [object Object]
+[2026-04-01T09:44:40.197Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T09:44:41.602Z] Customer found: 1
+[2026-04-01T09:54:01.252Z] MongoDB connected
+[2026-04-01T09:54:01.263Z] Server running on port 4000
+[2026-04-01T09:55:25.865Z] api cart-data called
+[2026-04-01T09:55:27.273Z] api cart-data called
+[2026-04-01T09:55:36.664Z] api cart-data called
+[2026-04-01T09:55:37.574Z] api cart-data called
+[2026-04-01T09:55:53.881Z] api cart-data called
+[2026-04-01T09:55:54.747Z] api cart-data called
+[2026-04-01T09:55:58.462Z] Search Customer by Email [object Object]
+[2026-04-01T09:55:58.463Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T09:55:58.872Z] Customer found: 1
+[2026-04-01T09:55:58.873Z] Email Search result: [object Object]
+[2026-04-01T09:55:58.874Z] ERROR: Customer search error: Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client
+[2026-04-01T09:55:58.879Z] ERROR: Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client
+    at ServerResponse.setHeader (node:_http_outgoing:699:11)
+    at ServerResponse.header (E:\Nomade-Subscription\backend\node_modules\express\lib\response.js:686:10)
+    at ServerResponse.send (E:\Nomade-Subscription\backend\node_modules\express\lib\response.js:163:12)
+    at ServerResponse.json (E:\Nomade-Subscription\backend\node_modules\express\lib\response.js:252:15)
+    at E:\Nomade-Subscription\backend\routes\bigcommerceRoutes.js:473:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2026-04-01T10:01:11.467Z] MongoDB connected
+[2026-04-01T10:01:11.475Z] Server running on port 4000
+[2026-04-01T10:01:13.074Z] api cart-data called
+[2026-04-01T10:01:14.575Z] api cart-data called
+[2026-04-01T10:01:33.169Z] Search Customer by Email [object Object]
+[2026-04-01T10:01:33.169Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T10:01:33.829Z] Customer found: 1
+[2026-04-01T10:01:33.829Z] Email Search result: [object Object]
+[2026-04-01T10:02:50.756Z] MongoDB connected
+[2026-04-01T10:02:50.766Z] Server running on port 4000
+[2026-04-01T10:05:21.900Z] api cart-data called
+[2026-04-01T10:05:22.796Z] api cart-data called
+[2026-04-01T10:05:32.639Z] Search Customer by Email [object Object]
+[2026-04-01T10:05:32.640Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T10:05:33.258Z] Customer found: 1
+[2026-04-01T10:05:33.258Z] Email Search result: {"data":[{"id":1,"authentication":{"force_password_reset":false},"company":"","customer_group_id":0,"email":"test111@gmail.com","first_name":"test","last_name":"test","notes":"","phone":"","registration_ip_address":"","tax_exempt_category":"","date_created":"2026-04-01T04:15:58Z","date_modified":"2026-04-01T04:15:58Z","accepts_product_review_abandoned_cart_emails":false,"origin_channel_id":1,"channel_ids":null}],"meta":{"pagination":{"total":1,"count":1,"per_page":50,"current_page":1,"total_pages":1},"cursor_pagination":{"count":1,"per_page":50,"start_cursor":"eyJpZCI6MX0","end_cursor":"eyJpZCI6MX0","links":{}}}}
+[2026-04-01T10:06:30.037Z] api cart-data called
+[2026-04-01T10:06:31.424Z] api cart-data called
+[2026-04-01T10:06:48.151Z] api cart-data called
+[2026-04-01T10:06:49.872Z] api cart-data called
+[2026-04-01T10:07:17.879Z] Search Customer by Email [object Object]
+[2026-04-01T10:07:17.879Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T10:07:18.510Z] Customer found: 1
+[2026-04-01T10:07:18.511Z] Email Search result: {"data":[{"id":1,"authentication":{"force_password_reset":false},"company":"","customer_group_id":0,"email":"test111@gmail.com","first_name":"test","last_name":"test","notes":"","phone":"","registration_ip_address":"","tax_exempt_category":"","date_created":"2026-04-01T04:15:58Z","date_modified":"2026-04-01T04:15:58Z","accepts_product_review_abandoned_cart_emails":false,"origin_channel_id":1,"channel_ids":null}],"meta":{"pagination":{"total":1,"count":1,"per_page":50,"current_page":1,"total_pages":1},"cursor_pagination":{"count":1,"per_page":50,"start_cursor":"eyJpZCI6MX0","end_cursor":"eyJpZCI6MX0","links":{}}}}
+[2026-04-01T10:30:35.657Z] api cart-data called
+[2026-04-01T10:30:37.111Z] api cart-data called
+[2026-04-01T10:30:40.128Z] Search Customer by Email [object Object]
+[2026-04-01T10:30:40.129Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T10:30:40.539Z] Customer found: 1
+[2026-04-01T10:30:40.541Z] Email Search result: {"data":[{"id":1,"authentication":{"force_password_reset":false},"company":"","customer_group_id":0,"email":"test111@gmail.com","first_name":"test","last_name":"test","notes":"","phone":"","registration_ip_address":"","tax_exempt_category":"","date_created":"2026-04-01T04:15:58Z","date_modified":"2026-04-01T04:15:58Z","accepts_product_review_abandoned_cart_emails":false,"origin_channel_id":1,"channel_ids":null}],"meta":{"pagination":{"total":1,"count":1,"per_page":50,"current_page":1,"total_pages":1},"cursor_pagination":{"count":1,"per_page":50,"start_cursor":"eyJpZCI6MX0","end_cursor":"eyJpZCI6MX0","links":{}}}}
+[2026-04-01T10:30:41.569Z] Customer search results: [object Object]
+[2026-04-01T10:30:41.570Z]  Found existing Airwallex customer: bcus_sgpdmbrtqhh63y2sfus
+[2026-04-01T10:30:41.729Z] Search Customer by Email [object Object]
+[2026-04-01T10:30:41.729Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T10:30:42.140Z] Customer found: 1
+[2026-04-01T10:30:42.142Z] Email Search result: {"data":[{"id":1,"authentication":{"force_password_reset":false},"company":"","customer_group_id":0,"email":"test111@gmail.com","first_name":"test","last_name":"test","notes":"","phone":"","registration_ip_address":"","tax_exempt_category":"","date_created":"2026-04-01T04:15:58Z","date_modified":"2026-04-01T04:15:58Z","accepts_product_review_abandoned_cart_emails":false,"origin_channel_id":1,"channel_ids":null}],"meta":{"pagination":{"total":1,"count":1,"per_page":50,"current_page":1,"total_pages":1},"cursor_pagination":{"count":1,"per_page":50,"start_cursor":"eyJpZCI6MX0","end_cursor":"eyJpZCI6MX0","links":{}}}}
+[2026-04-01T10:30:53.407Z] ================================================================================
+[2026-04-01T10:30:53.408Z] 🚚 SHIPPING QUOTES API HIT
+[2026-04-01T10:30:53.408Z] 🕒 Timestamp: 2026-04-01T10:30:53.408Z
+[2026-04-01T10:30:53.410Z] 📥 Incoming body: {
+  "cartId": "b226d5e8-53c9-4098-a2f7-17ce65329037",
+  "address": {
+    "firstName": "Test",
+    "lastName": "test test",
+    "address1": "560 Mission Street",
+    "city": "San Francisco",
+    "postalCode": "94105",
+    "countryCode": "FR",
+    "stateOrProvince": "San Francisco",
+    "phone": ""
+  }
+}
+[2026-04-01T10:30:53.410Z] 🔎 Extracted inputs: [object Object]
+[2026-04-01T10:30:53.410Z] ✅ Validation passed
+[2026-04-01T10:30:53.411Z] 📤 Fetching checkout from BigCommerce: https://api.bigcommerce.com/stores/9feeyc5orh/v3/checkouts/b226d5e8-53c9-4098-a2f7-17ce65329037
+[2026-04-01T10:30:54.284Z] 📡 Checkout response status: 200
+[2026-04-01T10:30:54.292Z] 📡 Checkout raw response: {"data":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","cart":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","customer_id":0,"channel_id":1,"email":"test111@gmail.com","currency":{"code":"EUR"},"tax_included":false,"base_amount":3071.4,"discount_amount":0,"manual_discount_amount":0,"cart_amount_inc_tax":3071.4,"cart_amount_ex_tax":3071.4,"coupons":[],"discounts":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","discounted_amount":0},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","discounted_amount":0},{"id":"b1e10291-3a62-4b2f-9505-a334d52c195a","discounted_amount":0},{"id":"b6beab66-e651-496c-9ddd-0d45d96a837d","discounted_amount":0},{"id":"a2f14abb-0a66-43b3-900f-4339faf5983b","discounted_amount":0},{"id":"4a4b6cb2-f67b-4c83-abd3-de359c10cf18","discounted_amount":0}],"line_items":{"physical_items":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","parent_id":null,"variant_id":1341,"product_id":207,"sku":"208-KH-8","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":3,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1174_thumb_1764685175.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":64.9,"list_price":64.9,"sale_price":64.9,"extended_list_price":194.7,"extended_sale_price":194.7,"comparison_price":64.9,"extended_comparison_price":194.7,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","parent_id":null,"variant_id":1346,"product_id":207,"sku":"208-GR-7","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":10,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/
+[2026-04-01T10:30:54.294Z] ✅ Checkout JSON parsed successfully
+[2026-04-01T10:30:54.295Z] 🧾 Checkout summary: [object Object]
+[2026-04-01T10:30:54.297Z] 🛒 Checkout line items summary: [object Object]
+[2026-04-01T10:30:54.308Z] 📦 Consignment payload to BigCommerce: [
+  {
+    "shipping_address": {
+      "first_name": "Test",
+      "last_name": "test test",
+      "address1": "560 Mission Street",
+      "city": "San Francisco",
+      "state_or_province": "San Francisco",
+      "postal_code": "94105",
+      "country_code": "FR",
+      "phone": ""
+    },
+    "line_items": [
+      {
+        "item_id": "2f44e6ba-0a4c-488a-9aca-e37aea31a511",
+        "quantity": 3
+      },
+      {
+        "item_id": "2855f582-3ac5-4a73-b65d-fc2b4d4b1c56",
+        "quantity": 10
+      },
+      {
+        "item_id": "b1e10291-3a62-4b2f-9505-a334d52c195a",
+        "quantity": 5
+      },
+      {
+        "item_id": "b6beab66-e651-496c-9ddd-0d45d96a837d",
+        "quantity": 1
+      },
+      {
+        "item_id": "a2f14abb-0a66-43b3-900f-4339faf5983b",
+        "quantity": 2
+      },
+      {
+        "item_id": "4a4b6cb2-f67b-4c83-abd3-de359c10cf18",
+        "quantity": 15
+      }
+    ]
+  }
+]
+[2026-04-01T10:30:54.309Z] 📤 Posting consignments to BigCommerce: https://api.bigcommerce.com/stores/9feeyc5orh/v3/checkouts/b226d5e8-53c9-4098-a2f7-17ce65329037/consignments?include=consignments.available_shipping_options
+[2026-04-01T10:30:55.873Z] 📡 Consignments response status: 200
+[2026-04-01T10:30:55.884Z] 📡 Consignments raw response: {"data":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","cart":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","customer_id":0,"channel_id":1,"email":"test111@gmail.com","currency":{"code":"EUR"},"tax_included":false,"base_amount":3071.4,"discount_amount":0,"manual_discount_amount":0,"cart_amount_inc_tax":3071.4,"cart_amount_ex_tax":3071.4,"coupons":[],"discounts":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","discounted_amount":0},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","discounted_amount":0},{"id":"b1e10291-3a62-4b2f-9505-a334d52c195a","discounted_amount":0},{"id":"b6beab66-e651-496c-9ddd-0d45d96a837d","discounted_amount":0},{"id":"a2f14abb-0a66-43b3-900f-4339faf5983b","discounted_amount":0},{"id":"4a4b6cb2-f67b-4c83-abd3-de359c10cf18","discounted_amount":0}],"line_items":{"physical_items":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","parent_id":null,"variant_id":1341,"product_id":207,"sku":"208-KH-8","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":3,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1174_thumb_1764685175.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":64.9,"list_price":64.9,"sale_price":64.9,"extended_list_price":194.7,"extended_sale_price":194.7,"comparison_price":64.9,"extended_comparison_price":194.7,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","parent_id":null,"variant_id":1346,"product_id":207,"sku":"208-GR-7","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":10,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1173_thumb_1764685175.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":64.9,"list_price":64.9,"sale_price":64.9,"extended_list_price":649,"extended_sale_price":649,"comparison_price":64.9,"extended_comparison_price":649,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"b1e10291-3a62-4b2f-9505-a334d52c195a","parent_id":null,"variant_id":1741,"product_id":264,"sku":"265-WH-L","name":"Ensemble de Randonn\u00e9e - Homme | Softshell & D\u00e9perlant","url":"https:\/\/nomade-horizon.com\/ensemble-de-randonnee-homme-softshell-deperlant\/","quantity":5,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1514_thumb_1764685679.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":59.9,"list_price":59.9,"sale_price":59.9,"extended_list_price":299.5,"extended_sale_price":299.5,"comparison_price":59.9,"extended_comparison_price":299.5,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"b6beab66-e651-496c-9ddd-0d45d96a837d","parent_id":null,"variant_id":1742,"product_id":264,"sku":"265-WH-XL","name":"Ensemble de Randonn\u00e9e - Homme | Softshell & D\u00e9perlant","url":"https:\/\/nomade-horizon.com\/ensemble-de-randonnee-homme-softshell-deperlant\/","quantity":1,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1520_thumb_1764685681.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":59.9,"list_price":59.9,"sale_price":59.9,"extended_list_price":59.9,"extended_sale_price":59.9,"comparison_price":59.9,"extended_comparison_price":59.9,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"a2f
+[2026-04-01T10:30:55.886Z] ✅ Consignments JSON parsed successfully
+[2026-04-01T10:30:55.887Z] 📋 Consignments summary: [object Object]
+[2026-04-01T10:30:55.888Z] 🚚 Raw available shipping options from BigCommerce: [
+  {
+    "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+    "type": "freeshipping",
+    "description": "Free Shipping",
+    "image_url": "",
+    "cost": 0,
+    "transit_time": "",
+    "additional_description": "",
+    "cost_after_discount": 0
+  }
+]
+[2026-04-01T10:30:55.893Z] ✅ Final mapped shipping options: [
+  {
+    "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+    "description": "Free Shipping",
+    "cost": 0,
+    "type": "freeshipping",
+    "isRecommended": false,
+    "raw": {
+      "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+      "type": "freeshipping",
+      "description": "Free Shipping",
+      "image_url": "",
+      "cost": 0,
+      "transit_time": "",
+      "additional_description": "",
+      "cost_after_discount": 0
+    }
+  }
+]
+[2026-04-01T10:30:55.895Z] 📤 Responding to frontend with: {
+  "success": true,
+  "checkoutId": "b226d5e8-53c9-4098-a2f7-17ce65329037",
+  "consignmentsCount": 1,
+  "shippingOptionsCount": 1
+}
+[2026-04-01T10:30:55.897Z] ================================================================================
+[2026-04-01T10:31:24.828Z] api cart-data called
+[2026-04-01T10:31:25.753Z] api cart-data called
+[2026-04-01T10:31:32.438Z] Search Customer by Email [object Object]
+[2026-04-01T10:31:32.438Z] Searching customer by email (decoded): aminchand42@gmail.com
+[2026-04-01T10:31:33.832Z] Customer search results: 
+[2026-04-01T10:31:33.832Z] 🆕 Creating new Airwallex customer for: aminchand42@gmail.com
+[2026-04-01T10:31:34.349Z] Search Customer by Email [object Object]
+[2026-04-01T10:31:34.349Z] Searching customer by email (decoded): aminchand42@gmail.com
+[2026-04-01T10:31:34.888Z] Create Customer
+[2026-04-01T10:31:34.888Z] Creating customer: [object Object]
+[2026-04-01T10:31:35.417Z] Customer created: 7
+[2026-04-01T10:31:51.018Z] ================================================================================
+[2026-04-01T10:31:51.018Z] 🚚 SHIPPING QUOTES API HIT
+[2026-04-01T10:31:51.018Z] 🕒 Timestamp: 2026-04-01T10:31:51.018Z
+[2026-04-01T10:31:51.020Z] 📥 Incoming body: {
+  "cartId": "b226d5e8-53c9-4098-a2f7-17ce65329037",
+  "address": {
+    "firstName": "Test",
+    "lastName": "test test",
+    "address1": "560 Mission Street",
+    "city": "San Francisco",
+    "postalCode": "94105",
+    "countryCode": "FR",
+    "stateOrProvince": "San Francisco",
+    "phone": ""
+  }
+}
+[2026-04-01T10:31:51.020Z] 🔎 Extracted inputs: [object Object]
+[2026-04-01T10:31:51.020Z] ✅ Validation passed
+[2026-04-01T10:31:51.020Z] 📤 Fetching checkout from BigCommerce: https://api.bigcommerce.com/stores/9feeyc5orh/v3/checkouts/b226d5e8-53c9-4098-a2f7-17ce65329037
+[2026-04-01T10:31:52.345Z] 📡 Checkout response status: 200
+[2026-04-01T10:31:52.347Z] 📡 Checkout raw response: {"data":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","cart":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","customer_id":0,"channel_id":1,"email":"test111@gmail.com","currency":{"code":"EUR"},"tax_included":false,"base_amount":3071.4,"discount_amount":0,"manual_discount_amount":0,"cart_amount_inc_tax":3071.4,"cart_amount_ex_tax":3071.4,"coupons":[],"discounts":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","discounted_amount":0},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","discounted_amount":0},{"id":"b1e10291-3a62-4b2f-9505-a334d52c195a","discounted_amount":0},{"id":"b6beab66-e651-496c-9ddd-0d45d96a837d","discounted_amount":0},{"id":"a2f14abb-0a66-43b3-900f-4339faf5983b","discounted_amount":0},{"id":"4a4b6cb2-f67b-4c83-abd3-de359c10cf18","discounted_amount":0}],"line_items":{"physical_items":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","parent_id":null,"variant_id":1341,"product_id":207,"sku":"208-KH-8","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":3,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1174_thumb_1764685175.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":64.9,"list_price":64.9,"sale_price":64.9,"extended_list_price":194.7,"extended_sale_price":194.7,"comparison_price":64.9,"extended_comparison_price":194.7,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","parent_id":null,"variant_id":1346,"product_id":207,"sku":"208-GR-7","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":10,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/
+[2026-04-01T10:31:52.348Z] ✅ Checkout JSON parsed successfully
+[2026-04-01T10:31:52.348Z] 🧾 Checkout summary: [object Object]
+[2026-04-01T10:31:52.349Z] 🛒 Checkout line items summary: [object Object]
+[2026-04-01T10:31:52.355Z] 📦 Consignment payload to BigCommerce: [
+  {
+    "shipping_address": {
+      "first_name": "Test",
+      "last_name": "test test",
+      "address1": "560 Mission Street",
+      "city": "San Francisco",
+      "state_or_province": "San Francisco",
+      "postal_code": "94105",
+      "country_code": "FR",
+      "phone": ""
+    },
+    "line_items": [
+      {
+        "item_id": "2f44e6ba-0a4c-488a-9aca-e37aea31a511",
+        "quantity": 3
+      },
+      {
+        "item_id": "2855f582-3ac5-4a73-b65d-fc2b4d4b1c56",
+        "quantity": 10
+      },
+      {
+        "item_id": "b1e10291-3a62-4b2f-9505-a334d52c195a",
+        "quantity": 5
+      },
+      {
+        "item_id": "b6beab66-e651-496c-9ddd-0d45d96a837d",
+        "quantity": 1
+      },
+      {
+        "item_id": "a2f14abb-0a66-43b3-900f-4339faf5983b",
+        "quantity": 2
+      },
+      {
+        "item_id": "4a4b6cb2-f67b-4c83-abd3-de359c10cf18",
+        "quantity": 15
+      }
+    ]
+  }
+]
+[2026-04-01T10:31:52.356Z] 📤 Posting consignments to BigCommerce: https://api.bigcommerce.com/stores/9feeyc5orh/v3/checkouts/b226d5e8-53c9-4098-a2f7-17ce65329037/consignments?include=consignments.available_shipping_options
+[2026-04-01T10:31:53.255Z] 📡 Consignments response status: 200
+[2026-04-01T10:31:53.262Z] 📡 Consignments raw response: {"data":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","cart":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","customer_id":0,"channel_id":1,"email":"test111@gmail.com","currency":{"code":"EUR"},"tax_included":false,"base_amount":3071.4,"discount_amount":0,"manual_discount_amount":0,"cart_amount_inc_tax":3071.4,"cart_amount_ex_tax":3071.4,"coupons":[],"discounts":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","discounted_amount":0},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","discounted_amount":0},{"id":"b1e10291-3a62-4b2f-9505-a334d52c195a","discounted_amount":0},{"id":"b6beab66-e651-496c-9ddd-0d45d96a837d","discounted_amount":0},{"id":"a2f14abb-0a66-43b3-900f-4339faf5983b","discounted_amount":0},{"id":"4a4b6cb2-f67b-4c83-abd3-de359c10cf18","discounted_amount":0}],"line_items":{"physical_items":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","parent_id":null,"variant_id":1341,"product_id":207,"sku":"208-KH-8","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":3,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1174_thumb_1764685175.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":64.9,"list_price":64.9,"sale_price":64.9,"extended_list_price":194.7,"extended_sale_price":194.7,"comparison_price":64.9,"extended_comparison_price":194.7,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","parent_id":null,"variant_id":1346,"product_id":207,"sku":"208-GR-7","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":10,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1173_thumb_1764685175.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":64.9,"list_price":64.9,"sale_price":64.9,"extended_list_price":649,"extended_sale_price":649,"comparison_price":64.9,"extended_comparison_price":649,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"b1e10291-3a62-4b2f-9505-a334d52c195a","parent_id":null,"variant_id":1741,"product_id":264,"sku":"265-WH-L","name":"Ensemble de Randonn\u00e9e - Homme | Softshell & D\u00e9perlant","url":"https:\/\/nomade-horizon.com\/ensemble-de-randonnee-homme-softshell-deperlant\/","quantity":5,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1514_thumb_1764685679.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":59.9,"list_price":59.9,"sale_price":59.9,"extended_list_price":299.5,"extended_sale_price":299.5,"comparison_price":59.9,"extended_comparison_price":299.5,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"b6beab66-e651-496c-9ddd-0d45d96a837d","parent_id":null,"variant_id":1742,"product_id":264,"sku":"265-WH-XL","name":"Ensemble de Randonn\u00e9e - Homme | Softshell & D\u00e9perlant","url":"https:\/\/nomade-horizon.com\/ensemble-de-randonnee-homme-softshell-deperlant\/","quantity":1,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1520_thumb_1764685681.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":59.9,"list_price":59.9,"sale_price":59.9,"extended_list_price":59.9,"extended_sale_price":59.9,"comparison_price":59.9,"extended_comparison_price":59.9,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"a2f
+[2026-04-01T10:31:53.264Z] ✅ Consignments JSON parsed successfully
+[2026-04-01T10:31:53.265Z] 📋 Consignments summary: [object Object]
+[2026-04-01T10:31:53.271Z] 🚚 Raw available shipping options from BigCommerce: [
+  {
+    "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+    "type": "freeshipping",
+    "description": "Free Shipping",
+    "image_url": "",
+    "cost": 0,
+    "transit_time": "",
+    "additional_description": "",
+    "cost_after_discount": 0
+  }
+]
+[2026-04-01T10:31:53.281Z] ✅ Final mapped shipping options: [
+  {
+    "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+    "description": "Free Shipping",
+    "cost": 0,
+    "type": "freeshipping",
+    "isRecommended": false,
+    "raw": {
+      "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+      "type": "freeshipping",
+      "description": "Free Shipping",
+      "image_url": "",
+      "cost": 0,
+      "transit_time": "",
+      "additional_description": "",
+      "cost_after_discount": 0
+    }
+  }
+]
+[2026-04-01T10:31:53.284Z] 📤 Responding to frontend with: {
+  "success": true,
+  "checkoutId": "b226d5e8-53c9-4098-a2f7-17ce65329037",
+  "consignmentsCount": 1,
+  "shippingOptionsCount": 1
+}
+[2026-04-01T10:31:53.284Z] ================================================================================
+[2026-04-01T10:31:58.995Z] ================================================================================
+[2026-04-01T10:31:58.996Z] 🚚 SHIPPING QUOTES API HIT
+[2026-04-01T10:31:58.996Z] 🕒 Timestamp: 2026-04-01T10:31:58.996Z
+[2026-04-01T10:31:58.997Z] 📥 Incoming body: {
+  "cartId": "b226d5e8-53c9-4098-a2f7-17ce65329037",
+  "address": {
+    "firstName": "Test",
+    "lastName": "test test",
+    "address1": "560 Mission Street",
+    "city": "San Francisco",
+    "postalCode": "94105",
+    "countryCode": "FR",
+    "stateOrProvince": "San Francisco",
+    "phone": "3423423"
+  }
+}
+[2026-04-01T10:31:58.997Z] 🔎 Extracted inputs: [object Object]
+[2026-04-01T10:31:58.998Z] ✅ Validation passed
+[2026-04-01T10:31:58.998Z] 📤 Fetching checkout from BigCommerce: https://api.bigcommerce.com/stores/9feeyc5orh/v3/checkouts/b226d5e8-53c9-4098-a2f7-17ce65329037
+[2026-04-01T10:31:59.929Z] 📡 Checkout response status: 200
+[2026-04-01T10:31:59.933Z] 📡 Checkout raw response: {"data":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","cart":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","customer_id":0,"channel_id":1,"email":"test111@gmail.com","currency":{"code":"EUR"},"tax_included":false,"base_amount":3071.4,"discount_amount":0,"manual_discount_amount":0,"cart_amount_inc_tax":3071.4,"cart_amount_ex_tax":3071.4,"coupons":[],"discounts":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","discounted_amount":0},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","discounted_amount":0},{"id":"b1e10291-3a62-4b2f-9505-a334d52c195a","discounted_amount":0},{"id":"b6beab66-e651-496c-9ddd-0d45d96a837d","discounted_amount":0},{"id":"a2f14abb-0a66-43b3-900f-4339faf5983b","discounted_amount":0},{"id":"4a4b6cb2-f67b-4c83-abd3-de359c10cf18","discounted_amount":0}],"line_items":{"physical_items":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","parent_id":null,"variant_id":1341,"product_id":207,"sku":"208-KH-8","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":3,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1174_thumb_1764685175.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":64.9,"list_price":64.9,"sale_price":64.9,"extended_list_price":194.7,"extended_sale_price":194.7,"comparison_price":64.9,"extended_comparison_price":194.7,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","parent_id":null,"variant_id":1346,"product_id":207,"sku":"208-GR-7","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":10,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/
+[2026-04-01T10:31:59.934Z] ✅ Checkout JSON parsed successfully
+[2026-04-01T10:31:59.935Z] 🧾 Checkout summary: [object Object]
+[2026-04-01T10:31:59.936Z] 🛒 Checkout line items summary: [object Object]
+[2026-04-01T10:31:59.946Z] 📦 Consignment payload to BigCommerce: [
+  {
+    "shipping_address": {
+      "first_name": "Test",
+      "last_name": "test test",
+      "address1": "560 Mission Street",
+      "city": "San Francisco",
+      "state_or_province": "San Francisco",
+      "postal_code": "94105",
+      "country_code": "FR",
+      "phone": "3423423"
+    },
+    "line_items": [
+      {
+        "item_id": "2f44e6ba-0a4c-488a-9aca-e37aea31a511",
+        "quantity": 3
+      },
+      {
+        "item_id": "2855f582-3ac5-4a73-b65d-fc2b4d4b1c56",
+        "quantity": 10
+      },
+      {
+        "item_id": "b1e10291-3a62-4b2f-9505-a334d52c195a",
+        "quantity": 5
+      },
+      {
+        "item_id": "b6beab66-e651-496c-9ddd-0d45d96a837d",
+        "quantity": 1
+      },
+      {
+        "item_id": "a2f14abb-0a66-43b3-900f-4339faf5983b",
+        "quantity": 2
+      },
+      {
+        "item_id": "4a4b6cb2-f67b-4c83-abd3-de359c10cf18",
+        "quantity": 15
+      }
+    ]
+  }
+]
+[2026-04-01T10:31:59.947Z] 📤 Posting consignments to BigCommerce: https://api.bigcommerce.com/stores/9feeyc5orh/v3/checkouts/b226d5e8-53c9-4098-a2f7-17ce65329037/consignments?include=consignments.available_shipping_options
+[2026-04-01T10:32:01.443Z] 📡 Consignments response status: 200
+[2026-04-01T10:32:01.446Z] 📡 Consignments raw response: {"data":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","cart":{"id":"b226d5e8-53c9-4098-a2f7-17ce65329037","customer_id":0,"channel_id":1,"email":"test111@gmail.com","currency":{"code":"EUR"},"tax_included":false,"base_amount":3071.4,"discount_amount":0,"manual_discount_amount":0,"cart_amount_inc_tax":3071.4,"cart_amount_ex_tax":3071.4,"coupons":[],"discounts":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","discounted_amount":0},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","discounted_amount":0},{"id":"b1e10291-3a62-4b2f-9505-a334d52c195a","discounted_amount":0},{"id":"b6beab66-e651-496c-9ddd-0d45d96a837d","discounted_amount":0},{"id":"a2f14abb-0a66-43b3-900f-4339faf5983b","discounted_amount":0},{"id":"4a4b6cb2-f67b-4c83-abd3-de359c10cf18","discounted_amount":0}],"line_items":{"physical_items":[{"id":"2f44e6ba-0a4c-488a-9aca-e37aea31a511","parent_id":null,"variant_id":1341,"product_id":207,"sku":"208-KH-8","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":3,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1174_thumb_1764685175.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":64.9,"list_price":64.9,"sale_price":64.9,"extended_list_price":194.7,"extended_sale_price":194.7,"comparison_price":64.9,"extended_comparison_price":194.7,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"2855f582-3ac5-4a73-b65d-fc2b4d4b1c56","parent_id":null,"variant_id":1346,"product_id":207,"sku":"208-GR-7","name":"Chaussures de randonn\u00e9e Homme - Ultra Solide - Montagne & Trekking","url":"https:\/\/nomade-horizon.com\/chaussures-de-randonnee-homme-ultra-solide-montagne-trekking\/","quantity":10,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1173_thumb_1764685175.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":64.9,"list_price":64.9,"sale_price":64.9,"extended_list_price":649,"extended_sale_price":649,"comparison_price":64.9,"extended_comparison_price":649,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"b1e10291-3a62-4b2f-9505-a334d52c195a","parent_id":null,"variant_id":1741,"product_id":264,"sku":"265-WH-L","name":"Ensemble de Randonn\u00e9e - Homme | Softshell & D\u00e9perlant","url":"https:\/\/nomade-horizon.com\/ensemble-de-randonnee-homme-softshell-deperlant\/","quantity":5,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1514_thumb_1764685679.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":59.9,"list_price":59.9,"sale_price":59.9,"extended_list_price":299.5,"extended_sale_price":299.5,"comparison_price":59.9,"extended_comparison_price":299.5,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"b6beab66-e651-496c-9ddd-0d45d96a837d","parent_id":null,"variant_id":1742,"product_id":264,"sku":"265-WH-XL","name":"Ensemble de Randonn\u00e9e - Homme | Softshell & D\u00e9perlant","url":"https:\/\/nomade-horizon.com\/ensemble-de-randonnee-homme-softshell-deperlant\/","quantity":1,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1520_thumb_1764685681.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":59.9,"list_price":59.9,"sale_price":59.9,"extended_list_price":59.9,"extended_sale_price":59.9,"comparison_price":59.9,"extended_comparison_price":59.9,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"a2f
+[2026-04-01T10:32:01.447Z] ✅ Consignments JSON parsed successfully
+[2026-04-01T10:32:01.447Z] 📋 Consignments summary: [object Object]
+[2026-04-01T10:32:01.448Z] 🚚 Raw available shipping options from BigCommerce: [
+  {
+    "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+    "type": "freeshipping",
+    "description": "Free Shipping",
+    "image_url": "",
+    "cost": 0,
+    "transit_time": "",
+    "additional_description": "",
+    "cost_after_discount": 0
+  }
+]
+[2026-04-01T10:32:01.449Z] ✅ Final mapped shipping options: [
+  {
+    "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+    "description": "Free Shipping",
+    "cost": 0,
+    "type": "freeshipping",
+    "isRecommended": false,
+    "raw": {
+      "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+      "type": "freeshipping",
+      "description": "Free Shipping",
+      "image_url": "",
+      "cost": 0,
+      "transit_time": "",
+      "additional_description": "",
+      "cost_after_discount": 0
+    }
+  }
+]
+[2026-04-01T10:32:01.450Z] 📤 Responding to frontend with: {
+  "success": true,
+  "checkoutId": "b226d5e8-53c9-4098-a2f7-17ce65329037",
+  "consignmentsCount": 1,
+  "shippingOptionsCount": 1
+}
+[2026-04-01T10:32:01.450Z] ================================================================================
+[2026-04-01T10:34:07.405Z] api cart-data called
+[2026-04-01T10:34:08.727Z] api cart-data called
+[2026-04-01T10:34:28.904Z] Search Customer by Email [object Object]
+[2026-04-01T10:34:28.905Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T10:34:29.528Z] Customer found: 1
+[2026-04-01T10:34:29.530Z] Email Search result: {"data":[{"id":1,"authentication":{"force_password_reset":false},"company":"","customer_group_id":0,"email":"test111@gmail.com","first_name":"test","last_name":"test","notes":"","phone":"","registration_ip_address":"","tax_exempt_category":"","date_created":"2026-04-01T04:15:58Z","date_modified":"2026-04-01T04:15:58Z","accepts_product_review_abandoned_cart_emails":false,"origin_channel_id":1,"channel_ids":null}],"meta":{"pagination":{"total":1,"count":1,"per_page":50,"current_page":1,"total_pages":1},"cursor_pagination":{"count":1,"per_page":50,"start_cursor":"eyJpZCI6MX0","end_cursor":"eyJpZCI6MX0","links":{}}}}
+[2026-04-01T10:34:30.256Z] Customer search results: [object Object]
+[2026-04-01T10:34:30.257Z]  Found existing Airwallex customer: bcus_sgpdmbrtqhh63y2sfus
+[2026-04-01T10:34:30.412Z] Search Customer by Email [object Object]
+[2026-04-01T10:34:30.412Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-01T10:34:30.818Z] Customer found: 1
+[2026-04-01T10:34:30.819Z] Email Search result: {"data":[{"id":1,"authentication":{"force_password_reset":false},"company":"","customer_group_id":0,"email":"test111@gmail.com","first_name":"test","last_name":"test","notes":"","phone":"","registration_ip_address":"","tax_exempt_category":"","date_created":"2026-04-01T04:15:58Z","date_modified":"2026-04-01T04:15:58Z","accepts_product_review_abandoned_cart_emails":false,"origin_channel_id":1,"channel_ids":null}],"meta":{"pagination":{"total":1,"count":1,"per_page":50,"current_page":1,"total_pages":1},"cursor_pagination":{"count":1,"per_page":50,"start_cursor":"eyJpZCI6MX0","end_cursor":"eyJpZCI6MX0","links":{}}}}
+[2026-04-01T10:37:43.118Z] MongoDB connected
+[2026-04-01T10:37:43.137Z] Server running on port 4000

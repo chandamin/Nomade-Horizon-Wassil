@@ -219,6 +219,29 @@ router.put('/plans/:id', requireSession, async (req, res) => {
 
 
 /**
+ * PUBLIC: GET ENABLED SUBSCRIPTION PRODUCT IDS FOR STOREFRONT
+ */
+router.get('/public/enabled-product-ids', async (req, res) => {
+  try {
+    const plans = await SubscriptionPlan
+      .find({ status: 'enabled' })
+      .select('bigcommerceProductId -_id')
+      .lean();
+
+    const ids = [...new Set(
+      plans
+        .map((plan) => Number(plan.bigcommerceProductId))
+        .filter((id) => Number.isInteger(id) && id > 0)
+    )];
+
+    res.json({ productIds: ids });
+  } catch (err) {
+    console.error('Failed to fetch enabled subscription product IDs:', err.message);
+    res.status(500).json({ error: 'Failed to fetch enabled subscription product IDs' });
+  }
+});
+
+/**
  * CREATE AIRWALLEX BILLING CUSTOMER + SAVE TO DB + List Customers for deduplication
  */
 
