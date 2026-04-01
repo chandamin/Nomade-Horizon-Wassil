@@ -111,7 +111,7 @@ export default function PaymentStep({
         setIntent(result);
 
         await init({
-          env: "demo",
+          env: "prod",
           enabledElements: ["payments"],
         });
 
