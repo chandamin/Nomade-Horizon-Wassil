@@ -863,7 +863,7 @@ export default function CheckoutLayout({
             {/* First Review */}
             <div className="nr-review-outer-wr">
               <div className="nr-review-wr bg-[#f4f4f4] p-[15px] rounded-[12px] mt-[17px] relative before:absolute before:content-[''] before:w-[30px] before:h-[30px] before:bg-[#f4f4f4] before:left-[35px] before:bottom-[-5px] before:rotate-[45deg]">
-                <p className="text-[14px] text-center">"Flashventes est mon magasin en ligne favoris. Il y a beaucoup de produits innovants à très bon prix. J'achète régulièrement sur ce site et en suis très satisfait. Je le recommande totalement"</p>
+                <p className="text-[14px] text-center">"Nomade Horizon est mon magasin en ligne favoris. Il y a beaucoup de produits innovants à très bon prix. J'achète régulièrement sur ce site et en suis très satisfait. Je le recommande totalement"</p>
               </div>
               <div className="flex justify-between w-100 mt-[13px] mb-[26px]">
                 <p className="text-[14px] font-[600]">Nicolas D. - Paris</p>
@@ -873,7 +873,7 @@ export default function CheckoutLayout({
             {/* Second Review */}
             <div className="nr-review-outer-wr border-b">
               <div className="nr-review-wr bg-[#f4f4f4] p-[15px] rounded-[12px] mt-[17px] relative before:absolute before:content-[''] before:w-[30px] before:h-[30px] before:bg-[#f4f4f4] before:left-[35px] before:bottom-[-5px] before:rotate-[45deg]">
-                <p className="text-[14px] text-center">"Très bonne boutique, large choix, on y trouve tout à tout petit prix. Je recommande totalement Flashventes pour son sérieux."</p>
+                <p className="text-[14px] text-center">"Très bonne boutique, large choix, on y trouve tout à tout petit prix. Je recommande totalement Nomade Horizon pour son sérieux."</p>
               </div>
               <div className="flex justify-between w-100 mt-[13px] mb-[26px]">
                 <p className="text-[14px] font-[600]">Marie P. - Marseille</p>
