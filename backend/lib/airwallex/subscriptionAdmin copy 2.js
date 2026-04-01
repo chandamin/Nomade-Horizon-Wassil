@@ -113,7 +113,7 @@ async function cancelAirwallexSubscription(airwallexSubscriptionId, options = {}
 
   const response = await airwallexRequest({
     method: 'POST',
-    url: `https://api-demo.airwallex.com/api/v1/subscriptions/${airwallexSubscriptionId}/cancel`,
+    url: `https://api.airwallex.com/api/v1/subscriptions/${airwallexSubscriptionId}/cancel`,
     data: {
       request_id: requestId,
       proration_behavior: prorationBehavior,

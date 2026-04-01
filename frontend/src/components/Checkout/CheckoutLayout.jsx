@@ -121,14 +121,37 @@ export default function CheckoutLayout({
           throw new Error(`Failed to load enabled plans: ${res.status}`);
         }
 
-        const plans = await res.json();
+        // const plans = await res.json();
+        // const ids = [...new Set(
+        //   (Array.isArray(plans) ? plans : [])
+        //     .map((plan) => Number(plan.bigcommerceProductId))
+        //     .filter((id) => Number.isInteger(id) && id > 0)
+        // )];
+
+        // if (mounted) {
+        //   setSubscriptionProductIds(ids);
+        // }
+        const payload = await res.json();
+
         const ids = [...new Set(
-          (Array.isArray(plans) ? plans : [])
-            .map((plan) => Number(plan.bigcommerceProductId))
+          (
+            Array.isArray(payload)
+              ? payload
+              : Array.isArray(payload?.productIds)
+                ? payload.productIds
+                : []
+          )
+            .map((id) => Number(id))
             .filter((id) => Number.isInteger(id) && id > 0)
         )];
 
-        if (mounted) {
+        console.log('Enabled subscription product IDs:', ids);
+        console.log('🛒 Cart product IDs:', [
+          ...(cart?.lineItems?.physicalItems || []),
+          ...(cart?.lineItems?.digitalItems || []),
+        ].map((item) => Number(item.product_id)));
+
+        if (mounted && ids.length > 0) {
           setSubscriptionProductIds(ids);
         }
       } catch (err) {
@@ -280,7 +303,11 @@ export default function CheckoutLayout({
           }));
 
           setCustomerId(result.customerId);
-          setBigcommerceCustomer(result.customerData || null);
+          // setBigcommerceCustomer(result.customerData || null);
+          setBigcommerceCustomer({
+            ...(result.customerData || {}),
+            id: result.customerId,
+          });
         }
       } catch (err) {
         console.error(':x: Customer API error (continuing anyway):', err);

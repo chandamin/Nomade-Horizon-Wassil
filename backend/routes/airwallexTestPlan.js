@@ -741,6 +741,7 @@ router.get('/payment-intents/:id', async (req, res) => {
 
 
 router.post('/subscriptions/provision', async (req, res) => {
+  console.log("Provision")
   try {
     const {
       orderId,
@@ -885,34 +886,56 @@ router.post('/subscriptions/provision', async (req, res) => {
       console.log('🔍 Debug: Trial start (created_at will be set by Airwallex)');
     }
 
+
+        const subscriptionPayload = {
+      request_id: crypto.randomUUID(),
+      billing_customer_id: airwallexCustomerId,
+      collection_method: 'AUTO_CHARGE',
+      currency: plan.currency,
+      items: [
+        {
+          price_id: plan.airwallexPriceId,
+          quantity: 1,
+        },
+      ],
+      duration: {
+        period_unit: plan.interval,
+        period: 1,
+      },
+      ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
+      legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
+      linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
+      payment_source_id: paymentSourceId,
+      metadata: {
+        bigcommerceOrderId: String(orderId),
+        bigcommerceCustomerId: String(bigcommerceCustomer.id),
+        bigcommerceProductId: String(productId),
+      },
+    };
+
+    console.log(
+      '📤 [SUBSCRIPTION CREATE] Sending payload:\n',
+      JSON.stringify(
+        {
+          billing_customer_id: subscriptionPayload.billing_customer_id,
+          collection_method: subscriptionPayload.collection_method,
+          currency: subscriptionPayload.currency,
+          items: subscriptionPayload.items,
+          duration: subscriptionPayload.duration,
+          trial_ends_at: subscriptionPayload.trial_ends_at || null,
+          legal_entity_id: subscriptionPayload.legal_entity_id,
+          linked_payment_account_id: subscriptionPayload.linked_payment_account_id,
+          payment_source_id: subscriptionPayload.payment_source_id,
+          metadata: subscriptionPayload.metadata,
+        },
+        null,
+        2
+      )
+    );
+
     const subscriptionRes = await axios.post(
       `${TEST_BASE}/api/v1/subscriptions/create`,
-      {
-        request_id: crypto.randomUUID(),
-        billing_customer_id: airwallexCustomerId,
-        // collection_method: 'OUT_OF_BAND',
-        collection_method: 'AUTO_CHARGE',
-        currency: plan.currency,
-        items: [
-          {
-            price_id: plan.airwallexPriceId,
-            quantity: 1,
-          },
-        ],
-        duration: {
-          period_unit: plan.interval,
-          period: 1,
-        },
-        ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
-        legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
-        linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
-        payment_source_id: paymentSourceId,
-        metadata: {
-          bigcommerceOrderId: String(orderId),
-          bigcommerceCustomerId: String(bigcommerceCustomer.id),
-          bigcommerceProductId: String(productId),
-        },
-      },
+      subscriptionPayload,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -920,6 +943,41 @@ router.post('/subscriptions/provision', async (req, res) => {
         },
       }
     );
+    // const subscriptionRes = await axios.post(
+    //   `${TEST_BASE}/api/v1/subscriptions/create`,
+    //   {
+    //     request_id: crypto.randomUUID(),
+    //     billing_customer_id: airwallexCustomerId,
+    //     // collection_method: 'OUT_OF_BAND',
+    //     collection_method: 'AUTO_CHARGE',
+    //     currency: plan.currency,
+    //     items: [
+    //       {
+    //         price_id: plan.airwallexPriceId,
+    //         quantity: 1,
+    //       },
+    //     ],
+    //     duration: {
+    //       period_unit: plan.interval,
+    //       period: 1,
+    //     },
+    //     ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
+    //     legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
+    //     linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
+    //     payment_source_id: paymentSourceId,
+    //     metadata: {
+    //       bigcommerceOrderId: String(orderId),
+    //       bigcommerceCustomerId: String(bigcommerceCustomer.id),
+    //       bigcommerceProductId: String(productId),
+    //     },
+    //   },
+    //   {
+    //     headers: {
+    //       Authorization: `Bearer ${token}`,
+    //       'Content-Type': 'application/json',
+    //     },
+    //   }
+    // );
 
     console.log('🔍 [SUBSCRIPTION CREATE] Request payload sent:', {
       billing_customer_id: airwallexCustomerId,
@@ -1002,10 +1060,27 @@ router.post('/subscriptions/provision', async (req, res) => {
     });
 
         subscriptions.push(saved);
-      } catch (productErr) {
+            } catch (productErr) {
+        const errorBody = productErr.response?.data || null;
+
+        console.error(
+          '❌ [PROVISION][PRODUCT ERROR]',
+          JSON.stringify(
+            {
+              productId,
+              status: productErr.response?.status || 500,
+              message: productErr.message,
+              data: errorBody,
+            },
+            null,
+            2
+          )
+        );
+
         errors.push({
           productId,
-          error: productErr.response?.data || productErr.message,
+          status: productErr.response?.status || 500,
+          error: errorBody || productErr.message,
         });
       }
     }

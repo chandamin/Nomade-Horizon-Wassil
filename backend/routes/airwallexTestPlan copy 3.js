@@ -1,19 +1,25 @@
 const express = require('express')
 const axios = require('axios');
 const router = express.Router()
+const requireSession = require('../middleware/requireSession');
 const SubscriptionPlan = require('../models/SubscriptionPlan.js');
 // const BillingCustomer = require('../models/BillingCustomer.js');
 const CustomerSubscription = require('../models/CustomerSubscription.js');
 const dayjs = require('dayjs');
 const crypto = require('crypto');
+const utc = require('dayjs/plugin/utc');  //  ADD UTC PLUGIN
+const {
+  findDistinctSubscriptionProducts,
+  getEnabledSubscriptionProductIds,
+} = require('../lib/subscriptionProducts');
+dayjs.extend(utc);     // EXTEND DAYJS WITH UTC
 
-
-
+const TEST_BASE = process.env.AIRWALLEX_BASE_URL || 'https://api.airwallex.com';
 
 async function getAirwallexToken() {
   try {
     const res = await axios.post(
-      'https://api.airwallex.com/api/v1/authentication/login',
+      `${TEST_BASE}/api/v1/authentication/login`,
       {}, //  EMPTY BODY
       {
         headers: {
@@ -35,24 +41,14 @@ async function getAirwallexToken() {
   }
 }
 
-function findSubscriptionProduct(cart, subscriptionProductIds = []) {
-  const physicalItems = cart?.lineItems?.physicalItems || [];
-  const digitalItems = cart?.lineItems?.digitalItems || [];
-  const allItems = [...physicalItems, ...digitalItems];
-
-  return allItems.find((item) =>
-    subscriptionProductIds.includes(Number(item.product_id))
-  );
-}
-
-
-router.get('/plans', async (req, res) => {
+router.get('/plans', requireSession, async (req, res) => {
   try {
-    const { interval, currency } = req.query;
+    const { interval, currency, status } = req.query;
 
     const query = {};
     if (interval) query.interval = interval;
     if (currency) query.currency = currency;
+    if (status) query.status = status;
 
     const plans = await SubscriptionPlan
       .find(query)
@@ -70,7 +66,7 @@ router.get('/plans', async (req, res) => {
 /**
  * CREATE AIRWALLEX PRODUCT and PRICE
  */
-router.post('/plans', async (req, res) => {
+router.post('/plans', requireSession, async (req, res) => {
   try {
     const {
       name,
@@ -109,7 +105,7 @@ router.post('/plans', async (req, res) => {
 
     // 2️⃣ Create Product
     const productRes = await axios.post(
-      'https://api.airwallex.com/api/v1/products/create',
+      `${TEST_BASE}/api/v1/products/create`,
       {
         request_id: crypto.randomUUID(),
         name,
@@ -121,7 +117,7 @@ router.post('/plans', async (req, res) => {
 
     // 3️⃣ Create Price
     const priceRes = await axios.post(
-      'https://api.airwallex.com/api/v1/prices/create',
+      `${TEST_BASE}/api/v1/prices/create`,
       {
         request_id: crypto.randomUUID(),
         product_id: productRes.data.id,
@@ -167,7 +163,7 @@ router.post('/plans', async (req, res) => {
  */
 
 
-router.put('/plans/:id', async (req, res) => {
+router.put('/plans/:id', requireSession, async (req, res) => {
   try {
     const {
       name,
@@ -187,7 +183,7 @@ router.put('/plans/:id', async (req, res) => {
 
     // 2️⃣ Update Airwallex Product
     await axios.post(
-      `https://api.airwallex.com/api/v1/products/${plan.airwallexProductId}/update`,
+      `${TEST_BASE}/api/v1/products/${plan.airwallexProductId}/update`,
       {
         request_id: crypto.randomUUID(),
         ...(name && { name }),
@@ -221,6 +217,29 @@ router.put('/plans/:id', async (req, res) => {
   }
 });
 
+
+/**
+ * PUBLIC: GET ENABLED SUBSCRIPTION PRODUCT IDS FOR STOREFRONT
+ */
+router.get('/public/enabled-product-ids', async (req, res) => {
+  try {
+    const plans = await SubscriptionPlan
+      .find({ status: 'enabled' })
+      .select('bigcommerceProductId -_id')
+      .lean();
+
+    const ids = [...new Set(
+      plans
+        .map((plan) => Number(plan.bigcommerceProductId))
+        .filter((id) => Number.isInteger(id) && id > 0)
+    )];
+
+    res.json({ productIds: ids });
+  } catch (err) {
+    console.error('Failed to fetch enabled subscription product IDs:', err.message);
+    res.status(500).json({ error: 'Failed to fetch enabled subscription product IDs' });
+  }
+});
 
 /**
  * CREATE AIRWALLEX BILLING CUSTOMER + SAVE TO DB + List Customers for deduplication
@@ -265,7 +284,7 @@ router.post('/billing-customers', async (req, res) => {
     try {
       //  CORRECT ENDPOINT: /api/v1/billing_customers (NOT /list)
       const listRes = await axios.get(
-        'https://api.airwallex.com/api/v1/billing_customers',
+        `${TEST_BASE}/api/v1/billing_customers`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -326,7 +345,7 @@ router.post('/billing-customers', async (req, res) => {
     // ➕ STEP 3: Create new customer if not found
     console.log('🆕 Creating new Airwallex customer for:', email);
     const airwallexRes = await axios.post(
-      'https://api.airwallex.com/api/v1/billing_customers/create',
+      `${TEST_BASE}/api/v1/billing_customers/create`,
       {
         request_id: crypto.randomUUID(),
         ...(name && { name }),
@@ -417,7 +436,7 @@ router.post('/billing-customers', async (req, res) => {
 //     const token = await getAirwallexToken();
 
 //     const airwallexRes = await axios.post(
-//       'https://api.airwallex.com/api/v1/billing_customers/create',
+//       `${TEST_BASE}/api/v1/billing_customers/create`,
 //       {
 //         request_id: crypto.randomUUID(),
 //         ...(name && { name }),
@@ -494,7 +513,7 @@ router.post('/create-checkout', async (req, res) => {
       .format('YYYY-MM-DDTHH:mm:ssZZ');
 
     const checkoutRes = await axios.post(
-      'https://api.airwallex.com/api/v1/billing_checkouts/create',
+      `${TEST_BASE}/api/v1/billing_checkouts/create`,
       {
         request_id: requestId,
         mode: 'SUBSCRIPTION',
@@ -534,12 +553,111 @@ router.post('/create-checkout', async (req, res) => {
 
 
 /**
+ * CREATE OR RETRIEVE AIRWALLEX PAYMENT CUSTOMER (cus_)
+ * Required to enable payment_consent on payment intents (for mtd_ reusable payment methods)
+ */
+router.post('/payment-customers', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
+    }
+
+    const token = await getAirwallexToken();
+
+    // Search for existing payment customer by merchant_customer_id (email)
+    try {
+      const searchRes = await axios.get(
+        `${TEST_BASE}/api/v1/pa/customers`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { merchant_customer_id: email, page_size: 5 },
+        }
+      );
+
+      const customers = searchRes.data?.items || [];
+      const existing = customers.find(c => c.merchant_customer_id === email);
+
+      if (existing) {
+        console.log('Reusing existing payment customer:', existing.id);
+        return res.json({ id: existing.id });
+      }
+    } catch (searchErr) {
+      console.warn('Payment customer search failed, will create new:', searchErr.response?.data || searchErr.message);
+    }
+
+    // Create new payment customer
+    const createRes = await axios.post(
+      `${TEST_BASE}/api/v1/pa/customers/create`,
+      {
+        request_id: crypto.randomUUID(),
+        merchant_customer_id: email,
+        email,
+      },
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+    );
+
+    console.log('Payment customer created:', createRes.data.id);
+    res.status(201).json({ id: createRes.data.id });
+  } catch (err) {
+    console.error('Create payment customer error:', err.response?.status, err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || 'Failed to create payment customer',
+    });
+  }
+});
+
+
+/**
+ * CREATE PAYMENT CONSENT (merchant-triggered, unscheduled)
+ * Must be created BEFORE the payment intent so the dropIn can verify it during payment.
+ */
+router.post('/payment-consents', async (req, res) => {
+  try {
+    const { payment_customer_id, currency } = req.body;
+
+    if (!payment_customer_id || !currency) {
+      return res.status(400).json({ error: 'payment_customer_id and currency are required' });
+    }
+
+    const token = await getAirwallexToken();
+
+    const consentRes = await axios.post(
+      `${TEST_BASE}/api/v1/pa/payment_consents/create`,
+      {
+        request_id: crypto.randomUUID(),
+        customer_id: payment_customer_id,
+        currency,
+        next_triggered_by: 'merchant',
+        merchant_trigger_reason: 'unscheduled',
+        payment_method_type: 'card',
+      },
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+    );
+
+    console.log('[payment-consents] created:', consentRes.data.id, 'status:', consentRes.data.status);
+    res.status(201).json({
+      id: consentRes.data.id,
+      client_secret: consentRes.data.client_secret,
+      status: consentRes.data.status,
+    });
+  } catch (err) {
+    console.error('Create payment consent error:', err.response?.status, err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || 'Failed to create payment consent',
+    });
+  }
+});
+
+
+/**
  * CREATE PAYMENT INTENT
  */
 
 router.post('/payment-intents', async (req, res) => {
   try {
-    const { amount, currency = "CNY", merchant_order_id, customer_id,} = req.body;
+    const { amount, currency = "CNY", merchant_order_id, payment_customer_id } = req.body;
 
     if (!amount || !merchant_order_id) {
       return res.status(400).json({
@@ -550,24 +668,14 @@ router.post('/payment-intents', async (req, res) => {
     const token = await getAirwallexToken();
 
     const airwallexRes = await axios.post(
-      "https://api.airwallex.com/api/v1/pa/payment_intents/create",
+      `${TEST_BASE}/api/v1/pa/payment_intents/create`,
       {
         request_id: crypto.randomUUID(),
         amount,
         currency,
         merchant_order_id,
         return_url: `${process.env.FRONTEND_URL}`,
-        ...(customer_id && { customer_id }),
-
-        // Enable merchant-initiated payments for reusable payment source
-        ...(customer_id && {
-          payment_consent: {
-            next_triggered_by: "merchant",
-            merchant_trigger_reason: "unscheduled",
-            payment_amount_type: "VARIABLE", // Allow variable amounts for subscriptions
-            payment_currency: currency,
-          }
-        }),
+        ...(payment_customer_id && { customer_id: payment_customer_id }),
       },
       {
         headers: {
@@ -578,8 +686,6 @@ router.post('/payment-intents', async (req, res) => {
     );
     console.log("PaymentIntent created:", {
       id: airwallexRes.data.id,
-      customer_id: airwallexRes.data.customer_id,
-      has_payment_consent: !!airwallexRes.data.payment_consent,
     });
     console.log("Airwallex payment intent response:", airwallexRes.data);
     res.json(airwallexRes.data);
@@ -608,7 +714,7 @@ router.get('/payment-intents/:id', async (req, res) => {
     const token = await getAirwallexToken();
 
     const airwallexRes = await axios.get(
-      `https://api.airwallex.com/api/v1/pa/payment_intents/${req.params.id}`,
+      `${TEST_BASE}/api/v1/pa/payment_intents/${req.params.id}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -633,7 +739,9 @@ router.get('/payment-intents/:id', async (req, res) => {
   }
 });
 
+
 router.post('/subscriptions/provision', async (req, res) => {
+  console.log("Provision")
   try {
     const {
       orderId,
@@ -709,70 +817,79 @@ router.post('/subscriptions/provision', async (req, res) => {
       });
     }
 
-    const subscriptionProductIds = (
-      process.env.SUBSCRIPTION_PRODUCT_IDS || ''
-    )
-      .split(',')
-      .map((id) => Number(id.trim()))
-      .filter(Boolean);
-
-    const subscriptionProduct = findSubscriptionProduct(
+    const subscriptionProductIds = await getEnabledSubscriptionProductIds();
+    const subscriptionProducts = findDistinctSubscriptionProducts(
       cart,
       subscriptionProductIds
     );
 
-    if (!subscriptionProduct) {
+    if (subscriptionProducts.length === 0) {
       return res.json({
         success: true,
         provisioned: false,
         message: 'No subscription product found in order cart',
+        subscriptions: [],
+        subscription: null,
       });
     }
+    const token = await getAirwallexToken();
+    const { upsertSubscriptionProjection } = require('../lib/airwallex/subscriptionAdmin');
+    const subscriptions = [];
+    const errors = [];
 
-    const plan = await SubscriptionPlan.findOne({
-      bigcommerceProductId: Number(subscriptionProduct.product_id),
-    });
+    for (const subscriptionProduct of subscriptionProducts) {
+      const productId = Number(subscriptionProduct.product_id);
+      try {
+        const plan = await SubscriptionPlan.findOne({
+          bigcommerceProductId: productId,
+        });
 
-    if (!plan) {
-      return res.status(404).json({
-        error: 'No SubscriptionPlan found for BigCommerce product',
-      });
-    }
-    if (plan.status === 'disabled' || plan.active === false) {
-      return res.status(400).json({
-        error: 'SubscriptionPlan is disabled',
-      });
-    }
+      if (!plan) {
+        errors.push({
+          productId,
+          error: 'No SubscriptionPlan found for BigCommerce product',
+        });
+        continue;
+      }
+      if (plan.status === 'disabled' || plan.active === false) {
+        errors.push({
+          productId,
+          error: 'SubscriptionPlan is disabled',
+        });
+        continue;
+      }
 
     // const existing = await CustomerSubscription.findOne({
     //   bigcommerceProductId: Number(subscriptionProduct.product_id),
     // });
 
-    const existing = await CustomerSubscription.findOne({
-      airwallexCustomerId: airwallexCustomerId,
-      airwallexProductId: plan.airwallexProductId,
-      // status: { $in: ['active', 'trialing', 'pending'] }, // Only block if active/trialing
-    });
-
-    console.log('Existing subscription check:', {
-      airwallexCustomerId,
-      airwallexProductId: plan.airwallexProductId,
-      existing,
-    });
-
-    if (existing) {
-      return res.json({
-        success: true,
-        provisioned: false,
-        message: 'Subscription already provisioned for this order',
-        subscription: existing,
+      const existing = await CustomerSubscription.findOne({
+        airwallexCustomerId,
+        airwallexProductId: plan.airwallexProductId,
       });
+
+      if (existing) {
+        subscriptions.push(existing);
+        continue;
+      }
+
+    let trialEndsAt = null;
+    if (plan.trialDays && plan.trialDays > 0) {
+      // Use UTC + start of day to avoid timezone/daylight saving issues
+      trialEndsAt = dayjs.utc()
+        .add(plan.trialDays + 1, 'day')
+        .startOf('day')  // Set to 00:00:00 to match Airwallex example format
+        .format('YYYY-MM-DDTHH:mm:ss') + '+0000';  // [Z] outputs literal "Z" for UTC
+      
+      console.log('🧮 Calculated trial_ends_at:', trialEndsAt, `(+$ {plan.trialDays} days)`);
+      console.log('🔍 Debug: Current UTC time:', dayjs.utc().format('YYYY-MM-DDTHH:mm:ss')+ '+0000');
+      console.log('🔍 Debug: Trial start (created_at will be set by Airwallex)');
     }
 
-    const token = await getAirwallexToken();
+    
 
     const subscriptionRes = await axios.post(
-      'https://api.airwallex.com/api/v1/subscriptions/create',
+      `${TEST_BASE}/api/v1/subscriptions/create`,
       {
         request_id: crypto.randomUUID(),
         billing_customer_id: airwallexCustomerId,
@@ -789,13 +906,14 @@ router.post('/subscriptions/provision', async (req, res) => {
           period_unit: plan.interval,
           period: 1,
         },
+        ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
         legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
         linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
         payment_source_id: paymentSourceId,
         metadata: {
           bigcommerceOrderId: String(orderId),
           bigcommerceCustomerId: String(bigcommerceCustomer.id),
-          bigcommerceProductId: String(subscriptionProduct.product_id),
+          bigcommerceProductId: String(productId),
         },
       },
       {
@@ -806,12 +924,47 @@ router.post('/subscriptions/provision', async (req, res) => {
       }
     );
 
+    console.log('🔍 [SUBSCRIPTION CREATE] Request payload sent:', {
+      billing_customer_id: airwallexCustomerId,
+      price_id: plan.airwallexPriceId,
+      currency: plan.currency,
+      interval: plan.interval,
+      trialDays: plan.trialDays,
+      trial_period: plan.trialDays > 0 ? { period: plan.trialDays, period_unit: 'DAY' } : 'NOT INCLUDED',
+      payment_source_id: paymentSourceId?.substring(0, 10) + '...',
+    });
+
+    console.log('📥 [SUBSCRIPTION CREATE] Airwallex response:', {
+      status: subscriptionRes.status,
+      subscription_id: subscriptionRes.data?.id,
+      status_value: subscriptionRes.data?.status,
+      trial_ends_at: subscriptionRes.data?.trial_ends_at,
+      next_billing_at: subscriptionRes.data?.next_billing_at,
+      created_at: subscriptionRes.data?.created_at,
+      raw_response: JSON.stringify(subscriptionRes.data, null, 2),
+    });
+
+    //  Verify trial was applied
+    if (plan.trialDays > 0) {
+      if (subscriptionRes.data?.status === 'IN_TRIAL') {
+        console.log(' Trial successfully applied! Status: trialing');
+      } else {
+        console.warn('⚠️ Expected status "IN_TRIAL" but got:', subscriptionRes.data?.status);
+      }
+      
+      if (subscriptionRes.data?.trial_ends_at) {
+        console.log(' trial_ends_at present:', subscriptionRes.data.trial_ends_at);
+      } else {
+        console.warn('⚠️ trial_ends_at missing from response - trial may not have been applied');
+      }
+    }
+
     const awSubscription = subscriptionRes.data;
 
     const saved = await CustomerSubscription.create({
       bigcommerceOrderId: Number(orderId),
       bigcommerceCustomerId: Number(bigcommerceCustomer.id),
-      bigcommerceProductId: Number(subscriptionProduct.product_id),
+      bigcommerceProductId: productId,
 
       airwallexCustomerId,
       airwallexProductId: plan.airwallexProductId,
@@ -838,8 +991,6 @@ router.post('/subscriptions/provision', async (req, res) => {
       },
     });
 
-    const { upsertSubscriptionProjection } = require('../lib/airwallex/subscriptionAdmin');
-
     const subscriptionProjection = await upsertSubscriptionProjection(
       saved,
       {
@@ -853,10 +1004,40 @@ router.post('/subscriptions/provision', async (req, res) => {
       externalSubscriptionId: subscriptionProjection.externalSubscriptionId,
     });
 
+        subscriptions.push(saved);
+      } catch (productErr) {
+        console.error('❌ [PROVISION][PRODUCT ERROR]', {
+          productId,
+          status: productErr.response?.status,
+          data: productErr.response?.data,
+          message: productErr.message,
+          stack: productErr.stack,
+        });
+
+        errors.push({
+          productId,
+          error: productErr.response?.data || productErr.message,
+        });
+      }
+    }
+
+    if (subscriptions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        provisioned: false,
+        error: 'Failed to provision any subscriptions for this order',
+        subscriptions: [],
+        subscription: null,
+        errors,
+      });
+    }
+
     return res.status(201).json({
       success: true,
       provisioned: true,
-      subscription: saved,
+      subscriptions,
+      subscription: subscriptions[0] || null,
+      errors,
     });
   } catch (err) {
     console.error(
@@ -880,24 +1061,130 @@ router.post('/payment-sources/create', async (req, res) => {
   try {
     const {
       billing_customer_id,
-      payment_method_id,  // The payment_method.id from successful PaymentIntent
-      linked_payment_account_id,
+      payment_method_id,
+      payment_customer_id, // cus_ ID — used to find verified payment consent
     } = req.body;
-    
+
     if (!billing_customer_id || !payment_method_id) {
       return res.status(400).json({
         error: "billing_customer_id and payment_method_id are required"
       });
     }
 
+    const linked_payment_account_id = process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID;
+
+    if (!linked_payment_account_id) {
+      return res.status(500).json({
+        error: "AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID is not configured on the server"
+      });
+    }
+
+    // Wait for the payment consent to become VERIFIED (it is set asynchronously after capture).
+    // Poll the payment consents for this customer up to 5 times with a 2s gap.
+    let verifiedMethodId = payment_method_id;
+
+    if (payment_customer_id) {
+      const RETRIES = 5;
+      const DELAY_MS = 2000;
+
+      for (let attempt = 1; attempt <= RETRIES; attempt++) {
+        if (attempt > 1) {
+          await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+        }
+
+        try {
+          const token = await getAirwallexToken();
+          const consentsRes = await axios.get(
+            `${TEST_BASE}/api/v1/pa/payment_consents`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              params: { customer_id: payment_customer_id, page_size: 20 },
+            }
+          );
+
+          const consents = consentsRes.data?.items || [];
+          console.log(`[payment-sources] attempt ${attempt}: consents for ${payment_customer_id}:`,
+            JSON.stringify(consents.map(c => ({
+              id: c.id,
+              status: c.status,
+              next_triggered_by: c.next_triggered_by,
+              merchant_trigger_reason: c.merchant_trigger_reason,
+              pm: c.payment_method?.id,
+            })), null, 2)
+          );
+
+          // Find a verified merchant-triggered consent (required for AUTO_CHARGE payment source)
+          const verified = consents.find(
+            c =>
+              c.status === 'VERIFIED' &&
+              c.next_triggered_by === 'merchant' &&
+              c.payment_method?.id
+          );
+
+          if (verified) {
+            verifiedMethodId = verified.payment_method.id;
+            console.log(`[payment-sources] verified merchant consent found on attempt ${attempt}:`, verified.id, 'mtd:', verifiedMethodId);
+            break;
+          }
+
+          if (attempt === RETRIES) {
+            console.warn('[payment-sources] consent not verified after all retries — proceeding anyway');
+          }
+        } catch (pollErr) {
+          console.warn(`[payment-sources] consent poll attempt ${attempt} failed:`, pollErr.message);
+        }
+      }
+    }
+
     const token = await getAirwallexToken();
 
+
+
+    console.log(`[payment-sources] Checking for existing payment source: billing_customer_id=${billing_customer_id}, external_id=${verifiedMethodId}`);
+    
+    try {
+      const listRes = await axios.get(
+        `${TEST_BASE}/api/v1/payment_sources`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: {
+            billing_customer_id: billing_customer_id,
+            page_size: 50,
+          },
+        }
+      );
+
+      const existingSources = listRes.data?.items || [];
+      const existingSource = existingSources.find(
+        src => src.external_id === verifiedMethodId 
+      );
+
+      if (existingSource) {
+        console.log(` Payment source already exists, returning:`, existingSource.id);
+        return res.status(200).json({
+          success: true,
+          duplicate: true,
+          paymentSource: {
+            id: existingSource.id,
+            billing_customer_id: existingSource.billing_customer_id,
+            external_id: existingSource.external_id,
+            linked_payment_account_id: existingSource.linked_payment_account_id,
+            created_at: existingSource.created_at,
+            status: existingSource.status,
+          }
+        });
+      }
+      console.log(`ℹ️ No existing payment source found, proceeding to create new one`);
+    } catch (listErr) {
+      console.warn(`⚠️ Could not list payment sources, proceeding to create:`, listErr.message);
+      // Continue to create if listing fails (fail-safe)
+    }
     const airwallexRes = await axios.post(
-      "https://api.airwallex.com/api/v1/payment_sources/create",
+      `${TEST_BASE}/api/v1/payment_sources/create`,
       {
         request_id: crypto.randomUUID(),
         billing_customer_id,
-        external_id: payment_method_id,  // Airwallex calls it "external_id"
+        external_id: verifiedMethodId,
         linked_payment_account_id,
       },
       {
@@ -908,8 +1195,8 @@ router.post('/payment-sources/create', async (req, res) => {
       }
     );
 
-    console.log("✅ PaymentSource created:", {
-      id: airwallexRes.data.id,  // This is the psrc_ ID!
+    console.log("PaymentSource created:", {
+      id: airwallexRes.data.id,
       billing_customer_id: airwallexRes.data.billing_customer_id,
       external_id: airwallexRes.data.external_id,
     });
@@ -917,9 +1204,9 @@ router.post('/payment-sources/create', async (req, res) => {
     res.status(201).json({
       success: true,
       paymentSource: {
-        id: airwallexRes.data.id,  // psrc_xxx
+        id: airwallexRes.data.id,
         billing_customer_id: airwallexRes.data.billing_customer_id,
-        external_id: airwallexRes.data.external_id,  // pm_xxx
+        external_id: airwallexRes.data.external_id,
         linked_payment_account_id: airwallexRes.data.linked_payment_account_id,
         created_at: airwallexRes.data.created_at,
       }

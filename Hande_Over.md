@@ -193,7 +193,7 @@ FRONTEND_CHECKOUT_URL=             # checkout page URL
 AIRWALLEX_API_KEY=
 AIRWALLEX_CLIENT_ID=
 AIRWALLEX_ENV=sandbox
-AIRWALLEX_BASE_URL=https://api-demo.airwallex.com
+AIRWALLEX_BASE_URL=https://api.airwallex.com
 AIRWALLEX_LEGAL_ENTITY_ID=
 AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID=
 
@@ -319,8 +319,6 @@ Identical endpoint shape as `airwallexLivePlan.js` but under `/api/subscription-
 | POST | `/api/customers/:customerId/add-vip` | None | Add VIP product to cart |
 | POST | `/api/customers/:customerId/remove-vip` | None | Remove VIP product |
 | GET | `/api/customers` | None | List customers |
-
-> **Note:** `add-vip`, `remove-vip`, and `customers` should have `requireSession` added before production — see [Known Issues](#15-known-issues--remaining-work).
 
 ---
 
@@ -755,7 +753,6 @@ BC sends POST to /api/webhooks/order-created
 
 ### Token Storage
 - JWT currently stored in `localStorage` — acceptable for current scope
-- **For production hardening:** move to `httpOnly` cookie (see [Known Issues](#15-known-issues--remaining-work))
 
 ---
 
@@ -797,15 +794,6 @@ This creates an `AdminUser` document with bcrypt-hashed password. Login at `/log
 ---
 
 ## 15. Known Issues & Remaining Work
-
-### Security (High Priority — fix before production)
-
-| Issue | Location | Fix |
-|-------|----------|-----|
-| `add-vip`, `remove-vip`, `customers` endpoints have no auth | `bigcommerceRoutes.js` | Add `requireSession` to these routes |
-| JWT stored in `localStorage` is vulnerable to XSS token theft | `frontend/src/utils/auth.js` | Move to `httpOnly` cookie — backend sets `Set-Cookie`, frontend no longer stores token |
-| Payment source ownership not validated in `/provision` | `airwallexLivePlan.js`, `airwallexTestPlan.js` | Verify that the `paymentSourceId` belongs to the `airwallexCustomerId` before provisioning |
-| ngrok CORS regex active in all environments | `backend/index.js` | Wrap in `if (process.env.NODE_ENV !== 'production')` |
 
 ### Code Quality
 

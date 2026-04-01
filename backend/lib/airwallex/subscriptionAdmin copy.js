@@ -8,7 +8,7 @@ const { getAirwallexToken } = require('./token');
 
 const STORE_HASH = process.env.BC_STORE_HASH || 'eapn6crf58';
 const AIRWALLEX_BASE_URL =
-  process.env.AIRWALLEX_BASE_URL || 'https://api-demo.airwallex.com/api/v1';
+  process.env.AIRWALLEX_BASE_URL || 'https://api.airwallex.com/api/v1';
 
 function normaliseStatus(status) {
   const value = String(status || '').toUpperCase();

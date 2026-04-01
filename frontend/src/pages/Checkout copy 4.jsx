@@ -184,20 +184,8 @@ const removeVipFromCart = async (cartId) => {
 
     const result = await res.json();
 
-    console.log('📥 [Checkout.jsx] provision response:', {
-      status: res.status,
-      ok: res.ok,
-      result,
-    });
-
-        if (!res.ok) {
-      throw new Error(
-        typeof result?.error === 'string'
-          ? result.error
-          : result?.error?.message ||
-            result?.message ||
-            JSON.stringify(result?.error || result)
-      );
+    if (!res.ok) {
+      throw new Error(result?.error || 'Failed to provision subscription');
     }
 
     return result;
