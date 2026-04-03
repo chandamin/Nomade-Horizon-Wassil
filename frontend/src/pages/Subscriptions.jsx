@@ -231,11 +231,11 @@ export default function Subscriptions({ environment = 'sandbox' }) {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Subscriptions</h1>
-            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+            {/* <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
               environment === 'live' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-            }`}>
-              {environment === 'live' ? 'Live' : 'Sandbox'}
-            </span>
+            }`}> */}
+              {/* {environment === 'live' ? 'Live' : 'Sandbox'} */}
+            {/* </span> */}
           </div>
           <p className="mt-1 text-sm text-gray-500">Manage customer subscriptions and sync with Airwallex</p>
         </div>

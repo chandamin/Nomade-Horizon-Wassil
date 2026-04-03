@@ -62,7 +62,7 @@ export default function SellingPlans({ environment }) {
           <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-semibold ${
             environment === 'live' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
           }`}>
-            {environment === 'live' ? 'Live' : 'Sandbox'}
+            {/* {environment === 'live' ? 'Live' : 'Sandbox'} */}
           </span>
         </div>
 

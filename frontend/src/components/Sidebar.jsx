@@ -56,7 +56,7 @@ function Sidebar({ environment = 'sandbox', setEnvironment }) {
       <div className="px-6 py-6">
         {!collapsed ? (
           <>
-            <h1 className="text-white text-xl font-bold">Ascend</h1>
+            <h1 className="text-white text-xl font-bold">Nomade Horizon</h1>
             <p className="text-gray-400 text-sm">
               Subscriptions At Convenience
             </p>
@@ -71,7 +71,7 @@ function Sidebar({ environment = 'sandbox', setEnvironment }) {
 
       {/* Environment Toggle */}
       <div className="px-6 py-4">
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
           <span className="text-white text-sm">Environment</span>
           <Switch
             checked={isLive}
@@ -84,7 +84,7 @@ function Sidebar({ environment = 'sandbox', setEnvironment }) {
             width={40}  // Width of the switch
           />
           <span className="text-white text-sm">{isLive ? 'Live' : 'Sandbox'}</span>
-        </div>
+        </div> */}
       </div>
 
       {/* Navigation */}

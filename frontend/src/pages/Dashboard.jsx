@@ -106,11 +106,11 @@ export default function Dashboard({ environment = 'sandbox' }) {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
-            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+            {/* <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
               environment === 'live' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-            }`}>
-              {environment === 'live' ? 'Live' : 'Sandbox'}
-            </span>
+            }`}> */}
+              {/* {environment === 'live' ? 'Live' : 'Sandbox'} */}
+            {/* </span> */}
           </div>
           <p className="text-gray-500 mt-1">
             Overview of subscriptions and recent activity
@@ -180,7 +180,7 @@ export default function Dashboard({ environment = 'sandbox' }) {
           value={Array.isArray(data?.recentActivity) ? data.recentActivity.length : 0}
         />
         <InfoCard
-          label="Ascend Subscriptions"
+          label="Nomade Horizon"
           value="Subscriptions at convenience"
         />
       </div>
