@@ -27,7 +27,7 @@ const allowedOrigins = [
   process.env.BACKEND_URL?.replace(/\/$/, ''),
   'https://airwall.kaswebtechsolutions.com',
   'https://nomade-horizon.com/',
-  'https://kasweb-c4.mybigcommerce.com',
+  'https://nomade-horizon.com',
   'http://localhost:5173',
   'http://192.168.29.30:5173',
   'http://checkout.nomade-horizon.com',

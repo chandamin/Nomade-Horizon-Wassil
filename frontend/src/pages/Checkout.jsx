@@ -472,6 +472,94 @@ const removeVipFromCart = async (cartId) => {
     return result.shippingOptions || [];
   };
 
+  const applyCheckoutCoupon = async ({ cartId, couponCode }) => {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/checkout/coupons/apply`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify({ cartId, couponCode }),
+      }
+    );
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      throw new Error(result?.error || 'The coupon code is invalid or cannot be applied');
+    }
+
+    return result;
+  };
+
+  const removeCheckoutCoupon = async ({ cartId, couponCode }) => {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/checkout/coupons/${cartId}/${encodeURIComponent(couponCode)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+      }
+    );
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      throw new Error(result?.error || 'Failed to remove coupon');
+    }
+
+    return result;
+  };
+
+  const applyCheckoutDiscount = async ({ cartId, discount }) => {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/checkout/discounts/apply`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify({ cartId, discount }),
+      }
+    );
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      throw new Error(result?.error || 'Failed to apply discount');
+    }
+
+    return result;
+  };
+
+  const removeCheckoutDiscount = async (cartId) => {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/checkout/discounts/${cartId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+      }
+    );
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      throw new Error(result?.error || 'Failed to remove discount');
+    }
+
+    return result;
+  };
+
   useEffect(() => {
     const initializeCart = async () => {
       try {
@@ -608,6 +696,10 @@ const removeVipFromCart = async (cartId) => {
       onProvisionSubscription={provisionSubscription}
       clearCart={clearCart}
       onCartCleared={handleCartCleared}
+      onApplyCheckoutCoupon={applyCheckoutCoupon}
+      onRemoveCheckoutCoupon={removeCheckoutCoupon}
+      onApplyCheckoutDiscount={applyCheckoutDiscount}
+      onRemoveCheckoutDiscount={removeCheckoutDiscount}
     />
   );
 }

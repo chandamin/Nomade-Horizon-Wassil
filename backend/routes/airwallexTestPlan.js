@@ -8,6 +8,7 @@ const CustomerSubscription = require('../models/CustomerSubscription.js');
 const dayjs = require('dayjs');
 const crypto = require('crypto');
 const utc = require('dayjs/plugin/utc');  //  ADD UTC PLUGIN
+const util = require('util');
 const {
   findDistinctSubscriptionProducts,
   getEnabledSubscriptionProductIds,
@@ -15,6 +16,48 @@ const {
 dayjs.extend(utc);     // EXTEND DAYJS WITH UTC
 
 const TEST_BASE = process.env.AIRWALLEX_BASE_URL || 'https://api.airwallex.com';
+
+const inspectLog = (value) => {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch (err) {
+    return util.inspect(value, { depth: 8, colors: false });
+  }
+};
+
+const logInfo = (message, data) => {
+  if (typeof data === 'undefined') {
+    console.log(message);
+    return;
+  }
+  console.log(`${message} ${inspectLog(data)}`);
+};
+
+const logError = (message, err, extra = {}) => {
+  const serialized = {
+    ...extra,
+    message: err?.message || null,
+    code: err?.code || null,
+    status: err?.response?.status || null,
+    statusText: err?.response?.statusText || null,
+    responseData: err?.response?.data || null,
+    requestUrl: err?.config?.url || null,
+    requestMethod: err?.config?.method || null,
+    requestHeaders: err?.config?.headers || null,
+    requestData:
+      typeof err?.config?.data === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(err.config.data);
+            } catch {
+              return err.config.data;
+            }
+          })()
+        : err?.config?.data || null,
+  };
+
+  console.error(`${message} ${inspectLog(serialized)}`);
+};
 
 async function getAirwallexToken() {
   try {
@@ -655,60 +698,152 @@ router.post('/payment-consents', async (req, res) => {
  * CREATE PAYMENT INTENT
  */
 
+// router.post('/payment-intents', async (req, res) => {
+//   try {
+//     const { amount, currency = "CNY", merchant_order_id, payment_customer_id } = req.body;
+
+//     if (!amount || !merchant_order_id) {
+//       return res.status(400).json({
+//         error: "amount and merchant_order_id are required"
+//       });
+//     }
+
+//     const token = await getAirwallexToken();
+
+//     const airwallexRes = await axios.post(
+//       `${TEST_BASE}/api/v1/pa/payment_intents/create`,
+//       {
+//         request_id: crypto.randomUUID(),
+//         amount,
+//         currency,
+//         merchant_order_id,
+//         return_url: `${process.env.FRONTEND_URL}`,
+//         ...(payment_customer_id && { customer_id: payment_customer_id }),
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           "Content-Type": "application/json"
+//         }
+//       }
+//     );
+//     console.log("PaymentIntent created:", {
+//       id: airwallexRes.data.id,
+//     });
+//     console.log("Airwallex payment intent response:", airwallexRes.data);
+//     res.json(airwallexRes.data);
+
+//   } catch (err) {
+//     console.error(
+//       "Create payment intent error:",
+//       err.response?.status,
+//       err.response?.data || err.message
+//     );
+
+//     res.status(err.response?.status || 500).json({
+//       error: err.response?.data || "Failed to create payment intent"
+//     });
+//   }
+// });
+
+
+
+// /**
+//  * RETRIEVE PAYMENT INTENT
+//  */
+
+// router.get('/payment-intents/:id', async (req, res) => {
+//   try {
+//     const token = await getAirwallexToken();
+
+//     const airwallexRes = await axios.get(
+//       `${TEST_BASE}/api/v1/pa/payment_intents/${req.params.id}`,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'application/json',
+//         },
+//       }
+//     );
+
+//     console.log("📥 Fetched payment intent:", airwallexRes.data); 
+
+//     res.json(airwallexRes.data);
+//   } catch (err) {
+//     console.error(
+//       'Get payment intent error:',
+//       err.response?.status,
+//       err.response?.data || err.message
+//     );
+
+//     res.status(err.response?.status || 500).json({
+//       error: err.response?.data || 'Failed to fetch payment intent',
+//     });
+//   }
+// });
+
+
+/**
+ * CREATE PAYMENT INTENT
+ */
 router.post('/payment-intents', async (req, res) => {
   try {
-    const { amount, currency = "CNY", merchant_order_id, payment_customer_id } = req.body;
+    const { amount, currency = 'CNY', merchant_order_id, payment_customer_id } = req.body;
+
+    logInfo('📥 [payment-intents/create] Incoming request:', req.body);
 
     if (!amount || !merchant_order_id) {
       return res.status(400).json({
-        error: "amount and merchant_order_id are required"
+        error: 'amount and merchant_order_id are required',
       });
     }
 
     const token = await getAirwallexToken();
 
+    const createPayload = {
+      request_id: crypto.randomUUID(),
+      amount,
+      currency,
+      merchant_order_id,
+      return_url: `${process.env.FRONTEND_URL}`,
+      ...(payment_customer_id && { customer_id: payment_customer_id }),
+    };
+
+    logInfo('📤 [payment-intents/create] Payload:', createPayload);
+
     const airwallexRes = await axios.post(
       `${TEST_BASE}/api/v1/pa/payment_intents/create`,
-      {
-        request_id: crypto.randomUUID(),
-        amount,
-        currency,
-        merchant_order_id,
-        return_url: `${process.env.FRONTEND_URL}`,
-        ...(payment_customer_id && { customer_id: payment_customer_id }),
-      },
+      createPayload,
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          'Content-Type': 'application/json',
+        },
       }
     );
-    console.log("PaymentIntent created:", {
-      id: airwallexRes.data.id,
+
+    logInfo('✅ PaymentIntent created:', {
+      id: airwallexRes.data?.id,
     });
-    console.log("Airwallex payment intent response:", airwallexRes.data);
-    res.json(airwallexRes.data);
 
+    logInfo('📥 Airwallex payment intent response:', airwallexRes.data);
+
+    return res.json(airwallexRes.data);
   } catch (err) {
-    console.error(
-      "Create payment intent error:",
-      err.response?.status,
-      err.response?.data || err.message
-    );
+    logError('❌ Create payment intent error:', err, {
+      route: '/payment-intents',
+      requestBody: req.body,
+    });
 
-    res.status(err.response?.status || 500).json({
-      error: err.response?.data || "Failed to create payment intent"
+    return res.status(err.response?.status || 500).json({
+      error: err.response?.data || 'Failed to create payment intent',
     });
   }
 });
 
-
-
 /**
  * RETRIEVE PAYMENT INTENT
  */
-
 router.get('/payment-intents/:id', async (req, res) => {
   try {
     const token = await getAirwallexToken();
@@ -723,17 +858,16 @@ router.get('/payment-intents/:id', async (req, res) => {
       }
     );
 
-    console.log("📥 Fetched payment intent:", airwallexRes.data); 
+    logInfo('📥 Fetched payment intent:', airwallexRes.data);
 
-    res.json(airwallexRes.data);
+    return res.json(airwallexRes.data);
   } catch (err) {
-    console.error(
-      'Get payment intent error:',
-      err.response?.status,
-      err.response?.data || err.message
-    );
+    logError('❌ Get payment intent error:', err, {
+      route: '/payment-intents/:id',
+      paymentIntentId: req.params.id,
+    });
 
-    res.status(err.response?.status || 500).json({
+    return res.status(err.response?.status || 500).json({
       error: err.response?.data || 'Failed to fetch payment intent',
     });
   }
@@ -741,7 +875,73 @@ router.get('/payment-intents/:id', async (req, res) => {
 
 
 router.post('/subscriptions/provision', async (req, res) => {
-  console.log("Provision")
+  const log = (label, payload) => {
+    if (payload === undefined) {
+      console.log(label);
+      return;
+    }
+
+    try {
+      const normalized =
+        payload && typeof payload.toJSON === 'function'
+          ? payload.toJSON()
+          : payload;
+
+      console.log(`${label}\n${JSON.stringify(normalized, null, 2)}`);
+    } catch (err) {
+      console.log(label, util.inspect(payload, { depth: 8, colors: false }));
+    }
+  };
+
+  const logError = (label, err, extra = {}) => {
+    const serialized = serializeError(err, extra);
+    console.error(`${label}\n${JSON.stringify(serialized, null, 2)}`);
+  };
+
+  const serializeError = (err, extra = {}) => {
+    const responseData = err?.response?.data;
+    const requestData = err?.config?.data;
+
+    return {
+      ...extra,
+      name: err?.name,
+      message: err?.message,
+      code: err?.code,
+      stack: err?.stack,
+      status: err?.response?.status || null,
+      statusText: err?.response?.statusText || null,
+      responseData:
+        typeof responseData === 'string'
+          ? responseData
+          : responseData || null,
+      request: {
+        method: err?.config?.method || null,
+        url: err?.config?.url || null,
+        headers: err?.config?.headers || null,
+        data:
+          typeof requestData === 'string'
+            ? tryParseJson(requestData)
+            : requestData || null,
+      },
+    };
+  };
+
+  const tryParseJson = (value) => {
+    if (typeof value !== 'string') return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  };
+
+  const safePrefix = (value, visible = 10) => {
+    if (!value || typeof value !== 'string') return null;
+    return value.length <= visible ? value : `${value.substring(0, visible)}...`;
+  };
+
+  console.log('Provision');
+
   try {
     const {
       orderId,
@@ -751,31 +951,53 @@ router.post('/subscriptions/provision', async (req, res) => {
       paymentSourceId,
     } = req.body;
 
-    console.log('📥 [PROVISION] Received request:', {
+    log('📥 [PROVISION] Received request:', {
       orderId,
       paymentSourceId,
-      paymentSourceIdPrefix: paymentSourceId?.substring(0, 4),
+      paymentSourceIdPrefix: paymentSourceId?.substring(0, 5) || null,
+      hasCart: !!cart,
+      cartItemsCount: Array.isArray(cart?.lineItems?.physicalItems)
+        ? cart.lineItems.physicalItems.length
+        : Array.isArray(cart?.items)
+        ? cart.items.length
+        : Array.isArray(cart)
+        ? cart.length
+        : null,
+      hasBigcommerceCustomer: !!bigcommerceCustomer,
+      bigcommerceCustomerId: bigcommerceCustomer?.id || null,
       hasAirwallexCustomer: !!airwallexCustomer,
-      airwallexCustomerId: airwallexCustomer?.airwallexCustomerId || airwallexCustomer?.id,
+      airwallexCustomerId:
+        airwallexCustomer?.airwallexCustomerId || airwallexCustomer?.id || null,
     });
 
     if (!orderId || !cart || !bigcommerceCustomer || !airwallexCustomer) {
+      log('❌ [PROVISION] Missing required fields:', {
+        orderIdPresent: !!orderId,
+        cartPresent: !!cart,
+        bigcommerceCustomerPresent: !!bigcommerceCustomer,
+        airwallexCustomerPresent: !!airwallexCustomer,
+      });
+
       return res.status(400).json({
         error: 'orderId, cart, bigcommerceCustomer and airwallexCustomer are required',
       });
     }
 
     if (!bigcommerceCustomer.id) {
+      log('❌ [PROVISION] Missing bigcommerceCustomer.id:', {
+        bigcommerceCustomer,
+      });
+
       return res.status(400).json({
         error: 'bigcommerceCustomer.id is required',
       });
     }
 
-
     if (!paymentSourceId) {
-      console.error('❌ [PROVISION] Missing paymentSourceId for AUTO_CHARGE subscription', {
+      log('❌ [PROVISION] Missing paymentSourceId for AUTO_CHARGE subscription:', {
         orderId,
-        airwallexCustomerId: airwallexCustomer?.airwallexCustomerId || airwallexCustomer?.id,
+        airwallexCustomerId:
+          airwallexCustomer?.airwallexCustomerId || airwallexCustomer?.id || null,
         collection_method: 'AUTO_CHARGE',
       });
 
@@ -791,14 +1013,13 @@ router.post('/subscriptions/provision', async (req, res) => {
       });
     }
 
-
-    // Validate paymentSourceId format - must start with 'psrc_'
-    if (paymentSourceId && !paymentSourceId.startsWith('psrc_')) {
-      console.error('❌ [PROVISION] Invalid paymentSourceId format:', {
+    if (!paymentSourceId.startsWith('psrc_')) {
+      log('❌ [PROVISION] Invalid paymentSourceId format:', {
         paymentSourceId,
-        prefix: paymentSourceId?.substring(0, 4),
+        prefix: paymentSourceId?.substring(0, 5) || null,
         expected: 'psrc_',
       });
+
       return res.status(400).json({
         error: `Invalid paymentSourceId format. Expected 'psrc_xxx', got '${paymentSourceId?.substring(0, 4)}xxx'`,
         code: 'INVALID_PAYMENT_SOURCE_ID',
@@ -807,21 +1028,29 @@ router.post('/subscriptions/provision', async (req, res) => {
         received_prefix: paymentSourceId?.substring(0, 4),
       });
     }
-    
+
     const airwallexCustomerId =
       airwallexCustomer.airwallexCustomerId || airwallexCustomer.id;
 
     if (!airwallexCustomerId) {
+      log('❌ [PROVISION] Missing Airwallex customer id:', {
+        airwallexCustomer,
+      });
+
       return res.status(400).json({
         error: 'airwallex customer id is required',
       });
     }
 
     const subscriptionProductIds = await getEnabledSubscriptionProductIds();
+    log('📦 [PROVISION] Enabled subscription product ids:', subscriptionProductIds);
+
     const subscriptionProducts = findDistinctSubscriptionProducts(
       cart,
       subscriptionProductIds
     );
+
+    log('🛒 [PROVISION] Distinct subscription products found in cart:', subscriptionProducts);
 
     if (subscriptionProducts.length === 0) {
       return res.json({
@@ -832,6 +1061,7 @@ router.post('/subscriptions/provision', async (req, res) => {
         subscription: null,
       });
     }
+
     const token = await getAirwallexToken();
     const { upsertSubscriptionProjection } = require('../lib/airwallex/subscriptionAdmin');
     const subscriptions = [];
@@ -839,84 +1069,100 @@ router.post('/subscriptions/provision', async (req, res) => {
 
     for (const subscriptionProduct of subscriptionProducts) {
       const productId = Number(subscriptionProduct.product_id);
+
       try {
+        log('🔄 [PROVISION] Processing subscription product:', {
+          productId,
+          subscriptionProduct,
+        });
+
         const plan = await SubscriptionPlan.findOne({
           bigcommerceProductId: productId,
-        });
+        }).lean();
 
-      if (!plan) {
-        errors.push({
+        log('📄 [PROVISION] Subscription plan lookup result:', {
           productId,
-          error: 'No SubscriptionPlan found for BigCommerce product',
+          found: !!plan,
+          plan,
         });
-        continue;
-      }
-      if (plan.status === 'disabled' || plan.active === false) {
-        errors.push({
+
+        if (!plan) {
+          errors.push({
+            productId,
+            error: 'No SubscriptionPlan found for BigCommerce product',
+          });
+          continue;
+        }
+
+        if (plan.status === 'disabled' || plan.active === false) {
+          errors.push({
+            productId,
+            error: 'SubscriptionPlan is disabled',
+          });
+          continue;
+        }
+
+        const existing = await CustomerSubscription.findOne({
+          airwallexCustomerId,
+          airwallexProductId: plan.airwallexProductId,
+        }).lean();
+
+        log('🔍 [PROVISION] Existing subscription lookup:', {
           productId,
-          error: 'SubscriptionPlan is disabled',
+          airwallexCustomerId,
+          airwallexProductId: plan.airwallexProductId,
+          existing,
         });
-        continue;
-      }
 
-    // const existing = await CustomerSubscription.findOne({
-    //   bigcommerceProductId: Number(subscriptionProduct.product_id),
-    // });
+        if (existing) {
+          subscriptions.push(existing);
+          continue;
+        }
 
-      const existing = await CustomerSubscription.findOne({
-        airwallexCustomerId,
-        airwallexProductId: plan.airwallexProductId,
-      });
+        let trialEndsAt = null;
 
-      if (existing) {
-        subscriptions.push(existing);
-        continue;
-      }
+        if (plan.trialDays && plan.trialDays > 0) {
+          trialEndsAt =
+            dayjs.utc()
+              .add(plan.trialDays + 1, 'day')
+              .startOf('day')
+              .format('YYYY-MM-DDTHH:mm:ss') + '+0000';
 
-    let trialEndsAt = null;
-    if (plan.trialDays && plan.trialDays > 0) {
-      // Use UTC + start of day to avoid timezone/daylight saving issues
-      trialEndsAt = dayjs.utc()
-        .add(plan.trialDays + 1, 'day')
-        .startOf('day')  // Set to 00:00:00 to match Airwallex example format
-        .format('YYYY-MM-DDTHH:mm:ss') + '+0000';  // [Z] outputs literal "Z" for UTC
-      
-      console.log('🧮 Calculated trial_ends_at:', trialEndsAt, `(+$ {plan.trialDays} days)`);
-      console.log('🔍 Debug: Current UTC time:', dayjs.utc().format('YYYY-MM-DDTHH:mm:ss')+ '+0000');
-      console.log('🔍 Debug: Trial start (created_at will be set by Airwallex)');
-    }
-
+          log('🧮 [PROVISION] Trial calculation:', {
+            trialDays: plan.trialDays,
+            nowUtc: dayjs.utc().format('YYYY-MM-DDTHH:mm:ss') + '+0000',
+            trialEndsAt,
+            note: 'created_at will be set by Airwallex',
+          });
+        }
 
         const subscriptionPayload = {
-      request_id: crypto.randomUUID(),
-      billing_customer_id: airwallexCustomerId,
-      collection_method: 'AUTO_CHARGE',
-      currency: plan.currency,
-      items: [
-        {
-          price_id: plan.airwallexPriceId,
-          quantity: 1,
-        },
-      ],
-      duration: {
-        period_unit: plan.interval,
-        period: 1,
-      },
-      ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
-      legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
-      linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
-      payment_source_id: paymentSourceId,
-      metadata: {
-        bigcommerceOrderId: String(orderId),
-        bigcommerceCustomerId: String(bigcommerceCustomer.id),
-        bigcommerceProductId: String(productId),
-      },
-    };
+          request_id: crypto.randomUUID(),
+          billing_customer_id: airwallexCustomerId,
+          collection_method: 'AUTO_CHARGE',
+          currency: plan.currency,
+          items: [
+            {
+              price_id: plan.airwallexPriceId,
+              quantity: 1,
+            },
+          ],
+          duration: {
+            period_unit: plan.interval,
+            period: 1,
+          },
+          ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
+          legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
+          linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
+          payment_source_id: paymentSourceId,
+          metadata: {
+            bigcommerceOrderId: String(orderId),
+            bigcommerceCustomerId: String(bigcommerceCustomer.id),
+            bigcommerceProductId: String(productId),
+          },
+        };
 
-    console.log(
-      '📤 [SUBSCRIPTION CREATE] Sending payload:\n',
-      JSON.stringify(
-        {
+        log('📤 [SUBSCRIPTION CREATE] Payload being sent to Airwallex:', {
           billing_customer_id: subscriptionPayload.billing_customer_id,
           collection_method: subscriptionPayload.collection_method,
           currency: subscriptionPayload.currency,
@@ -925,167 +1171,112 @@ router.post('/subscriptions/provision', async (req, res) => {
           trial_ends_at: subscriptionPayload.trial_ends_at || null,
           legal_entity_id: subscriptionPayload.legal_entity_id,
           linked_payment_account_id: subscriptionPayload.linked_payment_account_id,
-          payment_source_id: subscriptionPayload.payment_source_id,
+          payment_source_id: safePrefix(subscriptionPayload.payment_source_id),
           metadata: subscriptionPayload.metadata,
-        },
-        null,
-        2
-      )
-    );
+        });
 
-    const subscriptionRes = await axios.post(
-      `${TEST_BASE}/api/v1/subscriptions/create`,
-      subscriptionPayload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    // const subscriptionRes = await axios.post(
-    //   `${TEST_BASE}/api/v1/subscriptions/create`,
-    //   {
-    //     request_id: crypto.randomUUID(),
-    //     billing_customer_id: airwallexCustomerId,
-    //     // collection_method: 'OUT_OF_BAND',
-    //     collection_method: 'AUTO_CHARGE',
-    //     currency: plan.currency,
-    //     items: [
-    //       {
-    //         price_id: plan.airwallexPriceId,
-    //         quantity: 1,
-    //       },
-    //     ],
-    //     duration: {
-    //       period_unit: plan.interval,
-    //       period: 1,
-    //     },
-    //     ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
-    //     legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
-    //     linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
-    //     payment_source_id: paymentSourceId,
-    //     metadata: {
-    //       bigcommerceOrderId: String(orderId),
-    //       bigcommerceCustomerId: String(bigcommerceCustomer.id),
-    //       bigcommerceProductId: String(productId),
-    //     },
-    //   },
-    //   {
-    //     headers: {
-    //       Authorization: `Bearer ${token}`,
-    //       'Content-Type': 'application/json',
-    //     },
-    //   }
-    // );
+        const subscriptionRes = await axios.post(
+          `${TEST_BASE}/api/v1/subscriptions/create`,
+          subscriptionPayload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
 
-    console.log('🔍 [SUBSCRIPTION CREATE] Request payload sent:', {
-      billing_customer_id: airwallexCustomerId,
-      price_id: plan.airwallexPriceId,
-      currency: plan.currency,
-      interval: plan.interval,
-      trialDays: plan.trialDays,
-      trial_period: plan.trialDays > 0 ? { period: plan.trialDays, period_unit: 'DAY' } : 'NOT INCLUDED',
-      payment_source_id: paymentSourceId?.substring(0, 10) + '...',
-    });
+        log('📥 [SUBSCRIPTION CREATE] Airwallex response:', {
+          httpStatus: subscriptionRes.status,
+          subscriptionId: subscriptionRes.data?.id,
+          status: subscriptionRes.data?.status,
+          trial_ends_at: subscriptionRes.data?.trial_ends_at || null,
+          next_billing_at: subscriptionRes.data?.next_billing_at || null,
+          created_at: subscriptionRes.data?.created_at || null,
+          responseBody: subscriptionRes.data,
+        });
 
-    console.log('📥 [SUBSCRIPTION CREATE] Airwallex response:', {
-      status: subscriptionRes.status,
-      subscription_id: subscriptionRes.data?.id,
-      status_value: subscriptionRes.data?.status,
-      trial_ends_at: subscriptionRes.data?.trial_ends_at,
-      next_billing_at: subscriptionRes.data?.next_billing_at,
-      created_at: subscriptionRes.data?.created_at,
-      raw_response: JSON.stringify(subscriptionRes.data, null, 2),
-    });
+        if (plan.trialDays > 0) {
+          if (subscriptionRes.data?.status === 'IN_TRIAL') {
+            log('✅ [PROVISION] Trial successfully applied:', {
+              subscriptionId: subscriptionRes.data?.id,
+              status: subscriptionRes.data?.status,
+              trial_ends_at: subscriptionRes.data?.trial_ends_at || null,
+            });
+          } else {
+            log('⚠️ [PROVISION] Trial expected but status was different:', {
+              expected: 'IN_TRIAL',
+              actual: subscriptionRes.data?.status || null,
+              subscriptionId: subscriptionRes.data?.id || null,
+            });
+          }
 
-    //  Verify trial was applied
-    if (plan.trialDays > 0) {
-      if (subscriptionRes.data?.status === 'IN_TRIAL') {
-        console.log(' Trial successfully applied! Status: trialing');
-      } else {
-        console.warn('⚠️ Expected status "IN_TRIAL" but got:', subscriptionRes.data?.status);
-      }
-      
-      if (subscriptionRes.data?.trial_ends_at) {
-        console.log(' trial_ends_at present:', subscriptionRes.data.trial_ends_at);
-      } else {
-        console.warn('⚠️ trial_ends_at missing from response - trial may not have been applied');
-      }
-    }
+          if (!subscriptionRes.data?.trial_ends_at) {
+            log('⚠️ [PROVISION] trial_ends_at missing from Airwallex response:', {
+              subscriptionId: subscriptionRes.data?.id || null,
+              responseBody: subscriptionRes.data,
+            });
+          }
+        }
 
-    const awSubscription = subscriptionRes.data;
+        const awSubscription = subscriptionRes.data;
 
-    const saved = await CustomerSubscription.create({
-      bigcommerceOrderId: Number(orderId),
-      bigcommerceCustomerId: Number(bigcommerceCustomer.id),
-      bigcommerceProductId: productId,
+        const saved = await CustomerSubscription.create({
+          bigcommerceOrderId: Number(orderId),
+          bigcommerceCustomerId: Number(bigcommerceCustomer.id),
+          bigcommerceProductId: productId,
+          airwallexCustomerId,
+          airwallexProductId: plan.airwallexProductId,
+          airwallexPriceId: plan.airwallexPriceId,
+          airwallexSubscriptionId: awSubscription.id,
+          planName: plan.name,
+          status: awSubscription.status || 'active',
+          amount: plan.amount,
+          currency: plan.currency,
+          interval: plan.interval,
+          trialDays: plan.trialDays,
+          startedAt: awSubscription.created_at
+            ? dayjs(awSubscription.created_at).toDate()
+            : new Date(),
+          nextBillingAt: awSubscription.next_billing_at
+            ? dayjs(awSubscription.next_billing_at).toDate()
+            : null,
+          metadata: {
+            source: 'bigcommerce-checkout',
+          },
+        });
 
-      airwallexCustomerId,
-      airwallexProductId: plan.airwallexProductId,
-      airwallexPriceId: plan.airwallexPriceId,
-      airwallexSubscriptionId: awSubscription.id,
+        log('💾 [PROVISION] CustomerSubscription saved:', saved);
 
-      planName: plan.name,
-      status: awSubscription.status || 'active',
+        const subscriptionProjection = await upsertSubscriptionProjection(saved, {
+          lastSyncedAt: new Date(),
+          syncStatus: 'ok',
+        });
 
-      amount: plan.amount,
-      currency: plan.currency,
-      interval: plan.interval,
-      trialDays: plan.trialDays,
-
-      startedAt: awSubscription.created_at
-        ? dayjs(awSubscription.created_at).toDate()
-        : new Date(),
-      nextBillingAt: awSubscription.next_billing_at
-        ? dayjs(awSubscription.next_billing_at).toDate()
-        : null,
-
-      metadata: {
-        source: 'bigcommerce-checkout',
-      },
-    });
-
-    const subscriptionProjection = await upsertSubscriptionProjection(
-      saved,
-      {
-        lastSyncedAt: new Date(),
-        syncStatus: 'ok',
-      }
-    );
-
-    console.log('[order-flow] Subscription projection upserted:', {
-      subscriptionId: subscriptionProjection._id,
-      externalSubscriptionId: subscriptionProjection.externalSubscriptionId,
-    });
+        log('[order-flow] Subscription projection upserted:', {
+          subscriptionId: subscriptionProjection?._id || null,
+          externalSubscriptionId:
+            subscriptionProjection?.externalSubscriptionId || null,
+          projection: subscriptionProjection,
+        });
 
         subscriptions.push(saved);
-            } catch (productErr) {
-        const errorBody = productErr.response?.data || null;
-
-        console.error(
-          '❌ [PROVISION][PRODUCT ERROR]',
-          JSON.stringify(
-            {
-              productId,
-              status: productErr.response?.status || 500,
-              message: productErr.message,
-              data: errorBody,
-            },
-            null,
-            2
-          )
-        );
+      } catch (productErr) {
+        logError('❌ [PROVISION][PRODUCT ERROR]', productErr, {
+          productId,
+        });
 
         errors.push({
           productId,
           status: productErr.response?.status || 500,
-          error: errorBody || productErr.message,
+          error: productErr.response?.data || productErr.message,
         });
       }
     }
 
     if (subscriptions.length === 0) {
+      log('❌ [PROVISION] No subscriptions provisioned:', { errors });
+
       return res.status(400).json({
         success: false,
         provisioned: false,
@@ -1096,6 +1287,15 @@ router.post('/subscriptions/provision', async (req, res) => {
       });
     }
 
+    log('✅ [PROVISION] Completed successfully:', {
+      provisionedCount: subscriptions.length,
+      errorCount: errors.length,
+      subscriptionIds: subscriptions.map(
+        (s) => s.airwallexSubscriptionId || s._id || null
+      ),
+      errors,
+    });
+
     return res.status(201).json({
       success: true,
       provisioned: true,
@@ -1104,17 +1304,388 @@ router.post('/subscriptions/provision', async (req, res) => {
       errors,
     });
   } catch (err) {
-    console.error(
-      'Provision subscription error:',
-      err.response?.status,
-      err.response?.data || err.message
-    );
+    logError('❌ [PROVISION] Unhandled route error', err);
 
     return res.status(err.response?.status || 500).json({
       error: err.response?.data || 'Failed to provision subscription',
     });
   }
 });
+// router.post('/subscriptions/provision', async (req, res) => {
+//   console.log("Provision")
+//   try {
+//     const {
+//       orderId,
+//       cart,
+//       bigcommerceCustomer,
+//       airwallexCustomer,
+//       paymentSourceId,
+//     } = req.body;
+
+//     console.log('📥 [PROVISION] Received request:', {
+//       orderId,
+//       paymentSourceId,
+//       paymentSourceIdPrefix: paymentSourceId?.substring(0, 4),
+//       hasAirwallexCustomer: !!airwallexCustomer,
+//       airwallexCustomerId: airwallexCustomer?.airwallexCustomerId || airwallexCustomer?.id,
+//     });
+
+//     if (!orderId || !cart || !bigcommerceCustomer || !airwallexCustomer) {
+//       return res.status(400).json({
+//         error: 'orderId, cart, bigcommerceCustomer and airwallexCustomer are required',
+//       });
+//     }
+
+//     if (!bigcommerceCustomer.id) {
+//       return res.status(400).json({
+//         error: 'bigcommerceCustomer.id is required',
+//       });
+//     }
+
+
+//     if (!paymentSourceId) {
+//       console.error('❌ [PROVISION] Missing paymentSourceId for AUTO_CHARGE subscription', {
+//         orderId,
+//         airwallexCustomerId: airwallexCustomer?.airwallexCustomerId || airwallexCustomer?.id,
+//         collection_method: 'AUTO_CHARGE',
+//       });
+
+//       return res.status(400).json({
+//         error: 'paymentSourceId is required for AUTO_CHARGE subscription provisioning',
+//         code: 'MISSING_PAYMENT_SOURCE_ID',
+//         details: {
+//           orderId,
+//           collection_method: 'AUTO_CHARGE',
+//           hasAirwallexCustomer: !!airwallexCustomer,
+//           hasBigcommerceCustomer: !!bigcommerceCustomer,
+//         },
+//       });
+//     }
+
+
+//     // Validate paymentSourceId format - must start with 'psrc_'
+//     if (paymentSourceId && !paymentSourceId.startsWith('psrc_')) {
+//       console.error('❌ [PROVISION] Invalid paymentSourceId format:', {
+//         paymentSourceId,
+//         prefix: paymentSourceId?.substring(0, 4),
+//         expected: 'psrc_',
+//       });
+//       return res.status(400).json({
+//         error: `Invalid paymentSourceId format. Expected 'psrc_xxx', got '${paymentSourceId?.substring(0, 4)}xxx'`,
+//         code: 'INVALID_PAYMENT_SOURCE_ID',
+//         received_id: paymentSourceId,
+//         expected_prefix: 'psrc_',
+//         received_prefix: paymentSourceId?.substring(0, 4),
+//       });
+//     }
+    
+//     const airwallexCustomerId =
+//       airwallexCustomer.airwallexCustomerId || airwallexCustomer.id;
+
+//     if (!airwallexCustomerId) {
+//       return res.status(400).json({
+//         error: 'airwallex customer id is required',
+//       });
+//     }
+
+//     const subscriptionProductIds = await getEnabledSubscriptionProductIds();
+//     const subscriptionProducts = findDistinctSubscriptionProducts(
+//       cart,
+//       subscriptionProductIds
+//     );
+
+//     if (subscriptionProducts.length === 0) {
+//       return res.json({
+//         success: true,
+//         provisioned: false,
+//         message: 'No subscription product found in order cart',
+//         subscriptions: [],
+//         subscription: null,
+//       });
+//     }
+//     const token = await getAirwallexToken();
+//     const { upsertSubscriptionProjection } = require('../lib/airwallex/subscriptionAdmin');
+//     const subscriptions = [];
+//     const errors = [];
+
+//     for (const subscriptionProduct of subscriptionProducts) {
+//       const productId = Number(subscriptionProduct.product_id);
+//       try {
+//         const plan = await SubscriptionPlan.findOne({
+//           bigcommerceProductId: productId,
+//         });
+
+//       if (!plan) {
+//         errors.push({
+//           productId,
+//           error: 'No SubscriptionPlan found for BigCommerce product',
+//         });
+//         continue;
+//       }
+//       if (plan.status === 'disabled' || plan.active === false) {
+//         errors.push({
+//           productId,
+//           error: 'SubscriptionPlan is disabled',
+//         });
+//         continue;
+//       }
+
+//     // const existing = await CustomerSubscription.findOne({
+//     //   bigcommerceProductId: Number(subscriptionProduct.product_id),
+//     // });
+
+//       const existing = await CustomerSubscription.findOne({
+//         airwallexCustomerId,
+//         airwallexProductId: plan.airwallexProductId,
+//       });
+
+//       if (existing) {
+//         subscriptions.push(existing);
+//         continue;
+//       }
+
+//     let trialEndsAt = null;
+//     if (plan.trialDays && plan.trialDays > 0) {
+//       // Use UTC + start of day to avoid timezone/daylight saving issues
+//       trialEndsAt = dayjs.utc()
+//         .add(plan.trialDays + 1, 'day')
+//         .startOf('day')  // Set to 00:00:00 to match Airwallex example format
+//         .format('YYYY-MM-DDTHH:mm:ss') + '+0000';  // [Z] outputs literal "Z" for UTC
+      
+//       console.log('🧮 Calculated trial_ends_at:', trialEndsAt, `(+$ {plan.trialDays} days)`);
+//       console.log('🔍 Debug: Current UTC time:', dayjs.utc().format('YYYY-MM-DDTHH:mm:ss')+ '+0000');
+//       console.log('🔍 Debug: Trial start (created_at will be set by Airwallex)');
+//     }
+
+
+//         const subscriptionPayload = {
+//       request_id: crypto.randomUUID(),
+//       billing_customer_id: airwallexCustomerId,
+//       collection_method: 'AUTO_CHARGE',
+//       currency: plan.currency,
+//       items: [
+//         {
+//           price_id: plan.airwallexPriceId,
+//           quantity: 1,
+//         },
+//       ],
+//       duration: {
+//         period_unit: plan.interval,
+//         period: 1,
+//       },
+//       ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
+//       legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
+//       linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
+//       payment_source_id: paymentSourceId,
+//       metadata: {
+//         bigcommerceOrderId: String(orderId),
+//         bigcommerceCustomerId: String(bigcommerceCustomer.id),
+//         bigcommerceProductId: String(productId),
+//       },
+//     };
+
+//     console.log(
+//       '📤 [SUBSCRIPTION CREATE] Sending payload:\n',
+//       JSON.stringify(
+//         {
+//           billing_customer_id: subscriptionPayload.billing_customer_id,
+//           collection_method: subscriptionPayload.collection_method,
+//           currency: subscriptionPayload.currency,
+//           items: subscriptionPayload.items,
+//           duration: subscriptionPayload.duration,
+//           trial_ends_at: subscriptionPayload.trial_ends_at || null,
+//           legal_entity_id: subscriptionPayload.legal_entity_id,
+//           linked_payment_account_id: subscriptionPayload.linked_payment_account_id,
+//           payment_source_id: subscriptionPayload.payment_source_id,
+//           metadata: subscriptionPayload.metadata,
+//         },
+//         null,
+//         2
+//       )
+//     );
+
+//     const subscriptionRes = await axios.post(
+//       `${TEST_BASE}/api/v1/subscriptions/create`,
+//       subscriptionPayload,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'application/json',
+//         },
+//       }
+//     );
+//     // const subscriptionRes = await axios.post(
+//     //   `${TEST_BASE}/api/v1/subscriptions/create`,
+//     //   {
+//     //     request_id: crypto.randomUUID(),
+//     //     billing_customer_id: airwallexCustomerId,
+//     //     // collection_method: 'OUT_OF_BAND',
+//     //     collection_method: 'AUTO_CHARGE',
+//     //     currency: plan.currency,
+//     //     items: [
+//     //       {
+//     //         price_id: plan.airwallexPriceId,
+//     //         quantity: 1,
+//     //       },
+//     //     ],
+//     //     duration: {
+//     //       period_unit: plan.interval,
+//     //       period: 1,
+//     //     },
+//     //     ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
+//     //     legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
+//     //     linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
+//     //     payment_source_id: paymentSourceId,
+//     //     metadata: {
+//     //       bigcommerceOrderId: String(orderId),
+//     //       bigcommerceCustomerId: String(bigcommerceCustomer.id),
+//     //       bigcommerceProductId: String(productId),
+//     //     },
+//     //   },
+//     //   {
+//     //     headers: {
+//     //       Authorization: `Bearer ${token}`,
+//     //       'Content-Type': 'application/json',
+//     //     },
+//     //   }
+//     // );
+
+//     console.log('🔍 [SUBSCRIPTION CREATE] Request payload sent:', {
+//       billing_customer_id: airwallexCustomerId,
+//       price_id: plan.airwallexPriceId,
+//       currency: plan.currency,
+//       interval: plan.interval,
+//       trialDays: plan.trialDays,
+//       trial_period: plan.trialDays > 0 ? { period: plan.trialDays, period_unit: 'DAY' } : 'NOT INCLUDED',
+//       payment_source_id: paymentSourceId?.substring(0, 10) + '...',
+//     });
+
+//     console.log('📥 [SUBSCRIPTION CREATE] Airwallex response:', {
+//       status: subscriptionRes.status,
+//       subscription_id: subscriptionRes.data?.id,
+//       status_value: subscriptionRes.data?.status,
+//       trial_ends_at: subscriptionRes.data?.trial_ends_at,
+//       next_billing_at: subscriptionRes.data?.next_billing_at,
+//       created_at: subscriptionRes.data?.created_at,
+//       raw_response: JSON.stringify(subscriptionRes.data, null, 2),
+//     });
+
+//     //  Verify trial was applied
+//     if (plan.trialDays > 0) {
+//       if (subscriptionRes.data?.status === 'IN_TRIAL') {
+//         console.log(' Trial successfully applied! Status: trialing');
+//       } else {
+//         console.warn('⚠️ Expected status "IN_TRIAL" but got:', subscriptionRes.data?.status);
+//       }
+      
+//       if (subscriptionRes.data?.trial_ends_at) {
+//         console.log(' trial_ends_at present:', subscriptionRes.data.trial_ends_at);
+//       } else {
+//         console.warn('⚠️ trial_ends_at missing from response - trial may not have been applied');
+//       }
+//     }
+
+//     const awSubscription = subscriptionRes.data;
+
+//     const saved = await CustomerSubscription.create({
+//       bigcommerceOrderId: Number(orderId),
+//       bigcommerceCustomerId: Number(bigcommerceCustomer.id),
+//       bigcommerceProductId: productId,
+
+//       airwallexCustomerId,
+//       airwallexProductId: plan.airwallexProductId,
+//       airwallexPriceId: plan.airwallexPriceId,
+//       airwallexSubscriptionId: awSubscription.id,
+
+//       planName: plan.name,
+//       status: awSubscription.status || 'active',
+
+//       amount: plan.amount,
+//       currency: plan.currency,
+//       interval: plan.interval,
+//       trialDays: plan.trialDays,
+
+//       startedAt: awSubscription.created_at
+//         ? dayjs(awSubscription.created_at).toDate()
+//         : new Date(),
+//       nextBillingAt: awSubscription.next_billing_at
+//         ? dayjs(awSubscription.next_billing_at).toDate()
+//         : null,
+
+//       metadata: {
+//         source: 'bigcommerce-checkout',
+//       },
+//     });
+
+//     const subscriptionProjection = await upsertSubscriptionProjection(
+//       saved,
+//       {
+//         lastSyncedAt: new Date(),
+//         syncStatus: 'ok',
+//       }
+//     );
+
+//     console.log('[order-flow] Subscription projection upserted:', {
+//       subscriptionId: subscriptionProjection._id,
+//       externalSubscriptionId: subscriptionProjection.externalSubscriptionId,
+//     });
+
+//         subscriptions.push(saved);
+//             } catch (productErr) {
+//         const errorBody = productErr.response?.data || null;
+
+//         console.error(
+//           '❌ [PROVISION][PRODUCT ERROR]',
+//           JSON.stringify(
+//             {
+//               productId,
+//               status: productErr.response?.status || 500,
+//               message: productErr.message,
+//               data: errorBody,
+//             },
+//             null,
+//             2
+//           )
+//         );
+
+//         errors.push({
+//           productId,
+//           status: productErr.response?.status || 500,
+//           error: errorBody || productErr.message,
+//         });
+//       }
+//     }
+
+//     if (subscriptions.length === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         provisioned: false,
+//         error: 'Failed to provision any subscriptions for this order',
+//         subscriptions: [],
+//         subscription: null,
+//         errors,
+//       });
+//     }
+
+//     return res.status(201).json({
+//       success: true,
+//       provisioned: true,
+//       subscriptions,
+//       subscription: subscriptions[0] || null,
+//       errors,
+//     });
+//   } catch (err) {
+//     console.error(
+//       'Provision subscription error:',
+//       err.response?.status,
+//       err.response?.data || err.message
+//     );
+
+//     return res.status(err.response?.status || 500).json({
+//       error: err.response?.data || 'Failed to provision subscription',
+//     });
+//   }
+// });
 
 
 /**
@@ -1276,7 +1847,11 @@ router.post('/payment-sources/create', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error("Create payment source error:", err.response?.status, err.response?.data || err.message);
+    console.error(
+      'Create payment source error:',
+      err.response?.status,
+      JSON.stringify(err.response?.data, null, 2)
+    );
     res.status(err.response?.status || 500).json({
       error: err.response?.data || "Failed to create payment source"
     });

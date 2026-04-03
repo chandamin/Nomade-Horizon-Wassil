@@ -20,10 +20,6 @@ export default function CheckoutLayout({
   onProvisionSubscription,
   clearCart,
   onCartCleared,
-  onApplyCheckoutCoupon,
-  onRemoveCheckoutCoupon,
-  onApplyCheckoutDiscount,
-  onRemoveCheckoutDiscount,
 }) {
   /**
    * activeStep controls which section is expanded.
@@ -47,11 +43,6 @@ export default function CheckoutLayout({
   const [shippingOptions, setShippingOptions] = useState([]);
   const [orderComplete, setOrderComplete] = useState(false);
   const [createdOrder, setCreatedOrder] = useState(null);
-  const [checkoutCart, setCheckoutCart] = useState(cart);
-
-  useEffect(() => {
-    setCheckoutCart(cart);
-  }, [cart]);
   const VIP_PRODUCT_ID = 268; // replace
   const fallbackSubscriptionProductIds = [...new Set([
     VIP_PRODUCT_ID,
@@ -379,6 +370,14 @@ export default function CheckoutLayout({
       alert("No cart found. Please refresh the page.");
       return;
     }
+
+    // console.log('🎯 handlePlaceOrder called', {
+    //   timestamp: new Date().toISOString(),
+    //   cartId: cart?.id,
+    //   paymentIntentId: paymentData?.paymentIntentId,
+    //   isPlacingOrder,
+    // });
+
     if (isPlacingOrder) {
       console.log("🚫 Blocked duplicate call");
       return;
@@ -390,8 +389,7 @@ export default function CheckoutLayout({
     setIsPlacingOrder(true);
 
 
-    // let latestCart = cart;
-    let latestCart = checkoutCart || cart;
+    let latestCart = cart;
 
     try {
       if (onFetchLatestCart && cart?.id) {
@@ -723,7 +721,7 @@ export default function CheckoutLayout({
               onContinue={(data) => setPaymentData(data)}
               isDisabled={activeStep !== "payment"}
               onPlaceOrder={handlePlaceOrder}
-              cart={checkoutCart}
+              cart={cart}
               clientData={clientData}
               deliveryData={deliveryData}
               airwallexCustomerId={airwallexCustomer?.airwallexCustomerId}
@@ -814,14 +812,14 @@ export default function CheckoutLayout({
                         />
                       </div>
                       <label htmlFor="vip-club" className="text-[16px] text-white">
-                        VIP CLUB ACCESS - NOMADE HORIZON
+                        VIP CLUB ACCESS - HIKE SUMMIT
                       </label>
                     </div>
                   </div>
 
                   <div className="nr-wrranty-text pt-[15px]">
                     <p className="text-[13px]">
-                      By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Nomade Horizon.
+                      By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Hike Summit.
                       After the trial, the subscription renews automatically at £12.99/month.
                       This membership is non-binding and can be cancelled at any time by contacting support.
                     </p>
@@ -852,12 +850,7 @@ export default function CheckoutLayout({
           {/* Pass cart prop to OrderSummary */}
           <OrderSummary
             deliveryPrice={deliveryData?.price ?? 0}
-            cart={checkoutCart}
-            onCartUpdate={setCheckoutCart}
-            onApplyCheckoutCoupon={onApplyCheckoutCoupon}
-            onRemoveCheckoutCoupon={onRemoveCheckoutCoupon}
-            onApplyCheckoutDiscount={onApplyCheckoutDiscount}
-            onRemoveCheckoutDiscount={onRemoveCheckoutDiscount}
+            cart={cart}
           />
           {/* first-part */}
           <div className="nr-rght-bottom-info-cntnt pt-[30px] pb-[30px] border-b ">

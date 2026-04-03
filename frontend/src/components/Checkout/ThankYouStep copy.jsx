@@ -46,13 +46,10 @@ const ThankYouStep = ({
   // const allItems = [...physicalItems, ...digitalItems];
   const discountAmount = Number(cart?.discountAmount || order?.discount_amount || 0);
 
-  let subtotalPreDiscount = Number(cart?.baseAmount || 0);
-  if (!subtotalPreDiscount && cart?.cartAmount) {
-    subtotalPreDiscount = Number(cart.cartAmount) + discountAmount;
-  }
-  if (!subtotalPreDiscount && order?.subtotal_inc_tax) {
-    subtotalPreDiscount = Number(order.subtotal_inc_tax);
-  }
+  const subtotal =
+    Number(cart?.baseAmount || 0) ||
+    Number(order?.subtotal_inc_tax || 0) ||
+    0;
 
   const shipping =
     Number(cart?.shippingAmount || 0) ||
@@ -189,15 +186,8 @@ const ThankYouStep = ({
             <div className="space-y-4 border-b border-[#e5e5e5] px-6 py-6 text-[16px] text-black">
               <div className="flex items-center justify-between">
                 <span>Subtotal</span>
-                <span>{formatPrice(subtotalPreDiscount, currency)}</span>
+                <span>{formatPrice(subtotal, currency)}</span>
               </div>
-
-              {discountAmount > 0 && (
-                <div className="flex items-center justify-between text-green-600">
-                  <span>Discount</span>
-                  <span>-{formatPrice(discountAmount, currency)}</span>
-                </div>
-              )}
 
               <div className="flex items-center justify-between">
                 <span>Shipping</span>

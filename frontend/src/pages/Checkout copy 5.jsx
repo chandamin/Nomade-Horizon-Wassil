@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from 'react-router-dom';
 import CheckoutLayout from "../components/Checkout/CheckoutLayout";
 
+// export function ErrorPage() {
+//   useEffect(() => {
+//     window.location.replace("https://nomade-horizon.com/cart.php");
+//   }, []);
+
+//   return null;
+// }
+
 export default function Checkout() {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +66,7 @@ export default function Checkout() {
   }, [searchParams]);
 
 
-  const VIP_PRODUCT_ID = 210; // replace with real BC product ID
+  const VIP_PRODUCT_ID = 268; // replace with real BC product ID
 
 const refreshCart = async (cartId) => {
   await fetchCartById(cartId);
@@ -176,8 +184,20 @@ const removeVipFromCart = async (cartId) => {
 
     const result = await res.json();
 
-    if (!res.ok) {
-      throw new Error(result?.error || 'Failed to provision subscription');
+    console.log('📥 [Checkout.jsx] provision response:', {
+      status: res.status,
+      ok: res.ok,
+      result,
+    });
+
+        if (!res.ok) {
+      throw new Error(
+        typeof result?.error === 'string'
+          ? result.error
+          : result?.error?.message ||
+            result?.message ||
+            JSON.stringify(result?.error || result)
+      );
     }
 
     return result;
@@ -289,13 +309,13 @@ const removeVipFromCart = async (cartId) => {
           
           try {
             const searchResult = JSON.parse(responseText);
-            console.log('✅ Parsed search result:', searchResult);
+            console.log(' Parsed search result:', searchResult);
             
             if (searchResult.exists) {
               // Use existing customer
               customerId = searchResult.customer.id;
               createdCustomerData = searchResult.customer;
-              console.log('✅ Using existing customer:', customerId);
+              console.log(' Using existing customer:', customerId);
             } else {
               // Create new customer
               console.log('🆕 Creating new customer...');
@@ -320,12 +340,12 @@ const removeVipFromCart = async (cartId) => {
               
               if (createResponse.ok) {
                 const createResult = await createResponse.json();
-                console.log('✅ Create result:', createResult);
+                console.log(' Create result:', createResult);
                 
                 if (createResult.success) {
                   customerId = createResult.customer.id;
                   createdCustomerData = createResult.customer;
-                  console.log('✅ Created new customer:', customerId);
+                  console.log(' Created new customer:', customerId);
                 } else {
                   console.warn('⚠️ Customer creation failed:', createResult.error);
                 }
@@ -396,7 +416,7 @@ const removeVipFromCart = async (cartId) => {
       
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Address saved:', result.addressId);
+        console.log(' Address saved:', result.addressId);
         return result;
       } else {
         const errorText = await response.text();
@@ -448,7 +468,7 @@ const removeVipFromCart = async (cartId) => {
       throw new Error(result.error || 'Failed to fetch shipping options');
     }
 
-    console.log("✅ Returning shipping options to ShippingStep:", result.shippingOptions || []);
+    console.log(" Returning shipping options to ShippingStep:", result.shippingOptions || []);
     return result.shippingOptions || [];
   };
 
@@ -466,40 +486,6 @@ const removeVipFromCart = async (cartId) => {
           setLoading(false);
           return;
         }
-
-
-        
-        // if (cartDataParam) {
-        //   try {
-        //     const decodedCartData = JSON.parse(decodeURIComponent(cartDataParam));
-        //     console.log('📦 Decoded cart data:', decodedCartData);
-            
-        //     const normalizedCart = {
-        //       ...decodedCartData,
-        //       lineItems: decodedCartData.lineItems || {
-        //         physicalItems: [],
-        //         digitalItems: []
-        //       },
-        //       cartAmount: decodedCartData.cartAmount || 0,
-        //       currency: decodedCartData.currency || { code: 'EUR' },
-        //       customerId: decodedCartData.customerId || 0,
-        //       customerEmail: decodedCartData.customerEmail || ''
-        //     };
-            
-        //     setCart(normalizedCart);
-        //     setLoading(false);
-            
-        //   } catch (parseError) {
-        //     console.error('❌ Failed to parse cart data:', parseError);
-        //     setError('Invalid cart data format');
-        //     setLoading(false);
-        //   }
-        // } else if (cartId) {
-        //   await fetchCartById(cartId);
-        // } else {
-        //   setError('Invalid checkout link');
-        //   setLoading(false);
-        // }
 
         if (cartId) {
           await fetchCartById(cartId);
@@ -585,21 +571,25 @@ const removeVipFromCart = async (cartId) => {
     );
   }
 
+  // if (error) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="max-w-md p-6 bg-red-50 border border-red-200 rounded-lg text-center">
+  //         <h2 className="text-xl font-semibold text-red-800 mb-2">Checkout Error</h2>
+  //         <p className="text-red-600 mb-4">{error}</p>
+  //         <a 
+  //           href="https://nomade-horizon.com/cart.php" 
+  //           className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+  //         >
+  //           Return to Cart
+  //         </a>
+  //       </div>
+  //     </div>
+  //   );
+  // }
   if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="max-w-md p-6 bg-red-50 border border-red-200 rounded-lg text-center">
-          <h2 className="text-xl font-semibold text-red-800 mb-2">Checkout Error</h2>
-          <p className="text-red-600 mb-4">{error}</p>
-          <a 
-            href="https://your-bigcommerce-store.com/cart" 
-            className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Return to Cart
-          </a>
-        </div>
-      </div>
-    );
+    window.location.replace("https://nomade-horizon.com/cart.php");
+    return null;
   }
 
   console.log("Cart Data: ",cart);

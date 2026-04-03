@@ -2,26 +2,21 @@ const express = require('express');
 const router = express.Router();
 
 // const STORE_HASH = 'eapn6crf58';
+const STORE_HASH = '9feeyc5orh';
 const MANAGEMENT_API_TOKEN = process.env.BC_API_TOKEN;
-const FRONTEND_CHECKOUT_URL = process.env.FRONTEND_CHECKOUT_URL || 'http://localhost:5173/checkout';
+const FRONTEND_CHECKOUT_URL = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '') + '/checkout';
 const VIP_PRODUCT_ID = 268;
 const SubscriptionCustomer = require('../models/SubscriptionCustomer');
+const {
+  findDistinctSubscriptionProducts,
+  getEnabledSubscriptionProductIds,
+} = require('../lib/subscriptionProducts');
 
 const bcHeaders = {
   'X-Auth-Token': MANAGEMENT_API_TOKEN,
   'Content-Type': 'application/json',
   'Accept': 'application/json'
 };
-
-const SUBSCRIPTION_PRODUCT_IDS = (
-  process.env.SUBSCRIPTION_PRODUCT_IDS || ''
-)
-  .split(',')
-  .map((id) => Number(id.trim()))
-  .filter(Boolean);
-
-
-
 
 async function updateOrderStatus(orderId, statusId, storeHash, apiToken) {
   try {
@@ -75,12 +70,11 @@ const debug = (label, data) => {
 
 function getCountryCode(countryName) {
   const countryMap = {
-    'United States': 'US',
-    'France': 'FR',
-    'Canada': 'CA',
-    'United Kingdom': 'GB',
-    'Germany': 'DE',
-    'Australia': 'AU'
+    "France": "FR",
+    "Belgium": "BE",
+    "Luxembourg": "LU",
+    "Switzerland": "CH",
+    "United States": "US",
   };
 
   return countryMap[countryName] || 'FR';
@@ -185,17 +179,8 @@ async function sendOrderConfirmationEmail(order, customerEmail) {
   }
 }
 
-function findSubscriptionProduct(cart, subscriptionProductIds = []) {
-  const physicalItems = cart?.lineItems?.physicalItems || [];
-  const digitalItems = cart?.lineItems?.digitalItems || [];
-  const allItems = [...physicalItems, ...digitalItems];
-
-  return allItems.find((item) =>
-    subscriptionProductIds.includes(Number(item.product_id))
-  );
-}
-
 router.get('/cart', async (req, res) => {
+  console.log("api cart called")
   const { cartId } = req.query;
 
   if (!cartId) {
@@ -269,6 +254,7 @@ router.get('/cart', async (req, res) => {
 });
 
 router.get('/cart-data', async (req, res) => {
+  console.log('api cart-data called');
   const { cartId } = req.query;
 
   if (!cartId) {
@@ -414,6 +400,7 @@ router.post('/customers', async (req, res) => {
 });
 
 router.get('/customers/search', async (req, res) => {
+  console.log('Search Customer by Email',req);
   try {
     let { email } = req.query;
 
@@ -448,6 +435,8 @@ router.get('/customers/search', async (req, res) => {
     if (searchResult.data && searchResult.data.length > 0) {
       const customer = searchResult.data[0];
       console.log('Customer found:', customer.id);
+
+      console.log("Email Search result:", JSON.stringify(searchResult));
 
       return res.json({
         success: true,
@@ -739,69 +728,311 @@ router.get('/shipping/zones/:zoneId/methods', async (req, res) => {
 });
 
 router.post('/shipping/quotes', async (req, res) => {
-  console.log('Getting shipping quotes');
+  console.log('='.repeat(80));
+  console.log('🚚 SHIPPING QUOTES API HIT');
+  console.log('🕒 Timestamp:', new Date().toISOString());
+  console.log('📥 Incoming body:', JSON.stringify(req.body, null, 2));
+
   try {
-    const { cartId } = req.body;
+    const { cartId, address } = req.body;
+
+    console.log('🔎 Extracted inputs:', {
+      cartId,
+      hasAddress: !!address,
+      address1: address?.address1,
+      city: address?.city,
+      postalCode: address?.postalCode,
+      countryCode: address?.countryCode,
+      stateOrProvince: address?.stateOrProvince,
+      firstName: address?.firstName,
+      lastName: address?.lastName,
+      phone: address?.phone,
+    });
 
     if (!cartId) {
+      console.warn('❌ Validation failed: cartId missing');
       return res.status(400).json({
         success: false,
-        error: 'Cart ID is required'
+        error: 'cartId is required'
       });
     }
 
-    const cartRes = await fetch(
-      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}`,
-      {
-        headers: bcGetHeaders
-      }
-    );
+    if (!address?.countryCode || !address?.city || !address?.address1) {
+      console.warn('❌ Validation failed: required address fields missing', {
+        countryCode: !!address?.countryCode,
+        city: !!address?.city,
+        address1: !!address?.address1,
+      });
 
-    if (!cartRes.ok) {
       return res.status(400).json({
         success: false,
-        error: 'Cart not found'
+        error: 'address.countryCode, address.city, and address.address1 are required'
       });
     }
 
-    const shippingOptions = [
+    console.log('✅ Validation passed');
+
+    // 1) Get checkout by cart id
+    const checkoutUrl = `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${cartId}`;
+    console.log('📤 Fetching checkout from BigCommerce:', checkoutUrl);
+
+    const checkoutRes = await fetch(checkoutUrl, {
+      method: 'GET',
+      headers: bcHeaders
+    });
+
+    const checkoutText = await checkoutRes.text();
+
+    console.log('📡 Checkout response status:', checkoutRes.status);
+    console.log('📡 Checkout raw response:', checkoutText.substring(0, 2000));
+
+    if (!checkoutRes.ok) {
+      console.error('❌ Failed to fetch checkout from BigCommerce');
+      return res.status(checkoutRes.status).json({
+        success: false,
+        error: 'Failed to fetch checkout',
+        details: checkoutText
+      });
+    }
+
+    let checkoutData;
+    try {
+      checkoutData = JSON.parse(checkoutText);
+      console.log('✅ Checkout JSON parsed successfully');
+    } catch (parseErr) {
+      console.error('❌ Failed to parse checkout JSON:', parseErr.message);
+      return res.status(500).json({
+        success: false,
+        error: 'Invalid checkout response from BigCommerce',
+        details: checkoutText.substring(0, 1000)
+      });
+    }
+
+    const checkoutId = checkoutData?.data?.id || cartId;
+
+    console.log('🧾 Checkout summary:', {
+      checkoutId,
+      cartId,
+      checkoutDataId: checkoutData?.data?.id,
+      hasCart: !!checkoutData?.data?.cart,
+      existingConsignmentsCount: checkoutData?.data?.consignments?.length || 0,
+    });
+
+    const physicalItems = checkoutData?.data?.cart?.line_items?.physical_items || [];
+    const digitalItems = checkoutData?.data?.cart?.line_items?.digital_items || [];
+    const lineItems = [...physicalItems, ...digitalItems];
+
+    console.log('🛒 Checkout line items summary:', {
+      physicalCount: physicalItems.length,
+      digitalCount: digitalItems.length,
+      totalCount: lineItems.length,
+      items: lineItems.map((item) => ({
+        id: item.id,
+        product_id: item.product_id,
+        name: item.name,
+        quantity: item.quantity,
+      })),
+    });
+
+    if (lineItems.length === 0) {
+      console.warn('⚠️ No line items found in checkout/cart');
+    }
+
+    const consignmentPayload = [
       {
-        id: 'free',
-        name: 'Free Delivery',
-        description: 'Standard delivery',
-        cost: 0,
-        estimated_days: '5-7 business days'
-      },
-      {
-        id: 'insured',
-        name: 'Delivery + Insurance',
-        description: 'Protection against loss, breakage, and theft',
-        cost: 1.99,
-        estimated_days: '3-5 business days'
-      },
-      {
-        id: 'express',
-        name: 'Express Delivery',
-        description: 'Priority shipping',
-        cost: 4.99,
-        estimated_days: '1-2 business days'
+        shipping_address: {
+          first_name: address.firstName || 'Guest',
+          last_name: address.lastName || 'Customer',
+          address1: address.address1 || 'N/A',
+          city: address.city || 'N/A',
+          state_or_province: address.stateOrProvince || address.city || 'N/A',
+          postal_code: address.postalCode || '00000',
+          country_code: address.countryCode || 'FR',
+          phone: address.phone || ''
+        },
+        line_items: lineItems.map((item) => ({
+          item_id: item.id,
+          quantity: item.quantity
+        }))
       }
     ];
 
-    res.json({
-      success: true,
-      options: shippingOptions,
-      message: 'Shipping quotes retrieved'
+    console.log(
+      '📦 Consignment payload to BigCommerce:',
+      JSON.stringify(consignmentPayload, null, 2)
+    );
+
+    // 2) Create/update consignment AND request available shipping options
+    const consignmentsUrl =
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${checkoutId}/consignments?include=consignments.available_shipping_options`;
+
+    console.log('📤 Posting consignments to BigCommerce:', consignmentsUrl);
+
+    const consignmentsRes = await fetch(consignmentsUrl, {
+      method: 'POST',
+      headers: bcHeaders,
+      body: JSON.stringify(consignmentPayload)
     });
+
+    const consignmentsText = await consignmentsRes.text();
+
+    console.log('📡 Consignments response status:', consignmentsRes.status);
+    console.log('📡 Consignments raw response:', consignmentsText.substring(0, 4000));
+
+    if (!consignmentsRes.ok) {
+      console.error('❌ Failed to create/update consignment or fetch shipping quotes');
+      return res.status(consignmentsRes.status).json({
+        success: false,
+        error: 'Failed to fetch shipping quotes',
+        details: consignmentsText
+      });
+    }
+
+    let consignmentsData;
+    try {
+      consignmentsData = JSON.parse(consignmentsText);
+      console.log('✅ Consignments JSON parsed successfully');
+    } catch (parseErr) {
+      console.error('❌ Failed to parse consignments JSON:', parseErr.message);
+      return res.status(500).json({
+        success: false,
+        error: 'Invalid consignments response from BigCommerce',
+        details: consignmentsText.substring(0, 1000)
+      });
+    }
+
+    const checkoutPayload = consignmentsData?.data || {};
+    const consignments = checkoutPayload?.consignments || [];
+    const firstConsignment = consignments[0];
+
+    console.log('📋 Consignments summary:', {
+      dataType: typeof consignmentsData?.data,
+      hasCheckoutPayload: !!checkoutPayload,
+      count: consignments.length,
+      hasFirstConsignment: !!firstConsignment,
+      firstConsignmentId: firstConsignment?.id,
+      availableShippingOptionsCount: firstConsignment?.available_shipping_options?.length || 0,
+      consignmentIds: consignments.map((c) => c.id),
+    });
+
+    const shippingOptions = firstConsignment?.available_shipping_options || [];
+
+    console.log(
+      '🚚 Raw available shipping options from BigCommerce:',
+      JSON.stringify(shippingOptions, null, 2)
+    );
+
+    const mappedShippingOptions = shippingOptions.map((option) => ({
+      id: option.id,
+      description: option.description || option.name,
+      cost:
+        option.cost ??
+        option.cost_ex_tax ??
+        option.cost_inc_tax ??
+        option.amount ??
+        option.rate ??
+        0,
+      type: option.type,
+      isRecommended: option.is_recommended || false,
+      raw: option
+    }));
+
+    console.log('✅ Final mapped shipping options:', JSON.stringify(mappedShippingOptions, null, 2));
+
+    const responsePayload = {
+      success: true,
+      checkoutId,
+      consignments,
+      shippingOptions: mappedShippingOptions
+    };
+
+    console.log('📤 Responding to frontend with:', JSON.stringify({
+      success: responsePayload.success,
+      checkoutId: responsePayload.checkoutId,
+      consignmentsCount: responsePayload.consignments.length,
+      shippingOptionsCount: responsePayload.shippingOptions.length,
+    }, null, 2));
+
+    console.log('='.repeat(80));
+
+    return res.json(responsePayload);
   } catch (err) {
-    console.error('Shipping quotes error:', err);
-    res.status(500).json({
+    console.error('💥 Shipping quotes error:', err.message);
+    console.error('💥 Shipping quotes stack:', err.stack);
+    console.log('='.repeat(80));
+
+    return res.status(500).json({
       success: false,
-      error: 'Server error',
+      error: 'Server error fetching shipping quotes',
       message: err.message
     });
   }
 });
+
+// router.post('/shipping/quotes', async (req, res) => {
+//   console.log('Getting shipping quotes');
+//   try {
+//     const { cartId } = req.body;
+
+//     if (!cartId) {
+//       return res.status(400).json({
+//         success: false,
+//         error: 'Cart ID is required'
+//       });
+//     }
+
+//     const cartRes = await fetch(
+//       `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}`,
+//       {
+//         headers: bcGetHeaders
+//       }
+//     );
+
+//     if (!cartRes.ok) {
+//       return res.status(400).json({
+//         success: false,
+//         error: 'Cart not found'
+//       });
+//     }
+
+//     const shippingOptions = [
+//       {
+//         id: 'free',
+//         name: 'Free Delivery',
+//         description: 'Standard delivery',
+//         cost: 0,
+//         estimated_days: '5-7 business days'
+//       },
+//       {
+//         id: 'insured',
+//         name: 'Delivery + Insurance',
+//         description: 'Protection against loss, breakage, and theft',
+//         cost: 1.99,
+//         estimated_days: '3-5 business days'
+//       },
+//       {
+//         id: 'express',
+//         name: 'Express Delivery',
+//         description: 'Priority shipping',
+//         cost: 4.99,
+//         estimated_days: '1-2 business days'
+//       }
+//     ];
+
+//     res.json({
+//       success: true,
+//       options: shippingOptions,
+//       message: 'Shipping quotes retrieved'
+//     });
+//   } catch (err) {
+//     console.error('Shipping quotes error:', err);
+//     res.status(500).json({
+//       success: false,
+//       error: 'Server error',
+//       message: err.message
+//     });
+//   }
+// });
 
 router.post('/orders/create', async (req, res) => {
   console.log('Creating order - START');
@@ -828,6 +1059,29 @@ router.post('/orders/create', async (req, res) => {
       return res.status(400).json({ success: false, error: 'At least one product is required' });
     }
 
+    // Fetch authoritative prices from BigCommerce — never trust client-submitted prices
+    const verifiedProducts = await Promise.all(
+      products.map(async (product) => {
+        const productId = product.product_id || product.productId;
+        const bcProductRes = await fetch(
+          `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/catalog/products/${productId}`,
+          { headers: bcHeaders }
+        );
+        if (!bcProductRes.ok) {
+          throw new Error(`Could not verify price for product ${productId}`);
+        }
+        const bcProduct = await bcProductRes.json();
+        const serverPrice = bcProduct.data?.price ?? bcProduct.data?.sale_price;
+        return {
+          product_id: productId,
+          quantity: product.quantity || 1,
+          price_inc_tax: serverPrice,
+          price_ex_tax: serverPrice,
+          product_options: product.product_options || [],
+        };
+      })
+    );
+
     const orderData = {
       customer_id: parseInt(customerId, 10),
       status_id: statusId,
@@ -844,13 +1098,7 @@ router.post('/orders/create', async (req, res) => {
         email: billingAddress.email || '',
         phone: billingAddress.phone || ''
       },
-      products: products.map(product => ({
-        product_id: product.product_id || product.productId,
-        quantity: product.quantity || 1,
-        price_inc_tax: product.priceIncTax || product.price_inc_tax,
-        price_ex_tax: product.priceExTax || product.price_ex_tax,
-        product_options: product.product_options || []
-      }))
+      products: verifiedProducts,
     };
 
     if (shippingAddress) {
@@ -872,7 +1120,7 @@ router.post('/orders/create', async (req, res) => {
     if (shippingMethod) {
       orderData.shipping_cost_inc_tax = shippingMethod.costIncTax || shippingMethod.cost_inc_tax;
       orderData.shipping_cost_ex_tax = shippingMethod.costExTax || shippingMethod.cost_ex_tax;
-      orderData.shipping_method = shippingMethod.name || shippingMethod.method;
+      // orderData.shipping_method = shippingMethod.name || shippingMethod.method;
     }
 
     if (paymentMethod) {
@@ -1245,62 +1493,72 @@ router.post('/subscription-customers/map', async (req, res) => {
       });
     }
 
-    const subscriptionProduct = findSubscriptionProduct(
+    const subscriptionProductIds = await getEnabledSubscriptionProductIds();
+    const subscriptionProducts = findDistinctSubscriptionProducts(
       cart,
-      SUBSCRIPTION_PRODUCT_IDS
+      subscriptionProductIds
     );
 
-    if (!subscriptionProduct) {
+    if (subscriptionProducts.length === 0) {
       return res.json({
         success: true,
         saved: false,
         message: 'No subscription product found. Mapping skipped.',
+        customers: [],
+        customer: null,
       });
     }
 
-    const doc = await SubscriptionCustomer.findOneAndUpdate(
-      {
-        bigcommerceCustomerId: bigcommerceCustomer.id,
-        subscriptionProductId: Number(subscriptionProduct.product_id),
-      },
-      {
-        $set: {
+    const customers = [];
+
+    for (const subscriptionProduct of subscriptionProducts) {
+      const doc = await SubscriptionCustomer.findOneAndUpdate(
+        {
           bigcommerceCustomerId: bigcommerceCustomer.id,
-          bigcommerceEmail: bigcommerceCustomer.email,
-          bigcommerceFirstName: bigcommerceCustomer.firstName,
-          bigcommerceLastName: bigcommerceCustomer.lastName,
-          bigcommercePhone: bigcommerceCustomer.phone,
-          bigcommerceCompany: bigcommerceCustomer.company,
-
-          airwallexCustomerId: airwallexCustomer.airwallexCustomerId,
-          airwallexName: airwallexCustomer.name,
-          airwallexEmail: airwallexCustomer.email,
-          airwallexType: airwallexCustomer.type,
-          airwallexPhoneNumber: airwallexCustomer.phone_number,
-
-          cartId: cart.id,
-          orderId: orderId || null,
-
           subscriptionProductId: Number(subscriptionProduct.product_id),
-          subscriptionProductName: subscriptionProduct.name,
-          isSubscriptionCustomer: true,
+        },
+        {
+          $set: {
+            bigcommerceCustomerId: bigcommerceCustomer.id,
+            bigcommerceEmail: bigcommerceCustomer.email,
+            bigcommerceFirstName: bigcommerceCustomer.firstName,
+            bigcommerceLastName: bigcommerceCustomer.lastName,
+            bigcommercePhone: bigcommerceCustomer.phone,
+            bigcommerceCompany: bigcommerceCustomer.company,
 
-          metadata: {
-            source: 'bigcommerce-checkout',
+            airwallexCustomerId: airwallexCustomer.airwallexCustomerId,
+            airwallexName: airwallexCustomer.name,
+            airwallexEmail: airwallexCustomer.email,
+            airwallexType: airwallexCustomer.type,
+            airwallexPhoneNumber: airwallexCustomer.phone_number,
+
+            cartId: cart.id,
+            orderId: orderId || null,
+
+            subscriptionProductId: Number(subscriptionProduct.product_id),
+            subscriptionProductName: subscriptionProduct.name,
+            isSubscriptionCustomer: true,
+
+            metadata: {
+              source: 'bigcommerce-checkout',
+            },
           },
         },
-      },
-      {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true,
-      }
-    );
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true,
+        }
+      );
+
+      customers.push(doc);
+    }
 
     return res.status(201).json({
       success: true,
       saved: true,
-      customer: doc,
+      customers,
+      customer: customers[0] || null,
     });
   } catch (err) {
     console.error('Subscription customer mapping error:', err);

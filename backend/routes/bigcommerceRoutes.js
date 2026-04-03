@@ -68,6 +68,45 @@ const debug = (label, data) => {
   }
 };
 
+function transformCartResponse(cartData) {
+  return {
+    id: cartData.data.id,
+    lineItems: {
+      physicalItems: (cartData.data.line_items?.physical_items || []).map(item => ({
+        id: item.id,
+        product_id: item.product_id,
+        name: item.name,
+        quantity: item.quantity,
+        extendedSalePrice: item.extended_sale_price,
+        extendedListPrice: item.extended_list_price,
+        list_price: item.list_price,
+        sale_price: item.sale_price,
+        imageUrl: item.image_url || '/placeholder.png',
+        options: item.options || []
+      })),
+      digitalItems: (cartData.data.line_items?.digital_items || []).map(item => ({
+        id: item.id,
+        product_id: item.product_id,
+        name: item.name,
+        quantity: item.quantity,
+        extendedSalePrice: item.extended_sale_price,
+        extendedListPrice: item.extended_list_price,
+        list_price: item.list_price,
+        sale_price: item.sale_price,
+        imageUrl: item.image_url || '/placeholder.png',
+        options: item.options || []
+      }))
+    },
+    cartAmount: cartData.data.cart_amount,
+    discountAmount: cartData.data.discount_amount || 0,
+    taxAmount: cartData.data.tax_amount || 0,
+    grandTotal: cartData.data.cart_amount,   // already after discounts
+    currency: cartData.data.currency || { code: 'EUR' },
+    customerId: cartData.data.customer_id,
+    coupons: cartData.data.coupons || []
+  };
+} 
+
 function getCountryCode(countryName) {
   const countryMap = {
     "France": "FR",
@@ -180,7 +219,7 @@ async function sendOrderConfirmationEmail(order, customerEmail) {
 }
 
 router.get('/cart', async (req, res) => {
-  console.log("api cart called")
+  console.log("api cart called");
   const { cartId } = req.query;
 
   if (!cartId) {
@@ -192,9 +231,7 @@ router.get('/cart', async (req, res) => {
   try {
     const cartRes = await fetch(
       `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}?include=redirect_urls,line_items.physical_items.options,line_items.digital_items,coupons`,
-      {
-        headers: bcHeaders
-      }
+      { headers: bcHeaders }
     );
 
     if (!cartRes.ok) {
@@ -213,37 +250,13 @@ router.get('/cart', async (req, res) => {
       total: cartData.data.cart_amount
     });
 
-    const transformedCart = {
-      id: cartData.data.id,
-      lineItems: {
-        physicalItems: cartData.data.line_items?.physical_items?.map(item => ({
-          id: item.id,
-          product_id: item.product_id,
-          name: item.name,
-          quantity: item.quantity,
-          extendedSalePrice: item.extended_sale_price,
-          list_price: item.list_price,
-          sale_price: item.sale_price,
-          imageUrl: item.image_url || '/placeholder.png',
-          options: item.options || []
-        })) || [],
-        digitalItems: cartData.data.line_items?.digital_items || []
-      },
-      cartAmount: cartData.data.cart_amount,
-      discountAmount: cartData.data.discount_amount || 0,
-      taxAmount: cartData.data.tax_amount || 0,
-      grandTotal: cartData.data.cart_amount,
-      currency: cartData.data.currency || { code: 'EUR' },
-      customerId: cartData.data.customer_id,
-      coupons: cartData.data.coupons || []
-    };
+    const transformedCart = transformCartResponse(cartData);
 
     const reactUrl = new URL(FRONTEND_CHECKOUT_URL);
     reactUrl.searchParams.append('cartId', cartId);
     reactUrl.searchParams.append('cartData', encodeURIComponent(JSON.stringify(transformedCart)));
 
     console.log('Redirecting to React app:', reactUrl.toString());
-
     return res.redirect(reactUrl.toString());
   } catch (err) {
     console.error('Server error:', err);
@@ -264,9 +277,7 @@ router.get('/cart-data', async (req, res) => {
   try {
     const cartRes = await fetch(
       `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}?include=redirect_urls,line_items.physical_items.options,line_items.digital_items,coupons`,
-      {
-        headers: bcHeaders
-      }
+      { headers: bcHeaders }
     );
 
     if (!cartRes.ok) {
@@ -279,47 +290,372 @@ router.get('/cart-data', async (req, res) => {
     }
 
     const cartData = await cartRes.json();
-
-    const transformedCart = {
-      id: cartData.data.id,
-      lineItems: {
-        physicalItems: cartData.data.line_items?.physical_items?.map(item => ({
-          id: item.id,
-          product_id: item.product_id,
-          name: item.name,
-          quantity: item.quantity,
-          extendedSalePrice: item.extended_sale_price,
-          list_price: item.list_price,
-          sale_price: item.sale_price,
-          imageUrl: item.image_url || '/placeholder.png',
-          options: item.options || []
-        })) || [],
-        digitalItems: cartData.data.line_items?.digital_items?.map(item => ({
-          id: item.id,
-          product_id: item.product_id,
-          name: item.name,
-          quantity: item.quantity,
-          extendedSalePrice: item.extended_sale_price,
-          list_price: item.list_price,
-          sale_price: item.sale_price,
-          imageUrl: item.image_url || '/placeholder.png',
-          options: item.options || []
-        })) || []
-      },
-      cartAmount: cartData.data.cart_amount,
-      discountAmount: cartData.data.discount_amount || 0,
-      taxAmount: cartData.data.tax_amount || 0,
-      grandTotal: cartData.data.cart_amount,
-      currency: cartData.data.currency || { code: 'EUR' },
-      customerId: cartData.data.customer_id,
-      coupons: cartData.data.coupons || []
-    };
-
+    const transformedCart = transformCartResponse(cartData);
     return res.json(transformedCart);
   } catch (err) {
     console.error('Cart data error:', err);
     return res.status(500).json({
       error: 'Server error',
+      message: err.message
+    });
+  }
+});
+
+router.post('/checkout/coupons/apply', async (req, res) => {
+  try {
+    const { cartId, couponCode } = req.body;
+
+    if (!cartId) {
+      return res.status(400).json({
+        success: false,
+        error: 'cartId is required'
+      });
+    }
+
+    if (!couponCode || !String(couponCode).trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'couponCode is required'
+      });
+    }
+
+    const checkoutRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${cartId}`,
+      {
+        method: 'GET',
+        headers: bcHeaders
+      }
+    );
+
+    const checkoutText = await checkoutRes.text();
+
+    if (!checkoutRes.ok) {
+      return res.status(checkoutRes.status).json({
+        success: false,
+        error: 'Failed to fetch checkout before applying coupon',
+        details: checkoutText
+      });
+    }
+
+    const checkoutJson = JSON.parse(checkoutText);
+    const checkoutId = checkoutJson?.data?.id || cartId;
+
+    const applyRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${checkoutId}/coupons`,
+      {
+        method: 'POST',
+        headers: bcHeaders,
+        body: JSON.stringify({
+          coupon_code: String(couponCode).trim()
+        })
+      }
+    );
+
+    const applyText = await applyRes.text();
+
+    if (!applyRes.ok) {
+      return res.status(applyRes.status).json({
+        success: false,
+        error: 'The coupon code is invalid or cannot be applied',
+        details: applyText
+      });
+    }
+
+    const refreshedCartRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}?include=redirect_urls,line_items.physical_items.options,line_items.digital_items,coupons`,
+      {
+        headers: bcHeaders
+      }
+    );
+
+    const refreshedCartText = await refreshedCartRes.text();
+
+    if (!refreshedCartRes.ok) {
+      return res.status(refreshedCartRes.status).json({
+        success: false,
+        error: 'Coupon applied but failed to refresh cart',
+        details: refreshedCartText
+      });
+    }
+
+    const refreshedCart = JSON.parse(refreshedCartText);
+
+    return res.json({
+      success: true,
+      message: 'Coupon applied successfully',
+      checkoutId,
+      checkout: JSON.parse(applyText),
+      cart: transformCartResponse(refreshedCart)
+    });
+  } catch (err) {
+    console.error('Apply checkout coupon error:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error applying checkout coupon',
+      message: err.message
+    });
+  }
+});
+
+router.delete('/checkout/coupons/:cartId/:couponCode', async (req, res) => {
+  try {
+    const { cartId, couponCode } = req.params;
+
+    if (!cartId || !couponCode) {
+      return res.status(400).json({
+        success: false,
+        error: 'cartId and couponCode are required'
+      });
+    }
+
+    const checkoutRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${cartId}`,
+      {
+        method: 'GET',
+        headers: bcHeaders
+      }
+    );
+
+    const checkoutText = await checkoutRes.text();
+
+    if (!checkoutRes.ok) {
+      return res.status(checkoutRes.status).json({
+        success: false,
+        error: 'Failed to fetch checkout before removing coupon',
+        details: checkoutText
+      });
+    }
+
+    const checkoutJson = JSON.parse(checkoutText);
+    const checkoutId = checkoutJson?.data?.id || cartId;
+
+    const removeRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${checkoutId}/coupons/${encodeURIComponent(couponCode)}`,
+      {
+        method: 'DELETE',
+        headers: bcHeaders
+      }
+    );
+
+    const removeText = await removeRes.text();
+
+    if (!removeRes.ok) {
+      return res.status(removeRes.status).json({
+        success: false,
+        error: 'Failed to remove coupon',
+        details: removeText
+      });
+    }
+
+    const refreshedCartRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}?include=redirect_urls,line_items.physical_items.options,line_items.digital_items,coupons`,
+      {
+        headers: bcHeaders
+      }
+    );
+
+    const refreshedCartText = await refreshedCartRes.text();
+
+    if (!refreshedCartRes.ok) {
+      return res.status(refreshedCartRes.status).json({
+        success: false,
+        error: 'Coupon removed but failed to refresh cart',
+        details: refreshedCartText
+      });
+    }
+
+    const refreshedCart = JSON.parse(refreshedCartText);
+
+    return res.json({
+      success: true,
+      message: 'Coupon removed successfully',
+      checkoutId,
+      cart: transformCartResponse(refreshedCart)
+    });
+  } catch (err) {
+    console.error('Remove checkout coupon error:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error removing checkout coupon',
+      message: err.message
+    });
+  }
+});
+
+router.post('/checkout/discounts/apply', async (req, res) => {
+  try {
+    const { cartId, discount } = req.body;
+
+    if (!cartId) {
+      return res.status(400).json({
+        success: false,
+        error: 'cartId is required'
+      });
+    }
+
+    if (!discount || typeof discount !== 'object') {
+      return res.status(400).json({
+        success: false,
+        error: 'discount object is required'
+      });
+    }
+
+    const checkoutRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${cartId}`,
+      {
+        method: 'GET',
+        headers: bcHeaders
+      }
+    );
+
+    const checkoutText = await checkoutRes.text();
+
+    if (!checkoutRes.ok) {
+      return res.status(checkoutRes.status).json({
+        success: false,
+        error: 'Failed to fetch checkout before applying discount',
+        details: checkoutText
+      });
+    }
+
+    const checkoutJson = JSON.parse(checkoutText);
+    const checkoutId = checkoutJson?.data?.id || cartId;
+
+    const applyRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${checkoutId}/discounts`,
+      {
+        method: 'POST',
+        headers: bcHeaders,
+        body: JSON.stringify(discount)
+      }
+    );
+
+    const applyText = await applyRes.text();
+
+    if (!applyRes.ok) {
+      return res.status(applyRes.status).json({
+        success: false,
+        error: 'Failed to apply discount',
+        details: applyText
+      });
+    }
+
+    const refreshedCartRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}?include=redirect_urls,line_items.physical_items.options,line_items.digital_items,coupons`,
+      {
+        headers: bcHeaders
+      }
+    );
+
+    const refreshedCartText = await refreshedCartRes.text();
+
+    if (!refreshedCartRes.ok) {
+      return res.status(refreshedCartRes.status).json({
+        success: false,
+        error: 'Discount applied but failed to refresh cart',
+        details: refreshedCartText
+      });
+    }
+
+    const refreshedCart = JSON.parse(refreshedCartText);
+
+    return res.json({
+      success: true,
+      message: 'Discount applied successfully',
+      checkoutId,
+      checkout: JSON.parse(applyText),
+      cart: transformCartResponse(refreshedCart)
+    });
+  } catch (err) {
+    console.error('Apply checkout discount error:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error applying checkout discount',
+      message: err.message
+    });
+  }
+});
+
+router.delete('/checkout/discounts/:cartId', async (req, res) => {
+  try {
+    const { cartId } = req.params;
+
+    if (!cartId) {
+      return res.status(400).json({
+        success: false,
+        error: 'cartId is required'
+      });
+    }
+
+    const checkoutRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${cartId}`,
+      {
+        method: 'GET',
+        headers: bcHeaders
+      }
+    );
+
+    const checkoutText = await checkoutRes.text();
+
+    if (!checkoutRes.ok) {
+      return res.status(checkoutRes.status).json({
+        success: false,
+        error: 'Failed to fetch checkout before removing discount',
+        details: checkoutText
+      });
+    }
+
+    const checkoutJson = JSON.parse(checkoutText);
+    const checkoutId = checkoutJson?.data?.id || cartId;
+
+    const removeRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/checkouts/${checkoutId}/discounts`,
+      {
+        method: 'DELETE',
+        headers: bcHeaders
+      }
+    );
+
+    const removeText = await removeRes.text();
+
+    if (!removeRes.ok) {
+      return res.status(removeRes.status).json({
+        success: false,
+        error: 'Failed to remove discount',
+        details: removeText
+      });
+    }
+
+    const refreshedCartRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}?include=redirect_urls,line_items.physical_items.options,line_items.digital_items,coupons`,
+      {
+        headers: bcHeaders
+      }
+    );
+
+    const refreshedCartText = await refreshedCartRes.text();
+
+    if (!refreshedCartRes.ok) {
+      return res.status(refreshedCartRes.status).json({
+        success: false,
+        error: 'Discount removed but failed to refresh cart',
+        details: refreshedCartText
+      });
+    }
+
+    const refreshedCart = JSON.parse(refreshedCartText);
+
+    return res.json({
+      success: true,
+      message: 'Discount removed successfully',
+      checkoutId,
+      cart: transformCartResponse(refreshedCart)
+    });
+  } catch (err) {
+    console.error('Remove checkout discount error:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error removing checkout discount',
       message: err.message
     });
   }
@@ -968,71 +1304,6 @@ router.post('/shipping/quotes', async (req, res) => {
     });
   }
 });
-
-// router.post('/shipping/quotes', async (req, res) => {
-//   console.log('Getting shipping quotes');
-//   try {
-//     const { cartId } = req.body;
-
-//     if (!cartId) {
-//       return res.status(400).json({
-//         success: false,
-//         error: 'Cart ID is required'
-//       });
-//     }
-
-//     const cartRes = await fetch(
-//       `https://api.bigcommerce.com/stores/${STORE_HASH}/v3/carts/${cartId}`,
-//       {
-//         headers: bcGetHeaders
-//       }
-//     );
-
-//     if (!cartRes.ok) {
-//       return res.status(400).json({
-//         success: false,
-//         error: 'Cart not found'
-//       });
-//     }
-
-//     const shippingOptions = [
-//       {
-//         id: 'free',
-//         name: 'Free Delivery',
-//         description: 'Standard delivery',
-//         cost: 0,
-//         estimated_days: '5-7 business days'
-//       },
-//       {
-//         id: 'insured',
-//         name: 'Delivery + Insurance',
-//         description: 'Protection against loss, breakage, and theft',
-//         cost: 1.99,
-//         estimated_days: '3-5 business days'
-//       },
-//       {
-//         id: 'express',
-//         name: 'Express Delivery',
-//         description: 'Priority shipping',
-//         cost: 4.99,
-//         estimated_days: '1-2 business days'
-//       }
-//     ];
-
-//     res.json({
-//       success: true,
-//       options: shippingOptions,
-//       message: 'Shipping quotes retrieved'
-//     });
-//   } catch (err) {
-//     console.error('Shipping quotes error:', err);
-//     res.status(500).json({
-//       success: false,
-//       error: 'Server error',
-//       message: err.message
-//     });
-//   }
-// });
 
 router.post('/orders/create', async (req, res) => {
   console.log('Creating order - START');

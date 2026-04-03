@@ -19,12 +19,10 @@ export default function PaymentStep({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [intent, setIntent] = useState(null);
-  
 
   const successHandledRef = useRef(false);
   
   const lastAmountKeyRef = useRef(null);
-
   // Reset initialization when payment step becomes inactive
   useEffect(() => {
     if (!active) {
@@ -39,6 +37,61 @@ export default function PaymentStep({
       elementRef.current = null;
     }
   }, [active]);
+
+  // Hide Airwallex mandate/consent text ("By confirming, you authorise...")
+  // useEffect(() => {
+  //   if (!active) return;
+  //   const container = containerRef.current;
+  //   if (!container) return;
+
+  //   const hideMandateText = () => {
+  //     // Target text nodes in the parent DOM (outside iframe)
+  //     const walker = document.createTreeWalker(
+  //       container,
+  //       NodeFilter.SHOW_TEXT,
+  //       null,
+  //       false
+  //     );
+  //     let node;
+  //     while ((node = walker.nextNode())) {
+  //       const text = node.textContent?.trim() || "";
+  //       if (
+  //         text.includes("By confirming") ||
+  //         text.includes("authorise") ||
+  //         text.includes("authorize") ||
+  //         text.includes("future payments in accordance")
+  //       ) {
+  //         // Hide the closest block-level parent of the text
+  //         const parent = node.parentElement;
+  //         if (parent && parent.id !== "airwallex-payment-element") {
+  //           parent.style.display = "none";
+  //         }
+  //       }
+  //     }
+  //   };
+
+  //   // Run once immediately and then observe for DOM changes
+  //   const timer = setTimeout(hideMandateText, 1000);
+  //   const timer2 = setTimeout(hideMandateText, 2500);
+  //   const timer3 = setTimeout(hideMandateText, 5000);
+
+  //   const observer = new MutationObserver(() => {
+  //     hideMandateText();
+  //   });
+  //   observer.observe(container, {
+  //     childList: true,
+  //     subtree: true,
+  //     characterData: true,
+  //   });
+
+  //   return () => {
+  //     clearTimeout(timer);
+  //     clearTimeout(timer2);
+  //     clearTimeout(timer3);
+  //     observer.disconnect();
+  //   };
+  // }, [active]);
+
 
   useEffect(() => {
     if (!active || isDisabled) return;
@@ -125,7 +178,7 @@ export default function PaymentStep({
         setIntent(result);
 
         await init({
-          env: "prod",
+          env: "demo",
           enabledElements: ["payments"],
         });
 
@@ -145,8 +198,57 @@ export default function PaymentStep({
               merchant_trigger_reason: "unscheduled",
             },
           }),
-          // appearance intentionally omitted — Airwallex only allows its own
-          // component tokens here; arbitrary selectors are silently ignored.
+          // Hide the mandate / consent disclosure text inside the iframe.
+          // DOM inspection shows it is an unclassed <p> directly inside <form>,
+          // immediately after the .Button element.
+          appearance: {
+            rules: {
+              // Adjacent sibling: the <p> that comes right after the Proceed button
+              // '.Button + p': { display: 'none', visibility: 'hidden', height: '0', overflow: 'hidden', margin: '0', padding: '0' },
+              // // Direct child <p> of the form (catches it regardless of position)
+              // 'form > p': { display: 'none', visibility: 'hidden', height: '0', overflow: 'hidden', margin: '0', padding: '0' },
+              // // Broad fallback — hide all bare <p> tags in the drop-in
+              // 'p': { display: 'none', visibility: 'hidden', height: '0', overflow: 'hidden', margin: '0', padding: '0' },
+              // 'p.css-hu5z15': {
+    //   display: 'none',
+    //   visibility: 'hidden',
+    //   height: '0',
+    //   overflow: 'hidden',
+    //   margin: '0',
+    //   padding: '0'
+    // },
+    // // 2. Target the last paragraph inside the form (works if saved card has same structure)
+    // 'form p:last-child': {
+    //   display: 'none'
+    // },
+    // // 3. Target any paragraph that is not the first (if only two paragraphs, hide the second)
+    // 'form p:not(:first-child)': {
+    //   display: 'none'
+    // },
+    // // 4. Very broad but safe: hide all paragraphs except those inside labels
+    // 'p:not(label p)': {
+    //   display: 'none'
+    // },
+
+    '.Button + p[class*="css-"]': {
+      display: 'none !important',
+      visibility: 'hidden !important',
+      height: '0 !important',
+      overflow: 'hidden !important',
+      margin: '0 !important',
+      padding: '0 !important'
+    }
+
+    // '.Button + p.css-hu5z15': {
+    //     display: 'none',
+    //     visibility: 'hidden',
+    //     height: '0',
+    //     overflow: 'hidden',
+    //     margin: '0',
+    //     padding: '0'
+    //   }
+            },
+          },
         });
 
         if (!element) {
@@ -159,53 +261,6 @@ export default function PaymentStep({
         element.on("ready", () => {
           if (!isMounted) return;
           setLoading(false);
-
-          // --- Mandate-text hider ---
-          // The mandate paragraph lives inside the Airwallex iframe (cross-origin),
-          // so we cannot reach it with CSS. Instead we clip the *host* container to
-          // the height of everything ABOVE the mandate paragraph, then let a
-          // ResizeObserver keep that clip up-to-date whenever the iframe resizes
-          // (e.g. switching between "Add new" and "Use saved cards").
-          const clipMandateText = () => {
-            const iframe = containerRef.current?.querySelector('iframe');
-            if (!iframe) return;
-
-            // The mandate paragraph is approximately 55 px tall (one or two lines
-            // of small text + its top margin). We shrink the wrapper by that amount
-            // so the paragraph is scrolled out of view behind overflow:hidden.
-            const MANDATE_HEIGHT_PX = 58;
-            const rawHeight = iframe.offsetHeight;
-            if (!rawHeight) return;
-
-            const clippedHeight = Math.max(0, rawHeight - MANDATE_HEIGHT_PX);
-            if (containerRef.current) {
-              containerRef.current.style.height = `${clippedHeight}px`;
-              containerRef.current.style.overflow = 'hidden';
-            }
-          };
-
-          // Run immediately, then watch for future iframe resizes.
-          clipMandateText();
-          const ro = new ResizeObserver(clipMandateText);
-          const iframe = containerRef.current?.querySelector('iframe');
-          if (iframe) ro.observe(iframe);
-
-          // Also re-clip on any DOM mutations inside the container (e.g. Airwallex
-          // swaps the form content when the user toggles saved-card / new-card).
-          const mo = new MutationObserver(clipMandateText);
-          if (containerRef.current) {
-            mo.observe(containerRef.current, { childList: true, subtree: true });
-          }
-
-          // Clean up observers when the component unmounts.
-          const prevCleanup = elementRef.current?._mandateCleanup;
-          if (prevCleanup) prevCleanup();
-          if (elementRef.current) {
-            elementRef.current._mandateCleanup = () => {
-              ro.disconnect();
-              mo.disconnect();
-            };
-          }
         });
 
 
@@ -377,9 +432,6 @@ export default function PaymentStep({
 
     return () => {
       isMounted = false;
-      if (elementRef.current?._mandateCleanup) {
-        elementRef.current._mandateCleanup();
-      }
       if (elementRef.current?.unmount) {
         elementRef.current.unmount();
       }
@@ -420,13 +472,30 @@ export default function PaymentStep({
           )}
 
           <div className="md:pl-[58.5px] md:pr-[29.5px]">
-            {/* overflow:hidden + dynamic height are set via JS in the ready handler
-                so the mandate text is clipped regardless of screen or iframe resize */}
-            <div
-              ref={containerRef}
-              id="airwallex-payment-element"
-              className="min-h-[180px]"
-            />
+            {/* Wrapper with overflow:hidden to clip the mandate text row */}
+            <div style={{ position: 'relative' }}>
+              <div
+                ref={containerRef}
+                id="airwallex-payment-element"
+                className="min-h-[180px]"
+              />
+              {/* White overlay to cover the mandate text rendered inside the Airwallex iframe.
+                  The text sits directly below the Proceed button, approximately in the last 50px
+                  of the iframe. We overlay it with a white rectangle. */}
+              <div
+                id="airwallex-mandate-cover"
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '40px',
+                  backgroundColor: '#f5f5f5',
+                  zIndex: 10,
+                  pointerEvents: 'none',
+                }}
+              />
+            </div>
             {/* 3DS authentication challenge renders here instead of redirecting */}
             <style>{`
               #airwallex-auth-container,

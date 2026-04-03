@@ -1,0 +1,221 @@
+export default function OrderSummary({
+  cart,
+  deliveryPrice = 1.99,
+  hiddenProductIds = [268],
+  onCartUpdate,
+  onApplyCheckoutCoupon,
+  onRemoveCheckoutCoupon,
+  onApplyCheckoutDiscount,
+  onRemoveCheckoutDiscount,
+}) {
+  // Default values if cart is not provided (for development/testing)
+  const defaultCart = {
+    lineItems: {
+      physicalItems: [
+        {
+          id: "1",
+          name: "LED Projector HY300 – Android 11 – WiFi – Bluetooth",
+          quantity: 1,
+          extendedSalePrice: 43.98,
+          imageUrl: "/product-placeholder.png",
+        },
+      ],
+    },
+    cartAmount: 43.98,
+    discountAmount: 0,
+    taxAmount: 0,
+    currency: { code: "EUR" },
+  };
+
+  // Use provided cart or default
+  const displayCart = cart || defaultCart;
+
+  // Extract items from cart
+  // const items = Array.isArray(displayCart.lineItems?.physicalItems)
+  //   ? displayCart.lineItems.physicalItems
+  //   : [];
+
+  const physicalItems = Array.isArray(displayCart.lineItems?.physicalItems)
+    ? displayCart.lineItems.physicalItems
+    : [];
+
+  const digitalItems = Array.isArray(displayCart.lineItems?.digitalItems)
+    ? displayCart.lineItems.digitalItems
+    : [];
+
+  const allItems = [...physicalItems, ...digitalItems];
+
+  const items = allItems.filter(
+    (item) => !hiddenProductIds.includes(Number(item.product_id))
+  );
+  // console.log("OrderSummary cart items:", items);
+
+  // Calculate prices
+  const subtotal = Number(displayCart.cartAmount || 0);
+  const discount = Number(displayCart.discountAmount || 0);
+  const tax = Number(displayCart.taxAmount || 0);
+  const total = subtotal + deliveryPrice - discount + tax;
+  const currency = displayCart.currency?.code || "EUR";
+
+  // Format price helper
+  const formatPrice = (value) => {
+    return `€${Number(value).toFixed(2)}`;
+  };
+
+  return (
+    <div className="bg-white border rounded text-sm max-[991px]:block lg:block">
+      {/* TITLE */}
+      <div className="nr-right-prt-hed-wr border-b flex justify-between p-[19.5px] mb-[19.5px]">
+        <h3 className="font-semibold text-gray-900">Order summary</h3>
+        <button
+          onClick={() =>
+            (window.location.href =
+              "https://nomade-horizon.com/cart.php")
+          }
+          className="text-[#476bef] hover:text-[#002fe1]"
+        >
+          Edit Cart
+        </button>
+      </div>
+      <div className="nr-rght-btm-prt">
+        {/* PRODUCTS */}
+        {items.length === 0 ? (
+          // Fallback if no items
+          <div className="flex gap-3 mb-4">
+            <img
+              src="/product-placeholder.png"
+              alt="Product"
+              className="w-16 h-16 border rounded object-cover"
+            />
+            <div className="flex-1">
+              <div className="font-medium text-gray-900 leading-snug">
+                Your cart is empty
+              </div>
+              <div className="text-xs text-gray-600 mt-1">Quantity: 0</div>
+            </div>
+            <div className="font-semibold text-gray-900">€0.00</div>
+          </div>
+        ) : (
+          // Dynamic items
+          items.map((item, index) => {
+            const itemPrice = Number(item.extendedSalePrice || 0);
+            const quantity = Number(item.quantity || 1);
+
+            return (
+              <div
+                key={item.id || index}
+                className="flex gap-3 p-[19.5px] pt-0"
+              >
+                {/* PRODUCT IMAGE */}
+                <img
+                  src={item.imageUrl || "/product-placeholder.png"}
+                  alt={item.name || "Product"}
+                  className="w-16 h-16 border rounded object-cover"
+                />
+
+                {/* PRODUCT DETAILS */}
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900 leading-snug">
+                    {item.name || "Unnamed product"}
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    Quantity: {quantity}
+                  </div>
+
+                  {/* {Number(item.product_id) === 268 && (
+                    <div className="text-xs text-green-600 mt-1">
+                      30-day free trial
+                    </div>
+                  )} */}
+                </div>
+
+                {/* PRODUCT PRICE */}
+                <div className="font-semibold text-gray-900">
+                  {formatPrice(itemPrice)}
+                </div>
+              </div>
+            );
+          })
+        )}
+
+        {/* PRICE BREAKDOWN */}
+        <div className="space-y-2 text-gray-700 p-[19.5px] border-t">
+          <div className="flex justify-between">
+            <span>Subtotal</span>
+            <span>{formatPrice(subtotal)}</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>Delivery</span>
+            <span>{formatPrice(deliveryPrice)}</span>
+          </div>
+
+          {discount > 0 ? (
+            <div className="flex justify-between text-green-600 font-medium">
+              <span>Discount</span>
+              <span>-{formatPrice(discount)}</span>
+            </div>
+          ) : (
+            <div className="flex justify-between text-green-600 font-medium">
+              <span>Discount</span>
+              <span>-€0.00</span>
+            </div>
+          )}
+
+          {tax > 0 && (
+            <div className="flex justify-between">
+              <span>Tax</span>
+              <span>{formatPrice(tax)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* DIVIDER */}
+        <div className="nr-total-prt p-[19.5px] border-t">
+          {/* TOTAL */}
+          <div className="flex justify-between items-center text-base font-semibold text-gray-900">
+            <span>Total ({currency})</span>
+            <span className="text-[30px]">{formatPrice(total)}</span>
+          </div>
+
+          {/* VAT NOTE */}
+          <div className="text-xs text-gray-500 mt-1">
+            Including VAT{subtotal > 0 ? " (estimated)" : ""}
+          </div>
+
+          {/* PROMO CODE */}
+          {/* <div className="nr-promo-code-prt">
+          <label className="block text-xs text-gray-600 my-1">
+            Promotional code
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Enter your code"
+              className="flex-1 border rounded px-2 py-1.5 text-sm"
+            />
+            <button
+              type="button"
+              className="border rounded px-3 py-1.5 text-xs font-medium hover:bg-gray-100"
+            >
+              OK
+            </button>
+          </div>
+        </div> */}
+        </div>
+        {/* CUSTOMER SUPPORT */}
+        {/* <div className="p-[19.5px] border-t text-xs text-gray-600 space-y-1">
+          <div className="font-medium text-gray-900">
+            Need help?
+          </div>
+          <div>
+            Contact our customer service
+          </div>
+          <div className="font-medium text-gray-900">
+            help@nomade-horizon.com
+          </div>
+        </div> */}
+      </div>
+    </div>
+  );
+}

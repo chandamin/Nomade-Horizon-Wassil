@@ -626,7 +626,7 @@ Low-level wrappers around Airwallex API calls:
 - Orchestrates the 3-step checkout: **Client → Shipping → Payment**
 - Manages all checkout state: clientData, deliveryData, paymentData, airwallexCustomer
 - Detects subscription products in cart via `VITE_SUBSCRIPTION_PRODUCT_IDS`
-- Handles VIP product (hardcoded product ID `210`) add/remove
+- Handles VIP product (hardcoded product ID `268`) add/remove
 - On payment success: places order via `POST /api/orders/create`, then `POST /api/selling-plans/subscriptions/provision`
 
 ### `ClientStep.jsx`

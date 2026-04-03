@@ -19,11 +19,8 @@ export default function PaymentStep({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [intent, setIntent] = useState(null);
-  
 
   const successHandledRef = useRef(false);
-  
-  const lastAmountKeyRef = useRef(null);
 
   // Reset initialization when payment step becomes inactive
   useEffect(() => {
@@ -43,20 +40,9 @@ export default function PaymentStep({
   useEffect(() => {
     if (!active || isDisabled) return;
     if (!cart?.id || !cart?.cartAmount) return;
-    // if (initializedRef.current) return;
+    if (initializedRef.current) return;
 
-    // initializedRef.current = true;
-
-    //  Calculate the unique key for this payment session
-    const expectedAmount = Number(cart.cartAmount) + Number(deliveryData?.price || 0);
-    const currency = cart?.currency?.code || 'EUR';
-    const amountKey = `${expectedAmount}-${currency}`;
-
-    // Skip only if we already have an element for THIS exact amount+currency
-    if (lastAmountKeyRef.current === amountKey && elementRef.current) {
-      return;
-    }
-    lastAmountKeyRef.current = amountKey;
+    initializedRef.current = true;
     let isMounted = true;
 
     const setupPayment = async () => {
@@ -125,7 +111,8 @@ export default function PaymentStep({
         setIntent(result);
 
         await init({
-          env: "prod",
+          // env: "prod",
+          env: "demo",
           enabledElements: ["payments"],
         });
 
@@ -134,8 +121,7 @@ export default function PaymentStep({
           client_secret: result.client_secret,
           currency: result.currency,
           methods: ["card"],
-          autoCapture: false,
-          // showConfirmButton: false,
+          autoCapture: true,
           // Plain container ID (not CSS selector) — renders 3DS auth challenge inline
           authFormContainer: "airwallex-auth-container",
           // Tell the dropIn to create and verify a merchant-triggered consent automatically
@@ -145,8 +131,6 @@ export default function PaymentStep({
               merchant_trigger_reason: "unscheduled",
             },
           }),
-          // appearance intentionally omitted — Airwallex only allows its own
-          // component tokens here; arbitrary selectors are silently ignored.
         });
 
         if (!element) {
@@ -159,56 +143,9 @@ export default function PaymentStep({
         element.on("ready", () => {
           if (!isMounted) return;
           setLoading(false);
-
-          // --- Mandate-text hider ---
-          // The mandate paragraph lives inside the Airwallex iframe (cross-origin),
-          // so we cannot reach it with CSS. Instead we clip the *host* container to
-          // the height of everything ABOVE the mandate paragraph, then let a
-          // ResizeObserver keep that clip up-to-date whenever the iframe resizes
-          // (e.g. switching between "Add new" and "Use saved cards").
-          const clipMandateText = () => {
-            const iframe = containerRef.current?.querySelector('iframe');
-            if (!iframe) return;
-
-            // The mandate paragraph is approximately 55 px tall (one or two lines
-            // of small text + its top margin). We shrink the wrapper by that amount
-            // so the paragraph is scrolled out of view behind overflow:hidden.
-            const MANDATE_HEIGHT_PX = 58;
-            const rawHeight = iframe.offsetHeight;
-            if (!rawHeight) return;
-
-            const clippedHeight = Math.max(0, rawHeight - MANDATE_HEIGHT_PX);
-            if (containerRef.current) {
-              containerRef.current.style.height = `${clippedHeight}px`;
-              containerRef.current.style.overflow = 'hidden';
-            }
-          };
-
-          // Run immediately, then watch for future iframe resizes.
-          clipMandateText();
-          const ro = new ResizeObserver(clipMandateText);
-          const iframe = containerRef.current?.querySelector('iframe');
-          if (iframe) ro.observe(iframe);
-
-          // Also re-clip on any DOM mutations inside the container (e.g. Airwallex
-          // swaps the form content when the user toggles saved-card / new-card).
-          const mo = new MutationObserver(clipMandateText);
-          if (containerRef.current) {
-            mo.observe(containerRef.current, { childList: true, subtree: true });
-          }
-
-          // Clean up observers when the component unmounts.
-          const prevCleanup = elementRef.current?._mandateCleanup;
-          if (prevCleanup) prevCleanup();
-          if (elementRef.current) {
-            elementRef.current._mandateCleanup = () => {
-              ro.disconnect();
-              mo.disconnect();
-            };
-          }
         });
 
-
+      
 
         element.on("success", async (event) => {
           if (successHandledRef.current) return;
@@ -337,19 +274,19 @@ export default function PaymentStep({
 
         element.on("error", (event) => {
           const message =
-            event?.detail?.error?.message ||
-            event?.detail?.message ||
-            "Payment failed";
+          event?.detail?.error?.message ||
+          event?.detail?.message ||
+          "Payment failed";
 
           setError(message);
 
           onContinue?.({
-            status: "FAILED",
-            paymentIntentId: result.id,
-            clientSecret: result.client_secret,
+          status: "FAILED",
+          paymentIntentId: result.id,
+          clientSecret: result.client_secret,
           });
         });
-
+    
 
         element.on("error", (event) => {
           const message =
@@ -377,16 +314,12 @@ export default function PaymentStep({
 
     return () => {
       isMounted = false;
-      if (elementRef.current?._mandateCleanup) {
-        elementRef.current._mandateCleanup();
-      }
       if (elementRef.current?.unmount) {
         elementRef.current.unmount();
       }
       elementRef.current = null;
-      lastAmountKeyRef.current = null;
     };
-  }, [active, isDisabled, cart?.id, cart?.cartAmount, deliveryData?.price, cart?.currency?.code, airwallexCustomerId]);
+  }, [active, isDisabled, cart?.id, cart?.cartAmount, deliveryData, cart?.currency?.code, airwallexCustomerId]);
   
   if (!active) {
     return (
@@ -420,8 +353,6 @@ export default function PaymentStep({
           )}
 
           <div className="md:pl-[58.5px] md:pr-[29.5px]">
-            {/* overflow:hidden + dynamic height are set via JS in the ready handler
-                so the mandate text is clipped regardless of screen or iframe resize */}
             <div
               ref={containerRef}
               id="airwallex-payment-element"

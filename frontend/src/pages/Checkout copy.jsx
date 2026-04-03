@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from 'react-router-dom';
 import CheckoutLayout from "../components/Checkout/CheckoutLayout";
 
+// export function ErrorPage() {
+//   useEffect(() => {
+//     window.location.replace("https://nomade-horizon.com/cart.php");
+//   }, []);
+
+//   return null;
+// }
+
 export default function Checkout() {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +66,7 @@ export default function Checkout() {
   }, [searchParams]);
 
 
-  const VIP_PRODUCT_ID = 210; // replace with real BC product ID
+  const VIP_PRODUCT_ID = 268; // replace with real BC product ID
 
 const refreshCart = async (cartId) => {
   await fetchCartById(cartId);
@@ -153,6 +161,7 @@ const removeVipFromCart = async (cartId) => {
     cart,
     bigcommerceCustomer,
     airwallexCustomer,
+    paymentSourceId,
   }) => {
     const res = await fetch(
       `${import.meta.env.VITE_BACKEND_URL}/api/subscription-plans/subscriptions/provision`,
@@ -168,11 +177,18 @@ const removeVipFromCart = async (cartId) => {
           cart,
           bigcommerceCustomer,
           airwallexCustomer,
+          paymentSourceId,
         }),
       }
     );
 
     const result = await res.json();
+
+    console.log('📥 [Checkout.jsx] provision response:', {
+      status: res.status,
+      ok: res.ok,
+      result,
+    });
 
     if (!res.ok) {
       throw new Error(result?.error || 'Failed to provision subscription');
@@ -211,6 +227,47 @@ const removeVipFromCart = async (cartId) => {
 
     return result;
   };
+
+
+  const clearCart = async (cartId) => {
+    if (!cartId) {
+      throw new Error("Cart ID is required");
+    }
+
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/cart/${cartId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "ngrok-skip-browser-warning": "true"
+        }
+      }
+    );
+
+    const responseText = await response.text();
+    console.log("🧹 Clear cart response status:", response.status);
+    console.log("🧹 Clear cart response body:", responseText);
+
+    let result = {};
+    try {
+      result = responseText ? JSON.parse(responseText) : {};
+    } catch (e) {
+      throw new Error(`Invalid clear cart response: ${responseText}`);
+    }
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Failed to clear cart");
+    }
+
+    return result;
+  };
+
+  const handleCartCleared = () => {
+    setCart(null);
+    sessionStorage.removeItem("airwallex_payment_result");
+  };
+
   // Enhanced customer creation function
   const handleCustomerCreation = async (customerData, cartId) => {
     try {
@@ -246,13 +303,13 @@ const removeVipFromCart = async (cartId) => {
           
           try {
             const searchResult = JSON.parse(responseText);
-            console.log('✅ Parsed search result:', searchResult);
+            console.log(' Parsed search result:', searchResult);
             
             if (searchResult.exists) {
               // Use existing customer
               customerId = searchResult.customer.id;
               createdCustomerData = searchResult.customer;
-              console.log('✅ Using existing customer:', customerId);
+              console.log(' Using existing customer:', customerId);
             } else {
               // Create new customer
               console.log('🆕 Creating new customer...');
@@ -277,12 +334,12 @@ const removeVipFromCart = async (cartId) => {
               
               if (createResponse.ok) {
                 const createResult = await createResponse.json();
-                console.log('✅ Create result:', createResult);
+                console.log(' Create result:', createResult);
                 
                 if (createResult.success) {
                   customerId = createResult.customer.id;
                   createdCustomerData = createResult.customer;
-                  console.log('✅ Created new customer:', customerId);
+                  console.log(' Created new customer:', customerId);
                 } else {
                   console.warn('⚠️ Customer creation failed:', createResult.error);
                 }
@@ -302,61 +359,6 @@ const removeVipFromCart = async (cartId) => {
       } catch (networkError) {
         console.error('❌ Network error checking customer:', networkError.message);
       }
-      
-      // 2. If we have a customer ID, assign it to cart
-      // if (customerId && cartId) {
-      //   try {
-      //     console.log('🔄 Assigning customer to cart...');
-      //     const assignResponse = await fetch(
-      //       `${import.meta.env.VITE_BACKEND_URL}/api/cart/assign-customer`,
-      //       {
-      //         method: 'POST',
-      //         headers: {
-      //           'Content-Type': 'application/json',
-      //           'Accept': 'application/json'
-      //         },
-      //         body: JSON.stringify({
-      //           cartId: cartId,
-      //           customerId: customerId
-      //         })
-      //       }
-      //     );
-          
-      //     console.log('📊 Assign response status:', assignResponse.status);
-          
-      //     if (assignResponse.ok) {
-      //       console.log('✅ Customer assigned to cart');
-      //     } else {
-      //       const errorText = await assignResponse.text();
-      //       console.warn('⚠️ Failed to assign customer to cart:', assignResponse.status, errorText.substring(0, 200));
-      //     }
-      //   } catch (assignErr) {
-      //     console.warn('⚠️ Cart assignment error:', assignErr.message);
-      //   }
-      // } else {
-      //   console.log('ℹ️ No customer ID to assign to cart');
-      // }
-
-      // if (customerId && createdCustomerData && cartId) {
-      //   try {
-      //     const latestCart = await fetchLatestCart(cartId);
-
-      //     const airwallexCustomer = await createAirwallexCustomer({
-      //       ...customerData,
-      //       ...createdCustomerData,
-      //     });
-
-      //     const mappingResult = await mapSubscriptionCustomer({
-      //       cart: latestCart,
-      //       bigcommerceCustomer: createdCustomerData,
-      //       airwallexCustomer,
-      //     });
-
-      //     console.log('✅ Subscription mapping result:', mappingResult);
-      //   } catch (mappingErr) {
-      //     console.warn('⚠️ Subscription mapping flow failed:', mappingErr.message);
-      //   }
-      // }
       
       // Return customer data for use in shipping step
       return {
@@ -408,7 +410,7 @@ const removeVipFromCart = async (cartId) => {
       
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Address saved:', result.addressId);
+        console.log(' Address saved:', result.addressId);
         return result;
       } else {
         const errorText = await response.text();
@@ -422,31 +424,46 @@ const removeVipFromCart = async (cartId) => {
   };
 
   // Shipping method handler (optional - for dynamic shipping)
-  const fetchShippingOptions = async (addressData) => {
-    try {
-      console.log('🚚 Fetching shipping options for address:', addressData);
-      
-      // Example: Fetch shipping zones
-      const zonesResponse = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/shipping/zones`,
-        {
-          headers: {
-            'Accept': 'application/json'
-          }
-        }
-      );
-      
-      if (zonesResponse.ok) {
-        const zonesData = await zonesResponse.json();
-        console.log('✅ Shipping zones:', zonesData.zones);
-        return zonesData;
+  const fetchShippingOptions = async ({ cartId, address }) => {
+    const payload = { cartId, address };
+
+    console.log("🌍 FRONTEND -> /api/shipping/quotes request payload:", payload);
+
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/shipping/quotes`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify(payload),
       }
-      
-      return null;
+    );
+
+    console.log("📡 /api/shipping/quotes response status:", response.status);
+
+    const responseText = await response.text();
+    console.log("📡 /api/shipping/quotes raw response:", responseText);
+
+    let result = {};
+    try {
+      result = responseText ? JSON.parse(responseText) : {};
     } catch (err) {
-      console.warn('⚠️ Shipping options fetch error:', err);
-      return null;
+      console.error("❌ Failed to parse shipping quotes response JSON:", err);
+      throw new Error("Invalid shipping quotes response");
     }
+
+    console.log("📦 Parsed shipping quotes response:", result);
+
+    if (!response.ok || !result.success) {
+      console.error("❌ Shipping quotes request failed:", result);
+      throw new Error(result.error || 'Failed to fetch shipping options');
+    }
+
+    console.log(" Returning shipping options to ShippingStep:", result.shippingOptions || []);
+    return result.shippingOptions || [];
   };
 
   useEffect(() => {
@@ -463,40 +480,6 @@ const removeVipFromCart = async (cartId) => {
           setLoading(false);
           return;
         }
-
-
-        
-        // if (cartDataParam) {
-        //   try {
-        //     const decodedCartData = JSON.parse(decodeURIComponent(cartDataParam));
-        //     console.log('📦 Decoded cart data:', decodedCartData);
-            
-        //     const normalizedCart = {
-        //       ...decodedCartData,
-        //       lineItems: decodedCartData.lineItems || {
-        //         physicalItems: [],
-        //         digitalItems: []
-        //       },
-        //       cartAmount: decodedCartData.cartAmount || 0,
-        //       currency: decodedCartData.currency || { code: 'EUR' },
-        //       customerId: decodedCartData.customerId || 0,
-        //       customerEmail: decodedCartData.customerEmail || ''
-        //     };
-            
-        //     setCart(normalizedCart);
-        //     setLoading(false);
-            
-        //   } catch (parseError) {
-        //     console.error('❌ Failed to parse cart data:', parseError);
-        //     setError('Invalid cart data format');
-        //     setLoading(false);
-        //   }
-        // } else if (cartId) {
-        //   await fetchCartById(cartId);
-        // } else {
-        //   setError('Invalid checkout link');
-        //   setLoading(false);
-        // }
 
         if (cartId) {
           await fetchCartById(cartId);
@@ -582,21 +565,25 @@ const removeVipFromCart = async (cartId) => {
     );
   }
 
+  // if (error) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="max-w-md p-6 bg-red-50 border border-red-200 rounded-lg text-center">
+  //         <h2 className="text-xl font-semibold text-red-800 mb-2">Checkout Error</h2>
+  //         <p className="text-red-600 mb-4">{error}</p>
+  //         <a 
+  //           href="https://nomade-horizon.com/cart.php" 
+  //           className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+  //         >
+  //           Return to Cart
+  //         </a>
+  //       </div>
+  //     </div>
+  //   );
+  // }
   if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="max-w-md p-6 bg-red-50 border border-red-200 rounded-lg text-center">
-          <h2 className="text-xl font-semibold text-red-800 mb-2">Checkout Error</h2>
-          <p className="text-red-600 mb-4">{error}</p>
-          <a 
-            href="https://your-bigcommerce-store.com/cart" 
-            className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Return to Cart
-          </a>
-        </div>
-      </div>
-    );
+    window.location.replace("https://nomade-horizon.com/cart.php");
+    return null;
   }
 
   console.log("Cart Data: ",cart);
@@ -613,6 +600,8 @@ const removeVipFromCart = async (cartId) => {
       onCreateAirwallexCustomer={createAirwallexCustomer}
       onMapSubscriptionCustomer={mapSubscriptionCustomer}
       onProvisionSubscription={provisionSubscription}
+      clearCart={clearCart}
+      onCartCleared={handleCartCleared}
     />
   );
 }
