@@ -225,7 +225,7 @@ export default function Subscriptions({ environment = 'sandbox' }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:py-[50px] sm:px-[40px] px-[20px] py-[24px]">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -296,7 +296,7 @@ export default function Subscriptions({ environment = 'sandbox' }) {
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead>
-              <tr className="bg-gray-50">
+              <tr className="bg-[#1b2432] text-white">
                 <TableHead>Customer</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Status</TableHead>
@@ -520,7 +520,7 @@ function TableHead({ children }) {
   return (
     <th
       scope="col"
-      className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500"
+      className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white"
     >
       {children}
     </th>

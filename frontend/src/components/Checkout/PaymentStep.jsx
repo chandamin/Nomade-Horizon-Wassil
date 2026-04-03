@@ -125,7 +125,7 @@ export default function PaymentStep({
         setIntent(result);
 
         await init({
-          env: "prod",
+          env: "demo",
           enabledElements: ["payments"],
         });
 
@@ -236,8 +236,20 @@ export default function PaymentStep({
 
           console.log("💳 [STEP 2] paymentMethodId from event:", paymentMethodId);
 
+          let paymentConsentId =
+            event?.detail?.payment_consent?.id ||
+            event?.detail?.intent?.payment_consent_id ||
+            event?.detail?.intent?.latest_payment_attempt?.payment_consent_id ||
+            null;
+
+          if (paymentConsentId && !paymentConsentId.startsWith("cst_")) {
+            paymentConsentId = null;
+          }
+
+          console.log("💳 [STEP 2d] paymentConsentId from event:", paymentConsentId);
+
           // If not in event, fetch the payment intent to get the mtd_ payment method ID
-          if (!paymentMethodId && intentId) {
+          if ((!paymentMethodId || !paymentConsentId) && intentId)  {
             try {
               console.log("💳 [STEP 2b] Fetching payment intent to get payment_method id...");
               const fetchRes = await fetch(
@@ -286,6 +298,7 @@ export default function PaymentStep({
               const requestBody = {
                 billing_customer_id: airwallexCustomerId,
                 payment_method_id: paymentMethodId || intentId,
+                // payment_consent_id: paymentConsentId || undefined,
                 ...(paymentCustomerId && { payment_customer_id: paymentCustomerId }),
               };
 

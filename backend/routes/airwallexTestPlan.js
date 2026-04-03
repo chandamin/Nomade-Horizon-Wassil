@@ -1717,6 +1717,7 @@ router.post('/payment-sources/create', async (req, res) => {
     // Wait for the payment consent to become VERIFIED (it is set asynchronously after capture).
     // Poll the payment consents for this customer up to 5 times with a 2s gap.
     let verifiedMethodId = payment_method_id;
+    let verifiedConsentId = null;
 
     if (payment_customer_id) {
       const RETRIES = 5;
@@ -1758,7 +1759,8 @@ router.post('/payment-sources/create', async (req, res) => {
 
           if (verified) {
             verifiedMethodId = verified.payment_method.id;
-            console.log(`[payment-sources] verified merchant consent found on attempt ${attempt}:`, verified.id, 'mtd:', verifiedMethodId);
+            verifiedConsentId = verified.id;
+            console.log(`[payment-sources] verified merchant consent found on attempt ${attempt}:`, verifiedConsentId, 'mtd:', verifiedMethodId);
             break;
           }
 
@@ -1773,7 +1775,7 @@ router.post('/payment-sources/create', async (req, res) => {
 
     const token = await getAirwallexToken();
 
-
+    const externalIdForPaymentSource = verifiedMethodId;
 
     console.log(`[payment-sources] Checking for existing payment source: billing_customer_id=${billing_customer_id}, external_id=${verifiedMethodId}`);
     
@@ -1791,7 +1793,7 @@ router.post('/payment-sources/create', async (req, res) => {
 
       const existingSources = listRes.data?.items || [];
       const existingSource = existingSources.find(
-        src => src.external_id === verifiedMethodId 
+        src => src.external_id === externalIdForPaymentSource
       );
 
       if (existingSource) {
@@ -1819,7 +1821,7 @@ router.post('/payment-sources/create', async (req, res) => {
       {
         request_id: crypto.randomUUID(),
         billing_customer_id,
-        external_id: verifiedMethodId,
+        external_id: externalIdForPaymentSource,
         linked_payment_account_id,
       },
       {
@@ -1830,11 +1832,14 @@ router.post('/payment-sources/create', async (req, res) => {
       }
     );
 
-    console.log("PaymentSource created:", {
-      id: airwallexRes.data.id,
-      billing_customer_id: airwallexRes.data.billing_customer_id,
-      external_id: airwallexRes.data.external_id,
-    });
+    console.log(
+      "PaymentSource created:",
+      JSON.stringify({
+        id: airwallexRes.data.id,
+        billing_customer_id: airwallexRes.data.billing_customer_id,
+        external_id: airwallexRes.data.external_id,
+      })
+    );
 
     res.status(201).json({
       success: true,
