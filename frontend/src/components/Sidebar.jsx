@@ -8,15 +8,17 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  ShieldUser
 } from 'lucide-react'
 import Switch from 'react-switch'
 import { removeToken } from '../utils/auth'
+import AdminSettings from '../pages/AdminSettings'
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { name: 'Selling Plans', path: '/selling-plans', icon: Package },
-  // { name: 'Customers', path: '/customers', icon: Users },
   { name: 'Subscriptions', path: '/subscriptions', icon: Repeat },
+  { name: 'Settings', path: '/settings', icon: ShieldUser },
 ]
 
 function Sidebar({ environment = 'sandbox', setEnvironment }) {

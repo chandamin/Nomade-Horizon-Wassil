@@ -10,6 +10,7 @@ import Checkout from './pages/Checkout';
 import ThankYou from "./pages/ThankYou";
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminSettings from './pages/AdminSettings';
 
 function Layout() {
   const location = useLocation();
@@ -51,6 +52,7 @@ function Layout() {
           <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions environment={environment} /></ProtectedRoute>} />
           <Route path="/selling-plans" element={<ProtectedRoute><SellingPlans environment={environment} /></ProtectedRoute>} />
           <Route path="/subscription-plan" element={<ProtectedRoute><CreatePlan /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

@@ -26,15 +26,15 @@ const allowedOrigins = [
   process.env.FRONTEND_URL?.replace(/\/$/, ''),
   process.env.BACKEND_URL?.replace(/\/$/, ''),
   'https://airwall.kaswebtechsolutions.com',
-  'https://nomade-horizon.com/',
-  'https://nomade-horizon.com',
+  'https://kasweb-c4.mybigcommerce.com/',
+  'https://kasweb-c4.mybigcommerce.com',
   'http://localhost:5173',
   'http://192.168.29.30:5173',
   'http://checkout.nomade-horizon.com',
   'https://checkout.nomade-horizon.com',
   'http://apicheckout.nomade-horizon.com',
   'https://apicheckout.nomade-horizon.com',
-  'https://nomade-horizon.com',
+  'https://kasweb-c4.mybigcommerce.com',
   /https:\/\/[a-z0-9-]+\.ngrok-free\.dev$/,
 ].filter(Boolean);
 

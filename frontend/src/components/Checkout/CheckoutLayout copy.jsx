@@ -43,7 +43,7 @@ export default function CheckoutLayout({
   const [shippingOptions, setShippingOptions] = useState([]);
   const [orderComplete, setOrderComplete] = useState(false);
   const [createdOrder, setCreatedOrder] = useState(null);
-  const VIP_PRODUCT_ID = 268; // replace
+  const VIP_PRODUCT_ID = 210; // replace
   const fallbackSubscriptionProductIds = [...new Set([
     VIP_PRODUCT_ID,
     ...(import.meta.env.VITE_SUBSCRIPTION_PRODUCT_IDS || '')

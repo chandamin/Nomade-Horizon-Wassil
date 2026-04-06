@@ -1,7 +1,7 @@
 export default function OrderSummary({
   cart,
   deliveryPrice = 1.99,
-  hiddenProductIds = [268],
+  hiddenProductIds = [210],
   onCartUpdate,
   onApplyCheckoutCoupon,
   onRemoveCheckoutCoupon,
@@ -70,7 +70,7 @@ export default function OrderSummary({
         <button
           onClick={() =>
             (window.location.href =
-              "https://nomade-horizon.com/cart.php")
+              "https://kasweb-c4.mybigcommerce.com/cart.php")
           }
           className="text-[#476bef] hover:text-[#002fe1]"
         >
@@ -122,7 +122,7 @@ export default function OrderSummary({
                     Quantity: {quantity}
                   </div>
 
-                  {/* {Number(item.product_id) === 268 && (
+                  {/* {Number(item.product_id) === 210 && (
                     <div className="text-xs text-green-600 mt-1">
                       30-day free trial
                     </div>

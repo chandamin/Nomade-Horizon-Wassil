@@ -193,14 +193,14 @@ FRONTEND_CHECKOUT_URL=             # checkout page URL
 AIRWALLEX_API_KEY=
 AIRWALLEX_CLIENT_ID=
 AIRWALLEX_ENV=sandbox
-AIRWALLEX_BASE_URL=https://api.airwallex.com
+AIRWALLEX_BASE_URL=https://api-demo.airwallex.com
 AIRWALLEX_LEGAL_ENTITY_ID=
 AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID=
 
 # Airwallex — Live
 AIRWALLEX_LIVE_API_KEY=
 AIRWALLEX_LIVE_CLIENT_ID=
-AIRWALLEX_LIVE_BASE_URL=https://api.airwallex.com
+AIRWALLEX_LIVE_BASE_URL=https://api-demo.airwallex.com
 
 # MongoDB
 MONGO_URI=mongodb+srv://...
@@ -626,7 +626,7 @@ Low-level wrappers around Airwallex API calls:
 - Orchestrates the 3-step checkout: **Client → Shipping → Payment**
 - Manages all checkout state: clientData, deliveryData, paymentData, airwallexCustomer
 - Detects subscription products in cart via `VITE_SUBSCRIPTION_PRODUCT_IDS`
-- Handles VIP product (hardcoded product ID `268`) add/remove
+- Handles VIP product (hardcoded product ID `210`) add/remove
 - On payment success: places order via `POST /api/orders/create`, then `POST /api/selling-plans/subscriptions/provision`
 
 ### `ClientStep.jsx`

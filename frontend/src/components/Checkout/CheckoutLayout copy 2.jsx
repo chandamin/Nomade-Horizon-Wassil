@@ -48,10 +48,8 @@ export default function CheckoutLayout({
   const [orderComplete, setOrderComplete] = useState(false);
   const [createdOrder, setCreatedOrder] = useState(null);
   const [checkoutCart, setCheckoutCart] = useState(cart);
+  const hasAutoAddedRef = useRef(false);
   const [isVipChecked, setIsVipChecked] = useState(true);
-  const [isVipLoading, setIsVipLoading] = useState(false);
-  const [isVipUiChecked, setIsVipUiChecked] = useState(false);
-  const hasInitializedVipUiRef = useRef(false);
 
   useEffect(() => {
     setCheckoutCart(cart);
@@ -80,7 +78,7 @@ export default function CheckoutLayout({
     return () => window.removeEventListener('airwallexCustomerReady', handleCustomerReady);
   }, []);
 
-  
+  const [isVipLoading, setIsVipLoading] = useState(false);
 
   const getMappedSubscriptionProducts = (cartToCheck = cart) => {
     const allItems = [
@@ -111,8 +109,7 @@ export default function CheckoutLayout({
   ].some((item) => Number(item.product_id) === VIP_PRODUCT_ID);
 
   useEffect(() => {
-    // Only sync once cart has lineItems loaded
-    if (cart?.lineItems !== undefined) {
+    if (cart?.lineItems) {
       setIsVipChecked(vipSelected);
     }
   }, [vipSelected, cart?.lineItems]);
@@ -261,11 +258,8 @@ export default function CheckoutLayout({
 
   const handleVipToggle = async (checked) => {
     if (!cart?.id) return;
-    
-    //  Immediate UI feedback
-    setIsVipUiChecked(checked);
+
     setIsVipLoading(true);
-    
     try {
       if (checked) {
         await onAddVipToCart?.(cart.id);
@@ -274,31 +268,29 @@ export default function CheckoutLayout({
       }
     } catch (err) {
       console.error('VIP toggle failed:', err);
-      //  Rollback UI on error
-      setIsVipUiChecked(!checked);
       alert('Failed to update VIP CLUB selection');
     } finally {
       setIsVipLoading(false);
     }
   };
-
   useEffect(() => {
-    if (activeStep === 'payment') {
-      // First time entering payment step with cart data ready
-      if (!hasInitializedVipUiRef.current && cart?.lineItems !== undefined) {
-        hasInitializedVipUiRef.current = true;
-        // Pre-select checkbox by default, unless cart explicitly shows VIP is NOT selected
-        setIsVipUiChecked(vipSelected || true);
-      } 
-      // After initialization, always sync with actual cart state
-      else if (hasInitializedVipUiRef.current) {
-        setIsVipUiChecked(vipSelected);
-      }
-    } else {
-      // Reset initialization flag when leaving payment step (for navigation back/forth)
-      hasInitializedVipUiRef.current = false;
+   
+    if (cart?.id && !vipSelected && !isVipLoading && !hasAutoAddedRef.current) {
+      hasAutoAddedRef.current = true; // prevent multiple calls
+      const addDefaultVip = async () => {
+        setIsVipLoading(true);
+        try {
+          await onAddVipToCart?.(cart.id);
+        } catch (err) {
+          console.error('Failed to add VIP by default:', err);
+          // Optionally show a user-friendly message
+        } finally {
+          setIsVipLoading(false);
+        }
+      };
+      addDefaultVip();
     }
-  }, [activeStep, vipSelected, cart?.lineItems]);
+  }, [cart?.id, vipSelected, isVipLoading]);
 
   // Delivery completion check from working version
   const isDeliveryComplete = !!(
@@ -842,7 +834,7 @@ export default function CheckoutLayout({
                           id="vip-club"
                           name="vip-club"
                           className="nr-checkbox"
-                          checked={isVipUiChecked}
+                          checked={vipSelected}
                           disabled={isVipLoading}
                           onChange={(e) => handleVipToggle(e.target.checked)}
                         />
