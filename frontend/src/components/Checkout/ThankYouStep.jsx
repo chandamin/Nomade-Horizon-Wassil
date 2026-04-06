@@ -193,7 +193,7 @@ const ThankYouStep = ({
               </div>
 
               {discountAmount > 0 && (
-                <div className="flex items-center justify-between text-green-600">
+                <div className="flex items-center justify-between">
                   <span>Discount</span>
                   <span>-{formatPrice(discountAmount, currency)}</span>
                 </div>

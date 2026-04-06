@@ -1775,126 +1775,83 @@ router.post('/payment-sources/create', async (req, res) => {
 
     const token = await getAirwallexToken();
 
-    // const externalIdForPaymentSource = verifiedMethodId;
+    const externalIdForPaymentSource = verifiedMethodId;
     // const externalIdForPaymentSource = verifiedConsentId;
 
-    const candidates = [
-      { type: 'consent', id: verifiedConsentId },
-      { type: 'method',  id: verifiedMethodId }
-    ].filter(c => c.id); // remove empty
-
-    let lastError = null;
-    let createdPaymentSource = null;
-
-    for (const candidate of candidates) {
-      const externalId = candidate.id;
-      console.log(`[payment-sources] 🔍 Attempting with external_id: ${externalId} (${candidate.type})`);
-
-    // console.log(`[payment-sources] Checking for existing payment source: billing_customer_id=${billing_customer_id}, external_id=${verifiedMethodId}`);
+    console.log(`[payment-sources] Checking for existing payment source: billing_customer_id=${billing_customer_id}, external_id=${verifiedMethodId}`);
     
-    // 1. Check if a payment source already exists for this external_id
-      try {
-        const listRes = await axios.get(`${TEST_BASE}/api/v1/payment_sources`, {
+    try {
+      const listRes = await axios.get(
+        `${TEST_BASE}/api/v1/payment_sources`,
+        {
           headers: { Authorization: `Bearer ${token}` },
-          params: { billing_customer_id, page_size: 50 },
-        });
-        const existingSource = listRes.data?.items?.find(src => src.external_id === externalId);
-        if (existingSource) {
-          console.log(`[payment-sources] ♻️ Existing payment source found for ${externalId}: ${existingSource.id}`);
-          return res.status(200).json({
-            success: true,
-            duplicate: true,
-            paymentSource: {
-              id: existingSource.id,
-              billing_customer_id: existingSource.billing_customer_id,
-              external_id: existingSource.external_id,
-              linked_payment_account_id: existingSource.linked_payment_account_id,
-              created_at: existingSource.created_at,
-              status: existingSource.status,
-            }
-          });
-        }
-      } catch (listErr) {
-        console.warn(`[payment-sources] ⚠️ Could not list payment sources for ${externalId}:`, listErr.message);
-        // continue to creation attempt
-      }
-
-      // 2. Try to create a new payment source
-      try {
-        const airwallexRes = await axios.post(
-          `${TEST_BASE}/api/v1/payment_sources/create`,
-          {
-            request_id: crypto.randomUUID(),
-            billing_customer_id,
-            external_id: externalId,
-            linked_payment_account_id,
+          params: {
+            billing_customer_id: billing_customer_id,
+            page_size: 50,
           },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+        }
+      );
+
+      const existingSources = listRes.data?.items || [];
+      const existingSource = existingSources.find(
+        src => src.external_id === externalIdForPaymentSource
+      );
+
+      if (existingSource) {
+        console.log(` Payment source already exists, returning:`, existingSource.id);
+        return res.status(200).json({
+          success: true,
+          duplicate: true,
+          paymentSource: {
+            id: existingSource.id,
+            billing_customer_id: existingSource.billing_customer_id,
+            external_id: existingSource.external_id,
+            linked_payment_account_id: existingSource.linked_payment_account_id,
+            created_at: existingSource.created_at,
+            status: existingSource.status,
           }
-        );
-
-        console.log(`[payment-sources] ✅ Created payment source with ${candidate.type} ID:\n${JSON.stringify({
-          id: airwallexRes.data.id,
-          external_id: airwallexRes.data.external_id,
-        }, null, 2)}`);
-        createdPaymentSource = airwallexRes.data;
-        break; // success, exit loop
-      } catch (err) {
-        lastError = err;
-        const errorMsg = err.response?.data?.message || err.message;
-        console.warn(`[payment-sources] ❌ Attempt with ${candidate.type} ID failed: ${errorMsg}`);
-
-        // If this is the consent ID attempt and the error says "should start with mtd_",
-        // we continue to the next candidate (method ID). Otherwise, break and report error.
-        if (candidate.type === 'consent' && errorMsg.includes('should start with mtd_')) {
-          console.log('[payment-sources] 🔁 Demo environment quirk detected – retrying with method ID');
-          continue;
-        }
-        // For any other error, stop trying
-        break;
+        });
       }
+      console.log(`ℹ️ No existing payment source found, proceeding to create new one`);
+    } catch (listErr) {
+      console.warn(`⚠️ Could not list payment sources, proceeding to create:`, listErr.message);
+      // Continue to create if listing fails (fail-safe)
     }
-
-    if (createdPaymentSource) {
-      return res.status(201).json({
-        success: true,
-        paymentSource: {
-          id: createdPaymentSource.id,
-          billing_customer_id: createdPaymentSource.billing_customer_id,
-          external_id: createdPaymentSource.external_id,
-          linked_payment_account_id: createdPaymentSource.linked_payment_account_id,
-          created_at: createdPaymentSource.created_at,
+    const airwallexRes = await axios.post(
+      `${TEST_BASE}/api/v1/payment_sources/create`,
+      {
+        request_id: crypto.randomUUID(),
+        billing_customer_id,
+        external_id: externalIdForPaymentSource,
+        linked_payment_account_id,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
         }
-      });
-    } else {
-      // All attempts failed
-      console.error('[payment-sources] All external_id attempts failed', lastError);
-      throw lastError || new Error('Failed to create payment source with all available IDs');
-    }
+      }
+    );
 
-    // console.log(
-    //   "PaymentSource created:",
-    //   JSON.stringify({
-    //     id: airwallexRes.data.id,
-    //     billing_customer_id: airwallexRes.data.billing_customer_id,
-    //     external_id: airwallexRes.data.external_id,
-    //   })
-    // );
+    console.log(
+      "PaymentSource created:",
+      JSON.stringify({
+        id: airwallexRes.data.id,
+        billing_customer_id: airwallexRes.data.billing_customer_id,
+        external_id: airwallexRes.data.external_id,
+      })
+    );
 
-    // res.status(201).json({
-    //   success: true,
-    //   paymentSource: {
-    //     id: airwallexRes.data.id,
-    //     billing_customer_id: airwallexRes.data.billing_customer_id,
-    //     external_id: airwallexRes.data.external_id,
-    //     linked_payment_account_id: airwallexRes.data.linked_payment_account_id,
-    //     created_at: airwallexRes.data.created_at,
-    //   }
-    // });
+    res.status(201).json({
+      success: true,
+      paymentSource: {
+        id: airwallexRes.data.id,
+        billing_customer_id: airwallexRes.data.billing_customer_id,
+        external_id: airwallexRes.data.external_id,
+        linked_payment_account_id: airwallexRes.data.linked_payment_account_id,
+        created_at: airwallexRes.data.created_at,
+      }
+    });
   } catch (err) {
     console.error(
       'Create payment source error:',
