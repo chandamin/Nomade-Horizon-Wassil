@@ -69,7 +69,7 @@ export default function AdminSettings() {
         <h2 className="text-white text-xl font-semibold mb-6">Update Admin Credentials</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          {/* <div>
             <label className="block text-gray-400 text-sm mb-1">New Username (optional)</label>
             <input
               type="text"
@@ -78,7 +78,7 @@ export default function AdminSettings() {
               className="w-full bg-gray-700 text-white rounded-lg px-4 py-2.5 text-sm border border-gray-600 focus:outline-none focus:border-indigo-500 placeholder-gray-500"
               placeholder="Leave blank to keep current"
             />
-          </div>
+          </div> */}
 
           <div>
             <label className="block text-gray-400 text-sm mb-1">Current Password *</label>

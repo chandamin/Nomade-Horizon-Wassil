@@ -54,7 +54,7 @@ export default function SellingPlans({ environment }) {
 
   return (
     // <div className="space-y-6">
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 sm:py-[50px] sm:px-[40px] px-[20px] py-[24px]">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -81,7 +81,7 @@ export default function SellingPlans({ environment }) {
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-100">
-              <tr>
+              <tr className="bg-[#1b2432] text-white">
                 <TableHead>Name</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Interval</TableHead>
@@ -399,7 +399,7 @@ async function updatePlan(id, payload, environment) {
 
 function TableHead({ children }) {
   return (
-    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+    <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase">
       {children}
     </th>
   )

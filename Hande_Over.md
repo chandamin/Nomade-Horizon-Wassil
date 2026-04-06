@@ -2,8 +2,8 @@
 
 **Project:** Ascend — Subscriptions at Convenience
 **Author:** KasWebtech
-**Date:** 2026-03-29
-**Status:** In development — authentication complete, checkout functional, admin panel functional
+**Date:** 2026-04-06
+**Status:** In development — admin panel functional, checkout functional, subscription lifecycle management operational
 
 ---
 
@@ -21,10 +21,9 @@
 10. [Frontend — Components](#10-frontend--components)
 11. [Frontend — Auth Utilities](#11-frontend--auth-utilities)
 12. [Key Data Flows](#12-key-data-flows)
-13. [Security Implementation](#13-security-implementation)
-14. [Running the Project](#14-running-the-project)
-15. [Known Issues & Remaining Work](#15-known-issues--remaining-work)
-16. [Deployment Notes](#16-deployment-notes)
+13. [Running the Project](#13-running-the-project)
+14. [Known Issues & Remaining Work](#14-known-issues--remaining-work)
+15. [Deployment Notes](#15-deployment-notes)
 
 ---
 
@@ -33,12 +32,23 @@
 Ascend is a **subscription management system** built as a BigCommerce app. It allows:
 
 - **Customers** to subscribe to products at checkout (payment processed via Airwallex)
-- **Admins** to manage subscriptions, selling plans, and customer data through a protected dashboard
+- **Admins** to manage subscriptions, selling plans, and customer data through a protected admin dashboard
 
 The system bridges three external platforms:
-- **BigCommerce** — e-commerce store, customer records, orders
+- **BigCommerce** — e-commerce store, customer records, orders, cart management
 - **Airwallex** — payment processing, recurring billing, subscription engine
 - **MongoDB Atlas** — persistent data store for subscriptions, customers, plans
+
+### Key Capabilities
+- Multi-subscription product support (dynamically loaded from DB, not hardcoded)
+- Coupon and discount application/removal during checkout
+- Shipping quote fetching via BigCommerce Consignments API
+- VIP product add/remove toggle at checkout
+- Subscription cancellation with proration control (ALL / PRORATED / NONE)
+- Subscription editing (collection method, payment source, trial period)
+- Sync subscription state from Airwallex to local DB
+- Admin credential update (username + password)
+- Environment toggle (Sandbox ↔ Live) for plan management *(currently commented out in Sidebar UI)*
 
 ---
 
@@ -47,23 +57,25 @@ The system bridges three external platforms:
 | Layer | Technology |
 |-------|-----------|
 | Backend runtime | Node.js + Express 5 |
-| Database | MongoDB via Mongoose |
-| Auth | JWT (`jsonwebtoken`) + bcrypt |
+| Database | MongoDB via Mongoose 9 |
+| Auth | JWT (`jsonwebtoken`) + bcrypt 6 |
 | Rate limiting | `express-rate-limit` |
-| Frontend | React 19 + React Router 7 + Vite |
-| Styling | Tailwind CSS |
+| HTTP client (backend) | `axios` |
+| Frontend | React 19 + React Router 7 + Vite 7 |
+| Styling | Tailwind CSS 3 + custom checkout CSS (Montserrat font) |
 | Payment UI | `@airwallex/components-sdk` |
-| Payment API | `@airwallex/node-sdk` |
-| E-commerce | BigCommerce Management API + OAuth |
+| Payment API (backend) | `axios` (direct Airwallex REST calls) |
+| E-commerce | BigCommerce Management API (v2 + v3) via `fetch` |
 | Date handling | `dayjs` |
 | Icons | `lucide-react` |
+| Toggle | `react-switch` |
 
 ---
 
 ## 3. Repository Structure
 
 ```
-Nomade-Horizon-Wassil/
+Nomade-Subscription/
 ├── ReadMe.md                              (dev notes / code snippets)
 ├── Hande_Over.md                          (this document)
 │
@@ -91,17 +103,18 @@ Nomade-Horizon-Wassil/
 │   │   └── SubscriptionPlan.js
 │   │
 │   ├── routes/
-│   │   ├── adminAuth.js                   (login + /me)
+│   │   ├── adminAuth.js                   (login + /me + update credentials)
 │   │   ├── admin.js                       (store summary, subscribers)
 │   │   ├── airwallexLivePlan.js           (LIVE plan CRUD + checkout endpoints)
 │   │   ├── airwallexTestPlan.js           (SANDBOX plan CRUD + checkout endpoints)
 │   │   ├── auth.js                        (BigCommerce OAuth install/load/uninstall)
-│   │   ├── bigcommerceRoutes.js           (BC customers, products, orders)
+│   │   ├── bigcommerceRoutes.js           (cart, customers, orders, shipping, coupons, discounts, VIP)
 │   │   ├── dashboard.js                   (admin dashboard stats)
-│   │   ├── sellingPlans.js                (selling plan DB CRUD)
+│   │   ├── sellingPlans.js                (selling plan DB CRUD — legacy, not actively used)
 │   │   ├── subscriptions.js               (admin subscription management)
-│   │   ├── syncOrders.js                  (order sync utility)
-│   │   └── webhooks.js                    (BC webhook receivers)
+│   │   ├── syncOrders.js                  (order sync utility — placeholder)
+│   │   ├── webhooks.js                    (BC webhook receivers)
+│   │   └── backfill-subscription-emails.js (one-off migration script)
 │   │
 │   ├── services/
 │   │   ├── airwallex.js
@@ -112,13 +125,14 @@ Nomade-Horizon-Wassil/
 │   │   └── registerWebhooks.js
 │   │
 │   ├── lib/
+│   │   ├── subscriptionProducts.js        (shared helpers: enabled plan IDs, cart product matching)
 │   │   └── airwallex/
 │   │       ├── client.js
 │   │       ├── price.js
 │   │       ├── product.js
-│   │       ├── subscriptionAdmin.js
+│   │       ├── subscriptionAdmin.js       (cancel, update, sync, upsert projection)
 │   │       ├── subscriptionPlan.js
-│   │       └── token.js
+│   │       └── token.js                   (fetch/cache Airwallex access tokens)
 │   │
 │   └── scripts/
 │       ├── createAdmin.js                 (one-time: seed initial admin user)
@@ -128,14 +142,17 @@ Nomade-Horizon-Wassil/
 └── frontend/
     ├── package.json
     ├── .env
-    ├── vite.config.js
-    ├── tailwind.config.js
-    ├── postcss.config.js
+    ├── vite.config.mjs
+    ├── tailwind.config.cjs
+    ├── postcss.config.cjs
+    ├── index.html
+    ├── deploy_frontend.sh                 (deployment script)
     │
     └── src/
         ├── App.jsx                        (router, layout, environment state)
         ├── index.jsx
         ├── index.css
+        ├── App.css
         │
         ├── pages/
         │   ├── Login.jsx
@@ -145,7 +162,8 @@ Nomade-Horizon-Wassil/
         │   ├── CreatePlan.jsx
         │   ├── Checkout.jsx
         │   ├── ThankYou.jsx
-        │   └── Customers.jsx              (currently unused / commented out)
+        │   ├── AdminSettings.jsx
+        │   └── Customers.jsx              (placeholder — unused)
         │
         ├── components/
         │   ├── Sidebar.jsx
@@ -164,8 +182,11 @@ Nomade-Horizon-Wassil/
         ├── api/
         │   └── admin.js
         │
+        ├── mocks/
+        │   └── dashboardMock.js
+        │
         └── styles/
-            └── checkout.css
+            └── checkout.css               (custom checkout styling — Montserrat font)
 ```
 
 ---
@@ -187,7 +208,7 @@ BIGCOMMERCE_REDIRECT_URI=
 APP_URL=                           # backend public URL
 FRONTEND_URL=                      # frontend public URL
 BACKEND_URL=                       # backend public URL (same as APP_URL)
-FRONTEND_CHECKOUT_URL=             # checkout page URL
+FRONTEND_CHECKOUT_URL=             # checkout page URL (auto-derived from FRONTEND_URL if not set)
 
 # Airwallex — Sandbox
 AIRWALLEX_API_KEY=
@@ -213,8 +234,10 @@ BC_API_TOKEN=
 
 ```env
 VITE_BACKEND_URL=https://apicheckout.nomade-horizon.com
-VITE_SUBSCRIPTION_PRODUCT_IDS=<comma-separated BigCommerce product IDs that are subscriptions>
+VITE_SUBSCRIPTION_PRODUCT_IDS=<comma-separated BigCommerce product IDs — used as fallback only>
 ```
+
+> **Note:** The frontend now dynamically loads enabled subscription product IDs from the backend via `GET /api/subscription-plans/public/enabled-product-ids`. The `VITE_SUBSCRIPTION_PRODUCT_IDS` env var is only a fallback if that call fails.
 
 ---
 
@@ -251,11 +274,100 @@ UTILITY
 |--------|------|------|-------------|
 | POST | `/api/admin-auth/login` | None (rate-limited: 10/15min) | Validates username + password, returns signed JWT (8h expiry) |
 | GET | `/api/admin-auth/me` | JWT required | Returns `{ username, role }` of current token |
+| PUT | `/api/admin-auth/update-credentials` | JWT required | Update admin username and/or password. Requires current password for verification. |
 
 **Login response:**
 ```json
 { "token": "<jwt>", "username": "admin", "role": "admin" }
 ```
+
+---
+
+### `bigcommerceRoutes.js` — BigCommerce Integration
+
+This is the largest route file. It handles cart operations, customer management, shipping, orders, coupons/discounts, and VIP product toggling.
+
+#### Cart Operations
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/cart` | Fetch cart from BC by `?cartId=`, transform, and **redirect** to frontend checkout with cart data in URL params |
+| GET | `/api/cart-data` | Fetch cart from BC by `?cartId=` and return transformed JSON (no redirect) |
+| PUT | `/api/cart/assign-customer` | Assign a BC customer to an existing cart. Body: `{ cartId, customerId }` |
+| DELETE | `/api/cart/:cartId` | Delete (clear) a cart in BigCommerce |
+
+#### Customer Operations
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/customers` | Create new BC customer. Auto-generates password. Falls back to lookup if email already exists (422 handling) |
+| GET | `/api/customers/search` | Search BC customer by `?email=`. Returns `{ exists, customer }` |
+| POST | `/api/customer/address` | Save or update a customer's residential address in BC (v2 API). Finds existing address to update, or creates new one |
+
+#### Shipping
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/shipping/zones` | List all BC shipping zones |
+| GET | `/api/shipping/zones/:zoneId/methods` | List shipping methods for a zone |
+| POST | `/api/shipping/quotes` | **Primary shipping endpoint.** Creates a consignment on the checkout with the given address, returns available shipping options. Body: `{ cartId, address }` |
+
+#### Order Operations
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/orders/create` | Create order in BigCommerce. **Prices are fetched server-side from BC catalog — client-supplied prices are ignored.** Handles: order status update on Airwallex payment success, inventory decrement, email notification placeholder |
+| GET | `/api/orders/:orderId` | Get order details from BC |
+
+#### Coupon & Discount Operations
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/checkout/coupons/apply` | Apply a coupon code to a checkout. Body: `{ cartId, couponCode }`. Returns refreshed cart data |
+| DELETE | `/api/checkout/coupons/:cartId/:couponCode` | Remove a coupon from checkout. Returns refreshed cart data |
+| POST | `/api/checkout/discounts/apply` | Apply a discount object to checkout. Body: `{ cartId, discount }` |
+| DELETE | `/api/checkout/discounts/:cartId` | Remove all discounts from checkout |
+
+#### VIP Product Operations
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/cart/add-vip` | Add VIP product (ID: 268) to cart. Checks for duplicates first. Body: `{ cartId }` |
+| POST | `/api/cart/remove-vip` | Remove all VIP product items from cart. Body: `{ cartId }` |
+
+#### Subscription Customer Mapping
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/subscription-customers/map` | Upsert `SubscriptionCustomer` records mapping BC customer → Airwallex customer for each subscription product in the cart. Supports multi-product subscriptions. Body: `{ cart, bigcommerceCustomer, airwallexCustomer, orderId }` |
+
+---
+
+### `airwallexLivePlan.js` — Live Airwallex Plans
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/selling-plans/plans` | JWT required | List all live subscription plans |
+| POST | `/api/selling-plans/plans` | JWT required | Create Airwallex product + price for a new plan |
+| PUT | `/api/selling-plans/plans/:id` | JWT required | Enable/disable a plan (syncs to Airwallex) |
+| POST | `/api/selling-plans/billing-customers` | None (checkout) | Create or find billing customer in Airwallex (deduplication by email) |
+| POST | `/api/selling-plans/payment-customers` | None (checkout) | Create or retrieve payment customer (cus_) |
+| POST | `/api/selling-plans/payment-consents` | None (checkout) | Create payment consent (for merchant-triggered recurring) |
+| POST | `/api/selling-plans/payment-intents` | None (checkout) | Create payment intent |
+| GET | `/api/selling-plans/payment-intents/:id` | None | Retrieve payment intent status |
+| POST | `/api/selling-plans/subscriptions/provision` | None (checkout) | Provision subscription(s) after payment. Loops over all subscription products in cart, creates Airwallex subscription for each, saves `CustomerSubscription` + upserts `Subscription` projection |
+| POST | `/api/selling-plans/payment-sources/create` | None (checkout) | Save payment source. Polls for verified consent, checks for existing source, then creates `psrc_` in Airwallex |
+
+---
+
+### `airwallexTestPlan.js` — Sandbox Airwallex Plans
+
+Same endpoint shape as `airwallexLivePlan.js` but under `/api/subscription-plans/` prefix and targeting `api-demo.airwallex.com`. Additional endpoints:
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/subscription-plans/public/enabled-product-ids` | None | Returns BigCommerce product IDs for all enabled subscription plans. Used by the frontend checkout to dynamically identify subscription items in the cart |
+| POST | `/api/subscription-plans/create-checkout` | None | Create an Airwallex billing checkout session (legacy endpoint, may not be actively used) |
 
 ---
 
@@ -266,14 +378,14 @@ All endpoints require JWT.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/subscriptions` | List all subscriptions. Query params: `status`, `customerId`, `productId`, `externalSubscriptionId` |
-| GET | `/api/subscriptions/:id` | Get single subscription with related customer data |
-| POST | `/api/subscriptions` | Create subscription placeholder |
+| GET | `/api/subscriptions/:id` | Get single subscription with related `CustomerSubscription` and `SubscriptionCustomer` data |
+| POST | `/api/subscriptions` | Create subscription placeholder (local only) |
 | PATCH | `/api/subscriptions/:id` | Update subscription status locally |
-| POST | `/api/subscriptions/:id/sync` | Pull latest state from Airwallex and update DB |
-| POST | `/api/subscriptions/:id/cancel` | Cancel in Airwallex + update local record. Body: `{ proration_behavior: 'ALL' \| 'PRORATED' \| 'NONE' }` |
-| POST | `/api/subscriptions/:id/update` | Modify subscription in Airwallex (collection method, payment source, trial period, etc.) |
-| GET | `/api/subscriptions/:id/payment-sources` | Fetch Airwallex payment sources available for a customer |
-| POST | `/api/subscriptions/internal/upsert-from-customer-subscription` | Internal: create admin projection record from a CustomerSubscription |
+| POST | `/api/subscriptions/:id/sync` | Pull latest state from Airwallex and sync to local DB (both `Subscription` projection and `CustomerSubscription`) |
+| POST | `/api/subscriptions/:id/cancel` | Cancel in Airwallex + update local records. Body: `{ proration_behavior: 'ALL' | 'PRORATED' | 'NONE' }` |
+| POST | `/api/subscriptions/:id/update` | Modify subscription in Airwallex — collection method, payment source, trial period, cancel at period end, duration, metadata, etc. Validates enum values, handles linked_payment_account_id logic for different collection methods |
+| GET | `/api/subscriptions/:id/payment-sources` | Fetch Airwallex payment sources for a subscription's billing customer |
+| POST | `/api/subscriptions/internal/upsert-from-customer-subscription` | Internal: create/update admin projection record from a `CustomerSubscription` |
 
 ---
 
@@ -281,44 +393,7 @@ All endpoints require JWT.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/dashboard` | JWT required | Returns subscription counts (total, active, paused, cancelled, pending), recent activity feed, total orders |
-
----
-
-### `airwallexLivePlan.js` — Live Airwallex Plans
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/api/selling-plans/plans` | JWT required | List all live subscription plans |
-| POST | `/api/selling-plans/plans` | JWT required | Create Airwallex product + price for a new plan |
-| PUT | `/api/selling-plans/plans/:id` | JWT required | Enable/disable a plan |
-| POST | `/api/selling-plans/billing-customers` | None (checkout) | Create billing customer in Airwallex |
-| POST | `/api/selling-plans/payment-customers` | None (checkout) | Create payment customer |
-| POST | `/api/selling-plans/payment-consents` | None (checkout) | Create payment consent |
-| POST | `/api/selling-plans/payment-intents` | None (checkout) | Create payment intent |
-| POST | `/api/selling-plans/subscriptions/provision` | None (checkout) | Provision subscription after payment |
-| POST | `/api/selling-plans/payment-sources/create` | None (checkout) | Save payment source |
-
-### `airwallexTestPlan.js` — Sandbox Airwallex Plans
-
-Identical endpoint shape as `airwallexLivePlan.js` but under `/api/subscription-plans/` and targeting `api-demo.airwallex.com`.
-
----
-
-### `bigcommerceRoutes.js` — BigCommerce Integration
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/api/products/subscription` | None | Fetch subscription products from BC catalog |
-| GET | `/api/customers/:email` | None | Look up BC customer by email |
-| POST | `/api/customers/create` | None | Create new BC customer |
-| POST | `/api/orders/create` | None (checkout) | Create order in BigCommerce. **Prices are fetched server-side from BC catalog — client-supplied prices are ignored** |
-| GET | `/api/shipping-methods` | None | Fetch available shipping methods |
-| GET | `/api/products/:id/inventory` | None | Get product inventory |
-| PUT | `/api/orders/:orderId/status` | None | Update order status |
-| POST | `/api/customers/:customerId/add-vip` | None | Add VIP product to cart |
-| POST | `/api/customers/:customerId/remove-vip` | None | Remove VIP product |
-| GET | `/api/customers` | None | List customers |
+| GET | `/api/dashboard` | JWT required | Returns subscription counts (total, active, paused, cancelled, pending), recent activity feed (with customer emails looked up from `SubscriptionCustomer`), total orders |
 
 ---
 
@@ -337,17 +412,22 @@ Identical endpoint shape as `airwallexLivePlan.js` but under `/api/subscription-
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/api/webhooks/uninstall` | SHA1 signature (verifyWebhook) | App uninstall webhook |
-| POST | `/api/webhooks/order-created` | SHA1 signature (verifyWebhook) | Order created event (logging) |
+| POST | `/api/webhooks/order-created` | SHA1 signature (verifyWebhook) | Order created event (logging only) |
 
 ---
 
-### `sellingPlans.js` — DB-level Selling Plans
+### `sellingPlans.js` — DB-level Selling Plans (Legacy)
+
+> **Note:** This route file is a legacy implementation. The active plan routes are `airwallexLivePlan.js` and `airwallexTestPlan.js`. This file references a `SellingPlan` model that does not exist in the current models directory.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/selling-plans` | None | List non-deleted plans |
 | POST | `/api/selling-plans` | None | Create plan in DB |
 | PATCH | `/api/selling-plans/:id` | None | Update plan |
+| PATCH | `/api/selling-plans/:id/status` | None | Enable/disable plan |
+| POST | `/api/selling-plans/:id/sync-airwallex-product` | None | Sync product to Airwallex |
+| POST | `/api/selling-plans/:id/sync-airwallex-subscription` | None | Sync subscription plan to Airwallex |
 
 ---
 
@@ -378,8 +458,8 @@ Create via: `node scripts/createAdmin.js <username> <password>`
 ### `Subscription` — Admin projection of a customer's subscription
 ```js
 {
-  subscriptionCustomerId:  ObjectId → SubscriptionCustomer,
-  customerSubscriptionId:  ObjectId → CustomerSubscription,
+  subscriptionCustomerId:  ObjectId → SubscriptionCustomer  (required),
+  customerSubscriptionId:  ObjectId → CustomerSubscription   (required),
   externalSubscriptionId:  String   (Airwallex sub ID, indexed, required),
   airwallexCustomerId:     String,
   bigcommerceCustomerId:   Number,
@@ -395,10 +475,6 @@ Create via: `node scripts/createAdmin.js <username> <password>`
   lastSyncedAt:            Date,
   syncStatus:              String   (enum: ok | failed),
   syncError:               String,
-  metadata:                Object,
-  cancelAtPeriodEnd:       Boolean,
-  collectionMethod:        String,
-  paymentSourceId:         String,
   createdAt, updatedAt
 }
 ```
@@ -531,13 +607,18 @@ Create via: `node scripts/createAdmin.js <username> <password>`
 ### `verifyWebhook.js`
 - Reads `req.rawBody` (captured by Express JSON verify callback in `index.js`)
 - Parses `body.hash` — the signature BigCommerce sends in the payload
-- Strips the `"hash":"..."` key/value from the raw body string (both comma-before and comma-after patterns)
+- Strips the `"hash":"..."` key/value from the raw body string
 - Computes `SHA1(rawBodyWithoutHash)` using Node's `crypto` module
 - Returns `401 Invalid signature` if hashes don't match
 
 ---
 
 ## 8. Backend — Services & Libraries
+
+### `lib/subscriptionProducts.js`
+Shared helper used by both `bigcommerceRoutes.js` and `airwallexLivePlan.js` / `airwallexTestPlan.js`:
+- `getEnabledSubscriptionProductIds()` — queries `SubscriptionPlan` for enabled plans and returns their BigCommerce product IDs
+- `findDistinctSubscriptionProducts(cart, subscriptionProductIds)` — scans cart line items and returns distinct subscription products (prevents duplicate provisioning per product)
 
 ### `lib/airwallex/`
 Low-level wrappers around Airwallex API calls:
@@ -546,7 +627,14 @@ Low-level wrappers around Airwallex API calls:
 - `product.js` — create/list Airwallex products
 - `price.js` — create/list Airwallex prices
 - `subscriptionPlan.js` — create/manage subscription plans
-- `subscriptionAdmin.js` — admin operations (cancel, update, sync)
+- `subscriptionAdmin.js` — admin operations (cancel, update, sync, upsert projection). Exports:
+  - `fetchAirwallexSubscription(subId)` — GET subscription from Airwallex
+  - `cancelAirwallexSubscription(subId, opts)` — cancel with proration behavior
+  - `updateAirwallexSubscription(subId, payload)` — update subscription attributes
+  - `upsertSubscriptionProjection(customerSubscription, extras)` — creates/updates the `Subscription` (admin projection) from a `CustomerSubscription` record
+  - `syncLocalSubscriptionFromAirwallex(airwallexSubscription)` — full two-way sync
+  - `normaliseStatus(airwallexStatus)` — maps Airwallex status strings to local enum
+  - `asDate(isoString)` — safe date parser
 
 ### `services/`
 - `airwallex.js` — higher-level Airwallex operations
@@ -559,6 +647,23 @@ Low-level wrappers around Airwallex API calls:
 ---
 
 ## 9. Frontend — Pages
+
+### Route Map (`App.jsx`)
+
+```
+Public routes:
+  /login            → Login.jsx
+  /checkout         → Checkout.jsx
+  /thank-you        → ThankYou.jsx
+
+Protected admin routes (require JWT in localStorage):
+  /                 → Dashboard.jsx
+  /dashboard        → Dashboard.jsx
+  /subscriptions    → Subscriptions.jsx
+  /selling-plans    → SellingPlans.jsx
+  /subscription-plan → CreatePlan.jsx
+  /settings         → AdminSettings.jsx
+```
 
 ### `Login.jsx`
 - Public page — no auth required
@@ -592,12 +697,36 @@ Low-level wrappers around Airwallex API calls:
 - Status toggle button calls `PUT /api/(selling|subscription)-plans/plans/:id`
 - "+ Create Plan" button opens `CreatePlanForm` modal
 
+### `CreatePlan.jsx`
+- Protected — requires JWT
+- Form to create a new subscription plan
+- Collects: name, description, amount, currency, interval, trial days, BC product ID
+- `POST /api/(selling|subscription)-plans/plans`
+
+### `AdminSettings.jsx`
+- Protected — requires JWT
+- Form to update admin username and/or password
+- Requires current password for verification
+- `PUT /api/admin-auth/update-credentials`
+
 ### `Checkout.jsx`
 - Public — no auth required
 - Entry point for customer checkout
-- Detects `?airwallex_return=true` query param (Airwallex 3DS redirect return)
+- Parses URL params: `?cartId=` or `?cartData=` or `?error=`
+- Detects `?airwallex_return=success` query param (Airwallex 3DS redirect return)
 - Stores payment result in `sessionStorage`
-- Renders `CheckoutLayout`
+- Provides all callback functions to `CheckoutLayout`:
+  - `onCustomerCreate` — search/create BC customer
+  - `onShippingAddress` — save address to BC
+  - `onFetchShippingOptions` — fetch shipping quotes via consignment API
+  - `onAddVipToCart` / `onRemoveVipFromCart` — VIP product management
+  - `onFetchLatestCart` — refresh cart data before order
+  - `onCreateAirwallexCustomer` — create billing customer
+  - `onMapSubscriptionCustomer` — customer mapping to DB
+  - `onProvisionSubscription` — provision Airwallex subscription
+  - `clearCart` / `onCartCleared` — post-order cart cleanup
+  - `onApplyCheckoutCoupon` / `onRemoveCheckoutCoupon` — coupon management
+  - `onApplyCheckoutDiscount` / `onRemoveCheckoutDiscount` — discount management
 
 ### `ThankYou.jsx`
 - Public
@@ -610,9 +739,9 @@ Low-level wrappers around Airwallex API calls:
 ## 10. Frontend — Components
 
 ### `Sidebar.jsx`
-- Navigation: Dashboard, Selling Plans, Subscriptions
+- Navigation: Dashboard, Selling Plans, Subscriptions, Settings
 - Collapsible (stores state locally)
-- Environment toggle (Sandbox ↔ Live) using `react-switch`
+- Environment toggle (Sandbox ↔ Live) using `react-switch` — **currently commented out in the UI**
   - Saves choice to `localStorage` key `adminEnvironment`
   - Calls `setEnvironment` prop to update App.jsx state
 - Logout button: calls `removeToken()` then navigates to `/login`
@@ -623,34 +752,45 @@ Low-level wrappers around Airwallex API calls:
 - Redirects to `/login` if not authenticated
 
 ### `CheckoutLayout.jsx`
-- Orchestrates the 3-step checkout: **Client → Shipping → Payment**
-- Manages all checkout state: clientData, deliveryData, paymentData, airwallexCustomer
-- Detects subscription products in cart via `VITE_SUBSCRIPTION_PRODUCT_IDS`
-- Handles VIP product (hardcoded product ID `210`) add/remove
-- On payment success: places order via `POST /api/orders/create`, then `POST /api/selling-plans/subscriptions/provision`
+- **Orchestrates the 3-step checkout: Client → Shipping → Payment**
+- Manages all checkout state: clientData, deliveryData, paymentData, airwallexCustomer, bigcommerceCustomer
+- **Dynamic subscription product detection:** Loads enabled product IDs from `GET /api/subscription-plans/public/enabled-product-ids` on mount (falls back to `VITE_SUBSCRIPTION_PRODUCT_IDS` env var)
+- Handles VIP product (product ID `268`) add/remove with optimistic UI updates
+- Displays 10-minute promo countdown timer
+- On delivery step completion: ensures Airwallex billing customer is created before moving to payment
+- On payment success:
+  1. Fetches latest cart data
+  2. Maps subscription customers to DB (`POST /api/subscription-customers/map`)
+  3. Creates BC order (`POST /api/orders/create`)
+  4. Provisions subscriptions (`POST /api/selling-plans/subscriptions/provision`)
+  5. Clears the cart
+  6. Navigates to `/thank-you`
 
 ### `ClientStep.jsx`
-- Collects: first name, last name, email
-- Looks up existing BC customer by email
+- Collects: first name, last name, email, phone, company
+- Look up existing BC customer by email on continue
 - Creates BC customer if new
-- Creates Airwallex billing customer
 
 ### `ShippingStep.jsx`
-- Collects shipping address
-- Fetches shipping methods from BigCommerce
-- User selects shipping option
+- Collects shipping address: address, city, country, postal code, phone
+- Fetches shipping quotes via `POST /api/shipping/quotes` (BigCommerce consignment API)
+- User selects shipping option from available quotes
+- Saves address to BigCommerce on continue
 
 ### `PaymentStep.jsx`
 - Embeds Airwallex Components SDK for card entry
-- Creates payment intent via `POST /api/selling-plans/payment-intents`
+- Creates payment customer → payment consent → payment intent flow
 - Handles SUCCEEDED / FAILED / PENDING payment states
-- Triggers order placement on SUCCEEDED
+- On SUCCEEDED: triggers `psrc_` payment source creation, then order placement
 
 ### `OrderSummary.jsx`
-- Shows line items, subscription details, order total during checkout
+- Shows line items, subscription details, applied coupons/discounts, shipping cost, order total during checkout
+- Coupon code input and apply/remove functionality
+- Rendered in the right column of the checkout layout
 
 ### `ThankYouStep.jsx`
-- Post-order confirmation within the checkout flow (before redirect)
+- Post-order confirmation within the checkout flow (before redirect to `/thank-you`)
+- Shows order details and customer greeting
 
 ---
 
@@ -689,27 +829,67 @@ Browser /login
 
 ### Customer Checkout → Subscription Created
 ```
-Checkout page loads
-  → ClientStep: GET /api/customers/:email (find or create BC customer)
-  → ClientStep: POST /api/selling-plans/billing-customers (create Airwallex customer)
-  → ShippingStep: GET /api/shipping-methods
-  → PaymentStep: POST /api/selling-plans/payment-intents
-  → Airwallex SDK: collects card, processes payment
-  → payment SUCCEEDED:
-      → POST /api/orders/create          (BC order, server fetches real prices)
-      → POST /api/selling-plans/subscriptions/provision  (Airwallex subscription)
-      → Subscription + SubscriptionCustomer + CustomerSubscription saved to DB
-  → redirect to /thank-you
+Customer navigates from BigCommerce store to checkout
+  → GET /api/cart?cartId=xxx redirects to frontend /checkout with cartData in URL
+  → OR frontend fetches GET /api/cart-data?cartId=xxx
+
+Checkout page loads:
+  → CheckoutLayout fetches GET /api/subscription-plans/public/enabled-product-ids
+     (dynamically identifies which cart items are subscriptions)
+
+  → ClientStep:
+       → GET /api/customers/search?email=xxx (find existing BC customer)
+       → POST /api/customers (create BC customer if new)
+
+  → ShippingStep:
+       → POST /api/shipping/quotes { cartId, address }
+          (creates consignment → returns available shipping options)
+       → POST /api/customer/address (save address to BC)
+       → POST /api/subscription-plans/billing-customers (ensure Airwallex customer)
+
+  → PaymentStep:
+       → POST /api/subscription-plans/payment-customers (create payment customer)
+       → POST /api/subscription-plans/payment-consents (create consent)
+       → POST /api/subscription-plans/payment-intents (create payment intent)
+       → Airwallex SDK: collects card, processes payment
+       → POST /api/subscription-plans/payment-sources/create (save psrc_)
+
+  → Payment SUCCEEDED:
+       → POST /api/subscription-customers/map
+            (upsert SubscriptionCustomer for each subscription product)
+       → POST /api/orders/create
+            (BC order, server fetches real prices, updates status to 11 if paid)
+       → POST /api/subscription-plans/subscriptions/provision
+            (for each subscription product in cart:
+              - look up SubscriptionPlan by bigcommerceProductId
+              - create Airwallex subscription with AUTO_CHARGE + psrc_
+              - save CustomerSubscription to DB
+              - upsert Subscription admin projection)
+       → DELETE /api/cart/:cartId (clear the cart)
+       → Navigate to /thank-you
 ```
 
-### Admin Cancels Subscription
+### Admin Manages Subscriptions
 ```
-Admin clicks Cancel on /subscriptions
-  → modal: choose proration (ALL / PRORATED / NONE)
-  → POST /api/subscriptions/:id/cancel  { proration_behavior }
-  → backend calls Airwallex cancel API
-  → Subscription.status updated to 'cancelled' in DB
-  → UI updates row status
+Admin views /subscriptions
+  → GET /api/subscriptions (list all)
+
+Admin syncs a subscription:
+  → POST /api/subscriptions/:id/sync
+  → Backend fetches subscription from Airwallex
+  → Updates both CustomerSubscription and Subscription projection in DB
+
+Admin cancels a subscription:
+  → Modal: choose proration (ALL / PRORATED / NONE)
+  → POST /api/subscriptions/:id/cancel { proration_behavior }
+  → Backend calls Airwallex cancel API
+  → Updates Subscription.status = 'cancelled' + CustomerSubscription in DB
+
+Admin updates a subscription:
+  → Modal: collection_method, payment_source_id, trial_ends_at, etc.
+  → POST /api/subscriptions/:id/update
+  → Backend calls Airwallex update API
+  → Syncs response to both Subscription + CustomerSubscription
 ```
 
 ### BigCommerce Webhook
@@ -718,45 +898,12 @@ BC sends POST to /api/webhooks/order-created
   → verifyWebhook middleware:
       strip "hash" field from raw body
       SHA1(rawBodyWithoutHash) === body.hash  → 401 if mismatch
-  → handler processes event
+  → handler processes event (currently logging only)
 ```
 
 ---
 
-## 13. Security Implementation
-
-### Authentication & Authorisation
-- All admin-facing endpoints (`/api/subscriptions`, `/api/dashboard`, `/api/admin`, `/api/sync-orders`) protected by `requireSession` middleware at router mount level
-- Plan CRUD (`GET/POST/PUT /plans`) on both live and sandbox plan routers protected per-route
-- Checkout endpoints (billing-customers, payment-intents, provision) left public — required for unauthenticated customer checkout flow
-
-### Password Security
-- bcrypt with cost factor 12 for all admin passwords
-- Generic error message on failed login ("Invalid credentials") — no username enumeration
-
-### Rate Limiting
-- Login endpoint: 10 requests per IP per 15 minutes via `express-rate-limit`
-- On breach: `429 Too Many Requests` with JSON error message
-
-### Webhook Integrity
-- `verifyWebhook.js` computes `SHA1(rawBody without hash field)` and compares to the `hash` value BigCommerce sends — rejects forged webhooks with 401
-
-### Price Integrity
-- `POST /api/orders/create` ignores all client-submitted price fields
-- Server fetches authoritative prices from `GET https://api.bigcommerce.com/stores/:hash/v3/catalog/products/:id`
-- Prevents price tampering attacks from the checkout page
-
-### Transport Security
-- CORS whitelist: specific domains + ngrok regex for development
-- `Access-Control-Allow-Private-Network: true` header set globally
-- Credentials: true on CORS (required for cookie-based flows if added later)
-
-### Token Storage
-- JWT currently stored in `localStorage` — acceptable for current scope
-
----
-
-## 14. Running the Project
+## 13. Running the Project
 
 ### Prerequisites
 - Node.js 18+
@@ -768,7 +915,7 @@ BC sends POST to /api/webhooks/order-created
 ```bash
 cd backend
 npm install
-# configure .env (copy from .env.example if exists, or use Section 4 as reference)
+# configure .env (use Section 4 as reference)
 npm run dev          # development (nodemon, port 4000)
 node index.js        # production
 ```
@@ -791,18 +938,33 @@ node scripts/createAdmin.js admin YourStrongPassword123!
 ```
 This creates an `AdminUser` document with bcrypt-hashed password. Login at `/login`.
 
+### Other Scripts
+```bash
+# Backfill subscription emails from SubscriptionCustomer to Subscription
+node routes/backfill-subscription-emails.js
+
+# Migrate subscription plan product IDs
+node scripts/migrateSubscriptionPlanProductIds.js
+
+# Seed test subscriptions
+node scripts/seedSubscriptions.js
+```
+
 ---
 
-## 15. Known Issues & Remaining Work
+## 14. Known Issues & Remaining Work
 
 ### Code Quality
 
 | Issue | Location | Note |
 |-------|----------|------|
-| Multiple "copy" route/component files | `backend/routes/`, `frontend/src/components/Checkout/` | Delete `*copy*.js` / `*copy*.jsx` backup files |
-| `sellingPlans.js` route has no auth on CRUD | `backend/routes/sellingPlans.js` | Review if this route is still used; `airwallexLivePlan.js` and `airwallexTestPlan.js` are the active plan routes |
+| `sellingPlans.js` route has no auth on CRUD | `backend/routes/sellingPlans.js` | This is a legacy route. The active plan routes are `airwallexLivePlan.js` and `airwallexTestPlan.js` |
 | `syncOrders.js` uses dummy/placeholder data | `backend/routes/syncOrders.js` | Needs real BigCommerce order integration |
-| `Customers.jsx` page is commented out in nav | `frontend/src/components/Sidebar.jsx:18` | Either implement or remove the file |
+| `Customers.jsx` page is a placeholder | `frontend/src/pages/Customers.jsx` | Contains only a stub component — either implement or remove |
+| Environment toggle commented out in Sidebar | `frontend/src/components/Sidebar.jsx` | The Sandbox ↔ Live toggle switch is commented out. Only the Live environment routes are effectively used |
+| `sendOrderConfirmationEmail` is a stub | `backend/routes/bigcommerceRoutes.js` | Function logs a message but doesn't actually send emails |
+| Hardcoded store hash | `backend/routes/bigcommerceRoutes.js:4` | `STORE_HASH = 'eapn6crf58'` is hardcoded. Should come from DB/env for multi-store support |
+| Hardcoded VIP product ID | Multiple files | `VIP_PRODUCT_ID = 268` is hardcoded in both backend and frontend. Should be configurable |
 
 ### Infrastructure
 
@@ -810,20 +972,21 @@ This creates an `AdminUser` document with bcrypt-hashed password. Login at `/log
 |-------|------|
 | SPA 404 on direct URL refresh | If hosted on Apache (Namecheap), need `.htaccess` rewrite rule to serve `index.html` for all non-file paths |
 | Input validation missing | No `zod` / `express-validator` on order creation, customer endpoints — add validation at API boundary |
-| Error response sanitization | Stack traces may leak in production — wrap errors in production-safe messages |
 
 ---
 
-## 16. Deployment Notes
+## 15. Deployment Notes
 
 ### Backend Hosting
 - Currently targeted at shared hosting (`app.log` file-based logging suggests non-container environment)
-- `npm run start:prod` targets `index-production.js` (check if this file exists and is up to date)
+- `npm run start:prod` targets `index-production.js` (verify this file exists)
 - Ensure `PORT` env var is set if host assigns a dynamic port
+- All `console.log` and `console.error` output is also written to `app.log` via custom file writer in `index.js`
 
 ### Frontend Hosting
 - Vite builds to `dist/` — deploy that folder as a static site
 - Set `VITE_BACKEND_URL` to the production backend URL in `.env` before building
+- A `deploy_frontend.sh` script exists in the frontend root for automated deployments
 - If hosting on Apache: add `.htaccess`:
   ```apache
   Options -MultiViews
@@ -835,11 +998,13 @@ This creates an `AdminUser` document with bcrypt-hashed password. Login at `/log
 ### BigCommerce App Configuration
 - OAuth redirect URI must match `BIGCOMMERCE_REDIRECT_URI` in `.env`
 - Register webhooks for `store/order/created` and `store/app/uninstalled` in BC dev portal or via `registerWebhooks.js` service
+- Current store: `kasweb-c4.mybigcommerce.com`
 
 ### Airwallex Configuration
-- Sandbox keys (`AIRWALLEX_API_KEY`, `AIRWALLEX_CLIENT_ID`) for the toggle "Sandbox" environment
-- Live keys (`AIRWALLEX_LIVE_API_KEY`, `AIRWALLEX_LIVE_CLIENT_ID`) for the toggle "Live" environment
-- Frontend environment toggle switches which backend route prefix is called (`/api/subscription-plans` vs `/api/selling-plans`)
+- Airwallex Live keys (`AIRWALLEX_API_KEY`, `AIRWALLEX_CLIENT_ID`) for the Production environment
+
+- `AIRWALLEX_LEGAL_ENTITY_ID` and `AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID` are required for subscription provisioning
+- Frontend currently calls `/api/subscription-plans/` endpoints (sandbox prefix) for checkout flows
 
 ---
 

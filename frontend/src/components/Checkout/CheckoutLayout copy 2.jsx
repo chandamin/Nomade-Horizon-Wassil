@@ -54,7 +54,7 @@ export default function CheckoutLayout({
   useEffect(() => {
     setCheckoutCart(cart);
   }, [cart]);
-  const VIP_PRODUCT_ID = 210; // replace
+  const VIP_PRODUCT_ID = 268; // replace
   const fallbackSubscriptionProductIds = [...new Set([
     VIP_PRODUCT_ID,
     ...(import.meta.env.VITE_SUBSCRIPTION_PRODUCT_IDS || '')

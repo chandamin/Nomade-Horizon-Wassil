@@ -21,8 +21,6 @@ function Layout() {
     () => localStorage.getItem('adminEnvironment') || 'sandbox'
   );
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
   const handleEnvironmentChange = (env) => {
     setEnvironment(env);
     localStorage.setItem('adminEnvironment', env);
@@ -31,18 +29,16 @@ function Layout() {
   return (
     <div className="flex min-h-screen">
       {!isCheckout && !hideSidebar && (
-        <Sidebar environment={environment} setEnvironment={handleEnvironmentChange} collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(prev => !prev)} />
+        <Sidebar environment={environment} setEnvironment={handleEnvironmentChange} />
       )}
 
       <main
-    className={`flex-1 min-h-screen transition-all duration-300 ease-in-out overflow-x-hidden ${
-      isCheckout || hideSidebar
-        ? 'p-0 bg-white'
-        : `bg-gradient-to-br from-white via-gray-50 to-gray-100 pl-[80px] md:pl-[80px] sm:px-6 ${
-            sidebarCollapsed ?  'lg:pl-20' : 'lg:pl-64' 
-          }`
-    }`}
-   >
+        className={`flex-1 ${
+          isCheckout || hideSidebar
+            ? 'p-0 bg-white'
+            : 'bg-gradient-to-br from-white via-gray-50 to-gray-100 w-[100%] max-w-[80%] relative right-[-20%]'
+        }`}
+      >
 
         <Routes>
           {/* Public routes */}

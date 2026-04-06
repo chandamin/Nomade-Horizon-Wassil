@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 export default function OrderSummary({
   cart,
   deliveryPrice = 1.99,
-  hiddenProductIds = [210],
+  hiddenProductIds = [268],
   onCartUpdate,
   onApplyCheckoutCoupon,
   onRemoveCheckoutCoupon,
@@ -214,7 +214,7 @@ export default function OrderSummary({
         <button
           onClick={() => {
             console.log("[OrderSummary] Redirecting user to cart");
-            window.location.href = "https://kasweb-c4.mybigcommerce.com/cart.php";
+            window.location.href = "https://nomade-horizon.com/cart.php";
           }}
           className="text-[#476bef] hover:text-[#002fe1]"
         >
