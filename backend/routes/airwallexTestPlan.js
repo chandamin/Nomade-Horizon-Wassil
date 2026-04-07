@@ -115,7 +115,7 @@ router.post('/plans', requireSession, async (req, res) => {
       name,
       description,
       amount,
-      currency = 'USD',
+      currency = 'EUR',
       interval = 'MONTH',
       trialDays = 14,
       active,
@@ -214,6 +214,9 @@ router.put('/plans/:id', requireSession, async (req, res) => {
       active,
       metadata,
       unit,
+      amount,
+      currency,
+      interval,
     } = req.body;
 
     // 1️⃣ Find plan
@@ -224,29 +227,100 @@ router.put('/plans/:id', requireSession, async (req, res) => {
 
     const token = await getAirwallexToken();
 
-    // 2️⃣ Update Airwallex Product
-    await axios.post(
-      `${TEST_BASE}/api/v1/products/${plan.airwallexProductId}/update`,
-      {
-        request_id: crypto.randomUUID(),
-        ...(name && { name }),
-        ...(description && { description }),
-        ...(typeof active === 'boolean' && { active }),
-        ...(unit && { unit }),
-        ...(metadata && { metadata }),
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+    // 2️⃣ Update Airwallex Product (name, description, active, etc.)
+    const hasProductUpdate = name || description || typeof active === 'boolean' || unit || metadata;
+    if (hasProductUpdate) {
+      await axios.post(
+        `${TEST_BASE}/api/v1/products/${plan.airwallexProductId}/update`,
+        {
+          request_id: crypto.randomUUID(),
+          ...(name && { name }),
+          ...(description && { description }),
+          ...(typeof active === 'boolean' && { active }),
+          ...(unit && { unit }),
+          ...(metadata && { metadata }),
         },
-      }
-    );
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+    }
 
-    // 3️⃣ Update MongoDB (mirror only)
+    // 3️⃣ If currency or amount changed, create a NEW price and deactivate the old one
+    const newCurrency = currency || plan.currency;
+    const newAmount = amount !== undefined && amount !== null ? amount : plan.amount;
+    const newInterval = interval || plan.interval;
+    const currencyChanged = currency && currency !== plan.currency;
+    const amountChanged = amount !== undefined && amount !== null && amount !== plan.amount;
+    const intervalChanged = interval && interval !== plan.interval;
+
+    if (currencyChanged || amountChanged || intervalChanged) {
+      logInfo('💱 Price change detected, creating new Airwallex price:', {
+        oldCurrency: plan.currency,
+        newCurrency,
+        oldAmount: plan.amount,
+        newAmount,
+        oldInterval: plan.interval,
+        newInterval,
+      });
+
+      // Create a new price on the same product
+      const newPriceRes = await axios.post(
+        `${TEST_BASE}/api/v1/prices/create`,
+        {
+          request_id: crypto.randomUUID(),
+          product_id: plan.airwallexProductId,
+          currency: newCurrency,
+          pricing_model: 'FLAT',
+          flat_amount: newAmount,
+          recurring: {
+            period: 1,
+            period_unit: newInterval,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      logInfo('✅ New price created:', newPriceRes.data.id);
+
+      // Try to deactivate the old price (best-effort, may fail if already archived)
+      try {
+        await axios.post(
+          `${TEST_BASE}/api/v1/prices/${plan.airwallexPriceId}/update`,
+          {
+            request_id: crypto.randomUUID(),
+            active: false,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        logInfo('🗑️ Old price deactivated:', plan.airwallexPriceId);
+      } catch (deactivateErr) {
+        logError('⚠️ Could not deactivate old price (continuing):', deactivateErr);
+      }
+
+      // Update MongoDB with new price details
+      plan.airwallexPriceId = newPriceRes.data.id;
+      plan.currency = newCurrency;
+      plan.amount = newAmount;
+      plan.interval = newInterval;
+    }
+
+    // 4️⃣ Update remaining MongoDB fields
     if (name !== undefined) plan.name = name;
     if (description !== undefined) plan.description = description;
-    // if (active !== undefined) plan.status = active ? 'enabled' : 'disabled';
     if (typeof active === 'boolean') {
       plan.status = active ? 'enabled' : 'disabled';
     }
@@ -255,7 +329,7 @@ router.put('/plans/:id', requireSession, async (req, res) => {
 
     res.json(plan);
   } catch (err) {
-    console.error(err.response?.data || err.message);
+    logError('Failed to update plan:', err);
     res.status(500).json({ error: 'Failed to update plan' });
   }
 });
@@ -788,7 +862,7 @@ router.post('/payment-consents', async (req, res) => {
  */
 router.post('/payment-intents', async (req, res) => {
   try {
-    const { amount, currency = 'CNY', merchant_order_id, payment_customer_id } = req.body;
+    const { amount, currency, merchant_order_id, payment_customer_id } = req.body;
 
     logInfo('📥 [payment-intents/create] Incoming request:', req.body);
 
@@ -1311,382 +1385,6 @@ router.post('/subscriptions/provision', async (req, res) => {
     });
   }
 });
-// router.post('/subscriptions/provision', async (req, res) => {
-//   console.log("Provision")
-//   try {
-//     const {
-//       orderId,
-//       cart,
-//       bigcommerceCustomer,
-//       airwallexCustomer,
-//       paymentSourceId,
-//     } = req.body;
-
-//     console.log('📥 [PROVISION] Received request:', {
-//       orderId,
-//       paymentSourceId,
-//       paymentSourceIdPrefix: paymentSourceId?.substring(0, 4),
-//       hasAirwallexCustomer: !!airwallexCustomer,
-//       airwallexCustomerId: airwallexCustomer?.airwallexCustomerId || airwallexCustomer?.id,
-//     });
-
-//     if (!orderId || !cart || !bigcommerceCustomer || !airwallexCustomer) {
-//       return res.status(400).json({
-//         error: 'orderId, cart, bigcommerceCustomer and airwallexCustomer are required',
-//       });
-//     }
-
-//     if (!bigcommerceCustomer.id) {
-//       return res.status(400).json({
-//         error: 'bigcommerceCustomer.id is required',
-//       });
-//     }
-
-
-//     if (!paymentSourceId) {
-//       console.error('❌ [PROVISION] Missing paymentSourceId for AUTO_CHARGE subscription', {
-//         orderId,
-//         airwallexCustomerId: airwallexCustomer?.airwallexCustomerId || airwallexCustomer?.id,
-//         collection_method: 'AUTO_CHARGE',
-//       });
-
-//       return res.status(400).json({
-//         error: 'paymentSourceId is required for AUTO_CHARGE subscription provisioning',
-//         code: 'MISSING_PAYMENT_SOURCE_ID',
-//         details: {
-//           orderId,
-//           collection_method: 'AUTO_CHARGE',
-//           hasAirwallexCustomer: !!airwallexCustomer,
-//           hasBigcommerceCustomer: !!bigcommerceCustomer,
-//         },
-//       });
-//     }
-
-
-//     // Validate paymentSourceId format - must start with 'psrc_'
-//     if (paymentSourceId && !paymentSourceId.startsWith('psrc_')) {
-//       console.error('❌ [PROVISION] Invalid paymentSourceId format:', {
-//         paymentSourceId,
-//         prefix: paymentSourceId?.substring(0, 4),
-//         expected: 'psrc_',
-//       });
-//       return res.status(400).json({
-//         error: `Invalid paymentSourceId format. Expected 'psrc_xxx', got '${paymentSourceId?.substring(0, 4)}xxx'`,
-//         code: 'INVALID_PAYMENT_SOURCE_ID',
-//         received_id: paymentSourceId,
-//         expected_prefix: 'psrc_',
-//         received_prefix: paymentSourceId?.substring(0, 4),
-//       });
-//     }
-    
-//     const airwallexCustomerId =
-//       airwallexCustomer.airwallexCustomerId || airwallexCustomer.id;
-
-//     if (!airwallexCustomerId) {
-//       return res.status(400).json({
-//         error: 'airwallex customer id is required',
-//       });
-//     }
-
-//     const subscriptionProductIds = await getEnabledSubscriptionProductIds();
-//     const subscriptionProducts = findDistinctSubscriptionProducts(
-//       cart,
-//       subscriptionProductIds
-//     );
-
-//     if (subscriptionProducts.length === 0) {
-//       return res.json({
-//         success: true,
-//         provisioned: false,
-//         message: 'No subscription product found in order cart',
-//         subscriptions: [],
-//         subscription: null,
-//       });
-//     }
-//     const token = await getAirwallexToken();
-//     const { upsertSubscriptionProjection } = require('../lib/airwallex/subscriptionAdmin');
-//     const subscriptions = [];
-//     const errors = [];
-
-//     for (const subscriptionProduct of subscriptionProducts) {
-//       const productId = Number(subscriptionProduct.product_id);
-//       try {
-//         const plan = await SubscriptionPlan.findOne({
-//           bigcommerceProductId: productId,
-//         });
-
-//       if (!plan) {
-//         errors.push({
-//           productId,
-//           error: 'No SubscriptionPlan found for BigCommerce product',
-//         });
-//         continue;
-//       }
-//       if (plan.status === 'disabled' || plan.active === false) {
-//         errors.push({
-//           productId,
-//           error: 'SubscriptionPlan is disabled',
-//         });
-//         continue;
-//       }
-
-//     // const existing = await CustomerSubscription.findOne({
-//     //   bigcommerceProductId: Number(subscriptionProduct.product_id),
-//     // });
-
-//       const existing = await CustomerSubscription.findOne({
-//         airwallexCustomerId,
-//         airwallexProductId: plan.airwallexProductId,
-//       });
-
-//       if (existing) {
-//         subscriptions.push(existing);
-//         continue;
-//       }
-
-//     let trialEndsAt = null;
-//     if (plan.trialDays && plan.trialDays > 0) {
-//       // Use UTC + start of day to avoid timezone/daylight saving issues
-//       trialEndsAt = dayjs.utc()
-//         .add(plan.trialDays + 1, 'day')
-//         .startOf('day')  // Set to 00:00:00 to match Airwallex example format
-//         .format('YYYY-MM-DDTHH:mm:ss') + '+0000';  // [Z] outputs literal "Z" for UTC
-      
-//       console.log('🧮 Calculated trial_ends_at:', trialEndsAt, `(+$ {plan.trialDays} days)`);
-//       console.log('🔍 Debug: Current UTC time:', dayjs.utc().format('YYYY-MM-DDTHH:mm:ss')+ '+0000');
-//       console.log('🔍 Debug: Trial start (created_at will be set by Airwallex)');
-//     }
-
-
-//         const subscriptionPayload = {
-//       request_id: crypto.randomUUID(),
-//       billing_customer_id: airwallexCustomerId,
-//       collection_method: 'AUTO_CHARGE',
-//       currency: plan.currency,
-//       items: [
-//         {
-//           price_id: plan.airwallexPriceId,
-//           quantity: 1,
-//         },
-//       ],
-//       duration: {
-//         period_unit: plan.interval,
-//         period: 1,
-//       },
-//       ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
-//       legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
-//       linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
-//       payment_source_id: paymentSourceId,
-//       metadata: {
-//         bigcommerceOrderId: String(orderId),
-//         bigcommerceCustomerId: String(bigcommerceCustomer.id),
-//         bigcommerceProductId: String(productId),
-//       },
-//     };
-
-//     console.log(
-//       '📤 [SUBSCRIPTION CREATE] Sending payload:\n',
-//       JSON.stringify(
-//         {
-//           billing_customer_id: subscriptionPayload.billing_customer_id,
-//           collection_method: subscriptionPayload.collection_method,
-//           currency: subscriptionPayload.currency,
-//           items: subscriptionPayload.items,
-//           duration: subscriptionPayload.duration,
-//           trial_ends_at: subscriptionPayload.trial_ends_at || null,
-//           legal_entity_id: subscriptionPayload.legal_entity_id,
-//           linked_payment_account_id: subscriptionPayload.linked_payment_account_id,
-//           payment_source_id: subscriptionPayload.payment_source_id,
-//           metadata: subscriptionPayload.metadata,
-//         },
-//         null,
-//         2
-//       )
-//     );
-
-//     const subscriptionRes = await axios.post(
-//       `${TEST_BASE}/api/v1/subscriptions/create`,
-//       subscriptionPayload,
-//       {
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//           'Content-Type': 'application/json',
-//         },
-//       }
-//     );
-//     // const subscriptionRes = await axios.post(
-//     //   `${TEST_BASE}/api/v1/subscriptions/create`,
-//     //   {
-//     //     request_id: crypto.randomUUID(),
-//     //     billing_customer_id: airwallexCustomerId,
-//     //     // collection_method: 'OUT_OF_BAND',
-//     //     collection_method: 'AUTO_CHARGE',
-//     //     currency: plan.currency,
-//     //     items: [
-//     //       {
-//     //         price_id: plan.airwallexPriceId,
-//     //         quantity: 1,
-//     //       },
-//     //     ],
-//     //     duration: {
-//     //       period_unit: plan.interval,
-//     //       period: 1,
-//     //     },
-//     //     ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
-//     //     legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
-//     //     linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
-//     //     payment_source_id: paymentSourceId,
-//     //     metadata: {
-//     //       bigcommerceOrderId: String(orderId),
-//     //       bigcommerceCustomerId: String(bigcommerceCustomer.id),
-//     //       bigcommerceProductId: String(productId),
-//     //     },
-//     //   },
-//     //   {
-//     //     headers: {
-//     //       Authorization: `Bearer ${token}`,
-//     //       'Content-Type': 'application/json',
-//     //     },
-//     //   }
-//     // );
-
-//     console.log('🔍 [SUBSCRIPTION CREATE] Request payload sent:', {
-//       billing_customer_id: airwallexCustomerId,
-//       price_id: plan.airwallexPriceId,
-//       currency: plan.currency,
-//       interval: plan.interval,
-//       trialDays: plan.trialDays,
-//       trial_period: plan.trialDays > 0 ? { period: plan.trialDays, period_unit: 'DAY' } : 'NOT INCLUDED',
-//       payment_source_id: paymentSourceId?.substring(0, 10) + '...',
-//     });
-
-//     console.log('📥 [SUBSCRIPTION CREATE] Airwallex response:', {
-//       status: subscriptionRes.status,
-//       subscription_id: subscriptionRes.data?.id,
-//       status_value: subscriptionRes.data?.status,
-//       trial_ends_at: subscriptionRes.data?.trial_ends_at,
-//       next_billing_at: subscriptionRes.data?.next_billing_at,
-//       created_at: subscriptionRes.data?.created_at,
-//       raw_response: JSON.stringify(subscriptionRes.data, null, 2),
-//     });
-
-//     //  Verify trial was applied
-//     if (plan.trialDays > 0) {
-//       if (subscriptionRes.data?.status === 'IN_TRIAL') {
-//         console.log(' Trial successfully applied! Status: trialing');
-//       } else {
-//         console.warn('⚠️ Expected status "IN_TRIAL" but got:', subscriptionRes.data?.status);
-//       }
-      
-//       if (subscriptionRes.data?.trial_ends_at) {
-//         console.log(' trial_ends_at present:', subscriptionRes.data.trial_ends_at);
-//       } else {
-//         console.warn('⚠️ trial_ends_at missing from response - trial may not have been applied');
-//       }
-//     }
-
-//     const awSubscription = subscriptionRes.data;
-
-//     const saved = await CustomerSubscription.create({
-//       bigcommerceOrderId: Number(orderId),
-//       bigcommerceCustomerId: Number(bigcommerceCustomer.id),
-//       bigcommerceProductId: productId,
-
-//       airwallexCustomerId,
-//       airwallexProductId: plan.airwallexProductId,
-//       airwallexPriceId: plan.airwallexPriceId,
-//       airwallexSubscriptionId: awSubscription.id,
-
-//       planName: plan.name,
-//       status: awSubscription.status || 'active',
-
-//       amount: plan.amount,
-//       currency: plan.currency,
-//       interval: plan.interval,
-//       trialDays: plan.trialDays,
-
-//       startedAt: awSubscription.created_at
-//         ? dayjs(awSubscription.created_at).toDate()
-//         : new Date(),
-//       nextBillingAt: awSubscription.next_billing_at
-//         ? dayjs(awSubscription.next_billing_at).toDate()
-//         : null,
-
-//       metadata: {
-//         source: 'bigcommerce-checkout',
-//       },
-//     });
-
-//     const subscriptionProjection = await upsertSubscriptionProjection(
-//       saved,
-//       {
-//         lastSyncedAt: new Date(),
-//         syncStatus: 'ok',
-//       }
-//     );
-
-//     console.log('[order-flow] Subscription projection upserted:', {
-//       subscriptionId: subscriptionProjection._id,
-//       externalSubscriptionId: subscriptionProjection.externalSubscriptionId,
-//     });
-
-//         subscriptions.push(saved);
-//             } catch (productErr) {
-//         const errorBody = productErr.response?.data || null;
-
-//         console.error(
-//           '❌ [PROVISION][PRODUCT ERROR]',
-//           JSON.stringify(
-//             {
-//               productId,
-//               status: productErr.response?.status || 500,
-//               message: productErr.message,
-//               data: errorBody,
-//             },
-//             null,
-//             2
-//           )
-//         );
-
-//         errors.push({
-//           productId,
-//           status: productErr.response?.status || 500,
-//           error: errorBody || productErr.message,
-//         });
-//       }
-//     }
-
-//     if (subscriptions.length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         provisioned: false,
-//         error: 'Failed to provision any subscriptions for this order',
-//         subscriptions: [],
-//         subscription: null,
-//         errors,
-//       });
-//     }
-
-//     return res.status(201).json({
-//       success: true,
-//       provisioned: true,
-//       subscriptions,
-//       subscription: subscriptions[0] || null,
-//       errors,
-//     });
-//   } catch (err) {
-//     console.error(
-//       'Provision subscription error:',
-//       err.response?.status,
-//       err.response?.data || err.message
-//     );
-
-//     return res.status(err.response?.status || 500).json({
-//       error: err.response?.data || 'Failed to provision subscription',
-//     });
-//   }
-// });
-
 
 /**
  * CREATE PAYMENT SOURCE (for AUTO_CHARGE subscriptions)
