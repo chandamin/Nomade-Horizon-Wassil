@@ -707,16 +707,16 @@ export default function CheckoutLayout({
 
 
       {/* ================= MAIN CONTENT ================= */}
-      <main className="max-w-[1200px] mx-auto py-8 px-[28px] md:px-[35px] flex pt-0 flex-col md:flex-row">
+      <main className="max-w-[1200px] mx-auto py-8 px-[28px] md:px-[35px] flex pt-0 flex-col md:flex-row flex-wrap">
         {/* ================= LEFT COLUMN ================= */}
         <section className="nr-lft-prt w-[100%] lg:w-[66.6666666667%] lg:pr-[78px] pr-0 md:w-[58.3333333333%]">
           {/* ================= PROMO BANNER (using old styles but new logic) ================= */}
           <div className="max-w-[1200px] mx-auto">
-            <div className="nr-date-time-wr text-white bg-[#3b4450] rounded-[5px] py-[8px] px-[10px] text-center">
+            <div className="nr-date-time-wr text-white bg-[#3b4450] rounded-[5px] flex-wrap py-[20px] px-[10px] gap-[5px] text-center flex justify-center align-middle">
               <p className="nr-date-time-txt-fir text-[14px] md:text-[16px]">
                 Votre commande est réservée pour
               </p>
-              <p className="nr-date-time-txt-sec text-[13px] md:text-[16px] mt-[5px]">
+              <p className="nr-date-time-txt-sec text-[13px] md:text-[16px]">
                 <span className="text-[#f4d54c] font-[600]">{minutes}:{seconds}</span> Poursuivre votre commande
                 {/* Valable ce <b>{formattedDate}</b> */}
               </p>
@@ -926,7 +926,7 @@ export default function CheckoutLayout({
             <p className="text-[15px] text-[#747474]">Profitez d'une expérience d'achat exceptionnelle, retours sous 30 jours.</p>
           </div>
           {/* third-part */}
-          <div className="nr-rght-bottom-info-cntnt py-[30px] border-b">
+          <div className="nr-rght-bottom-info-cntnt py-[30px]">
             <div className="nr-info-hed-prt flex gap-[8px] items-center text-[18px] font-[600] pb-[8px]">
               <img src="../images/delivery-truck-icon.webp" alt="shield" className="h-[40px] w-[40px] object-contain" />
               <h3>Suivi de commande</h3>
@@ -956,13 +956,18 @@ export default function CheckoutLayout({
               </div>
             </div> */}
           {/* </div> */}
-          <div className="nr-footer-links flex flex-col gap-[10px] items-center">
+        </aside>
+        <footer className="nr-foote w-[100%] border-t pt-[32px]">
+          {/* <div className="nr-footer-hed pt-[10px] pb-[20px]">
+            <h2 className="text-center font-[600]">Policies</h2>
+          </div> */}
+          <div className="nr-footer-links flex gap-[10px] items-center justify-between flex-wrap">
             <a href="https://nomade-horizon.com/conditions-generales/" className="liks text-[12px] text-[#656565]">Conditions Générales</a>
             <a href="https://nomade-horizon.com/politique-de-confidentialite/" className="liks text-[12px] text-[#656565]">Politique de confidentialité</a>
             <a href="https://nomade-horizon.com/politique-d-expedition/" className="liks text-[12px] text-[#656565]">Politiques et Tarifs d'expédition</a>
             <a href="https://nomade-horizon.com/politique-de-retour-et-de-remboursement/" className="liks text-[12px] text-[#656565]">Échange et Retour</a>
           </div>
-        </aside>
+        </footer>
       </main>
 
       {/* ================= FOOTER ================= */}

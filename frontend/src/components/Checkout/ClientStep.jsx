@@ -275,7 +275,7 @@ export default function ClientStep({
             disabled={loading || isDisabled}
           />
           <label htmlFor="email-address" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-            Email Address
+            Adresse e-mail
           </label>
           
           {/* {emailError && (

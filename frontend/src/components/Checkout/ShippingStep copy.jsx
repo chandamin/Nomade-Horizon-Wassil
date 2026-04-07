@@ -88,6 +88,7 @@ export default function ShippingStep({
                   }
                   disabled={isLoading}
                 >
+                  <option value="select">Sélectionnez votre pays</option>
                   <option value="France">France</option>
                   <option value="Belgium">Belgium</option>
                   <option value="Luxembourg">Luxembourg</option>

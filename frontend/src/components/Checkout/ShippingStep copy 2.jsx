@@ -65,14 +65,7 @@ export default function ShippingStep({
     }
   }, [data, customerData]);
 
-  // Use a sentinel value so the first time all fields are valid the fetch always fires,
-  // even though country starts pre-filled as "France" and never triggers a change event.
-  const previousAddressKeyRef = useRef("__INIT__");
-  useEffect(() => {
-    if (active) {
-      lastFetchedPayloadRef.current = "";
-    }
-  }, [active]);
+  const previousAddressKeyRef = useRef("");
 
   useEffect(() => {
     if (!active) return;
@@ -85,16 +78,12 @@ export default function ShippingStep({
     });
 
     if (!hasRequiredAddressForQuotes) {
-      // Do NOT update previousAddressKeyRef here — we only want to track
-      // transitions between valid address states. If we stored the incomplete
-      // key here, then once all fields are filled the key would already match
-      // and the reset (which clears lastFetchedPayloadRef) would be skipped,
-      // so the fetch effect would see "same payload already fetched" and bail.
+      previousAddressKeyRef.current = addressKey;
       return;
     }
 
     if (
-      previousAddressKeyRef.current !== "" &&
+      previousAddressKeyRef.current &&
       previousAddressKeyRef.current !== addressKey
     ) {
       setForm((prev) => ({
@@ -181,7 +170,8 @@ export default function ShippingStep({
 
     if (!hasRequiredAddressForQuotes) {
       console.log("ℹ️ Waiting for required delivery fields before fetching shipping quotes");
-      
+      setShippingOptions?.([]);
+      lastFetchedPayloadRef.current = "";
       return;
     }
 
@@ -227,7 +217,7 @@ export default function ShippingStep({
       } finally {
         setIsFetchingShipping(false);
       }
-    }, 800);
+    }, 500);
 
     return () => {
       if (shippingDebounceRef.current) {
@@ -342,7 +332,6 @@ export default function ShippingStep({
                   }
                   disabled={isLoading}
                 >
-                  <option value="select">Sélectionnez votre pays</option>
                   <option value="France">France</option>
                   <option value="Belgium">Belgium</option>
                   <option value="Luxembourg">Luxembourg</option>
@@ -688,3 +677,4 @@ function Header({ step, title, onEdit, firstName, lastName, phone, addressLine, 
     </div>
   );
 }
+
