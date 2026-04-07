@@ -305,11 +305,19 @@ export default function ShippingStep({
     onContinue(form);
   };
 
+  const shippingOptionTranslations = {
+    "Free Delivery": "GRATUIT",
+    "Standard Shipping": "Livraison standard",
+    "Express Shipping": "Livraison express",
+    "Insurance": "Garantie de transport",
+    // add all other options here
+  };
+
   /* ================= ACTIVE VIEW (when step is active) ================= */
   if (active) {
     return (
       <section className="nr-second-step border-b pb-4">
-        <Header step={2} title="Delivery" />
+        <Header step={2} title="Livraison" />
 
         {/* ADDRESS FORM */}
         <div className="nr-sec-st-cntnt-wr">
@@ -349,7 +357,7 @@ export default function ShippingStep({
                 required
               />
               <label htmlFor="firstname" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                First name *
+                Prénom *
               </label>
             </div>
             
@@ -366,7 +374,7 @@ export default function ShippingStep({
                 required
               />
               <label htmlFor="name" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                Name *
+                Nom *
               </label>
             </div>
             
@@ -383,7 +391,7 @@ export default function ShippingStep({
                 required
               />
               <label htmlFor="address" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                Address *
+                Adresse *
               </label>
             </div>
             
@@ -400,7 +408,7 @@ export default function ShippingStep({
                 required
               />
               <label htmlFor="city" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                City *
+                Ville *
               </label>
             </div>
             
@@ -417,7 +425,7 @@ export default function ShippingStep({
                 required
               />
               <label htmlFor="postal-code" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                Postal code *
+                Code postal *
               </label>
             </div>
             
@@ -433,7 +441,7 @@ export default function ShippingStep({
                 disabled={isLoading}
               />
               <label htmlFor="phone" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                Telephone (if the postman needs to contact you)
+                Téléphone (si le facteur a besoin de vous contacter)
               </label>
               {/* {customerData?.email && !form.phone && (
                 <div className="text-xs text-gray-500 mt-1">
@@ -445,7 +453,7 @@ export default function ShippingStep({
 
           {/* DELIVERY METHODS */}
           <div className="mt-6 text-sm">
-            <div className="mb-3 text-[15px] font-[700]">Delivery method</div>
+            <div className="mb-3 text-[15px] font-[700]">Livraison rapide & sécurisée</div>
 
             {!hasRequiredAddressForQuotes ? (
                 <div className="text-sm text-gray-600 border rounded p-4 bg-gray-50">
@@ -532,7 +540,7 @@ export default function ShippingStep({
                             disabled={isLoading || isFetchingShipping}
                           />
                           <p className="nr-payment-option-hed text-[15px] font-[700]">
-                            {isFreeOption ? "Free Delivery" : option.description}
+                            {isFreeOption ? shippingOptionTranslations["Free Delivery"] : shippingOptionTranslations[option.description] || option.description}
                           </p>
                         </div>
                         <span className="font-medium">
@@ -560,7 +568,7 @@ export default function ShippingStep({
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
-                Saving address...
+                Enregistrement de l’adresse…
               </span>
             ) : (
               'CONTINUER'
@@ -569,7 +577,7 @@ export default function ShippingStep({
           
           {customerData?.customerId && (
             <div className="mt-3 text-xs text-gray-600">
-              <p>Address will be saved to your customer profile.</p>
+              <p>L’adresse sera enregistrée dans votre profil client.</p>
             </div>
           )}
         </div>
@@ -593,7 +601,7 @@ export default function ShippingStep({
       <section className="nr-second-step border-b pb-4">
         <Header
           step={2}
-          title="Delivery"
+          title="Livraison"
           onEdit={onEdit}
           firstName={data.firstName}
           lastName={data.lastName}
@@ -611,7 +619,7 @@ export default function ShippingStep({
   /* ================= DEFAULT COLLAPSED VIEW (when step is not reached or no data) ================= */
   return (
     <section className="nr-second-step border-b pb-4">
-      <Header step={2} title="Delivery" />
+      <Header step={2} title="Livraison" />
     </section>
   );
 }

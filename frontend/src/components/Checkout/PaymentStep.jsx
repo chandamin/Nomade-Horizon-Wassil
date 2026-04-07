@@ -404,20 +404,20 @@ export default function PaymentStep({
   if (!active) {
     return (
       <section className="pb-4">
-        <Header step={3} title="Payment" />
+        <Header step={3} title="Paiement" />
       </section>
     );
   }
 
   return (
     <section>
-      <Header step={3} title="Payment" />
+      <Header step={3} title="Paiement" />
 
       <div className="mt-4">
         <div className="border rounded p-4 bg-[#f5f5f5] pb-[35px]">
           <label className="flex items-center gap-2 text-sm font-medium mb-4">
             <input type="radio" checked readOnly />
-            Card payment
+            Paiement par carte
           </label>
 
           {/* {loading && (

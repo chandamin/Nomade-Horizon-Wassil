@@ -714,11 +714,11 @@ export default function CheckoutLayout({
           <div className="max-w-[1200px] mx-auto">
             <div className="nr-date-time-wr text-white bg-[#3b4450] rounded-[5px] py-[8px] px-[10px] text-center">
               <p className="nr-date-time-txt-fir text-[14px] md:text-[16px]">
-                Félicitations, votre promo a été appliquée.
+                Votre commande est réservée pour
               </p>
               <p className="nr-date-time-txt-sec text-[13px] md:text-[16px] mt-[5px]">
-                Il vous reste <span className="text-[#f4d54c] font-[600]">{minutes}:{seconds}</span> pour en bénéficier.
-                Valable ce <b>{formattedDate}</b>
+                <span className="text-[#f4d54c] font-[600]">{minutes}:{seconds}</span> Poursuivre votre commande
+                {/* Valable ce <b>{formattedDate}</b> */}
               </p>
             </div>
           </div>
@@ -848,16 +848,22 @@ export default function CheckoutLayout({
                         />
                       </div>
                       <label htmlFor="vip-club" className="text-[16px] text-white">
-                        VIP CLUB ACCESS - NOMADE HORIZON
+                        VIP CLUB ACCESS
                       </label>
                     </div>
                   </div>
 
                   <div className="nr-wrranty-text pt-[15px]">
                     <p className="text-[13px]">
-                      By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Nomade Horizon.
-                      After the trial, the subscription renews automatically at £12.99/month.
-                      This membership is non-binding and can be cancelled at any time by contacting support.
+                      By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Nomade-Horizon. After the trial, the subscription renews automatically at £12.99/month. This membership is non-binding and can be cancelled at any time by contacting support. Consult the {" "}
+                      <a
+                        href="https://nomade-horizon.com/vip-club/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#007bff", textDecoration: "underline" }}
+                      >
+                        /vip-club 
+                      </a> policy for more information.
                     </p>
                   </div>
                 </div>
@@ -899,7 +905,7 @@ export default function CheckoutLayout({
               <img src="../images/shield-2.webp" alt="shield" className="h-[40px] w-[40px] object-contain" />
               <h3>Service Client</h3>
             </div>
-            <p className="pb-[20px] text-[15px] text-[#747474]">Nous répondons à vos questions du lundi au vendredi de 9h à 18h.</p>
+            <p className="pb-[20px] text-[15px] text-[#747474]">Vous pouvez nous joindre du lundi au vendredi, de 8h00 à 17h00.</p>
             <div className="nr-contact-info">
               <div className="nr-info-item flex gap-[8px] align-middle pb-[16px]">
                 <img src="../images/phone-icon.webp" alt="phone" className="h-[24px] w-[24px] object-contain" />
@@ -915,22 +921,22 @@ export default function CheckoutLayout({
           <div className="nr-rght-bottom-info-cntnt py-[30px] border-b">
             <div className="nr-info-hed-prt flex gap-[8px] items-center text-[18px] font-[600] pb-[8px]">
               <img src="../images/calendar-2.webp" alt="shield" className="h-[40px] w-[40px] object-contain" />
-              <h3>Satisfait ou remboursé 30 jours</h3>
+              <h3>Expérience d'achat</h3>
             </div>
-            <p className="text-[15px] text-[#747474]">Insatisfait ? Remboursement facile et sans condition. Votre satisfaction est notre priorité.</p>
+            <p className="text-[15px] text-[#747474]">Profitez d'une expérience d'achat exceptionnelle, retours sous 30 jours.</p>
           </div>
           {/* third-part */}
           <div className="nr-rght-bottom-info-cntnt py-[30px] border-b">
             <div className="nr-info-hed-prt flex gap-[8px] items-center text-[18px] font-[600] pb-[8px]">
               <img src="../images/delivery-truck-icon.webp" alt="shield" className="h-[40px] w-[40px] object-contain" />
-              <h3>Expédition en 48h</h3>
+              <h3>Suivi de commande</h3>
             </div>
-            <p className="text-[15px] text-[#747474]">Bénéficiez d'une expédition ultra-rapide avec suivi en seulement 48 heures.</p>
+            <p className="text-[15px] text-[#747474]">Bénéficiez du suivi de votre commande en temps réel.</p>
           </div>
-          <div className="nr-review-prt py-[30px]">
-            <h2 className="text-[18px] font-[600]">Ce que disent nos clients</h2>
+          {/* <div className="nr-review-prt py-[30px]">
+            <h2 className="text-[18px] font-[600]">Ce que disent nos clients</h2> */}
             {/* First Review */}
-            <div className="nr-review-outer-wr">
+            {/* <div className="nr-review-outer-wr">
               <div className="nr-review-wr bg-[#f4f4f4] p-[15px] rounded-[12px] mt-[17px] relative before:absolute before:content-[''] before:w-[30px] before:h-[30px] before:bg-[#f4f4f4] before:left-[35px] before:bottom-[-5px] before:rotate-[45deg]">
                 <p className="text-[14px] text-center">"Nomade Horizon est mon magasin en ligne favoris. Il y a beaucoup de produits innovants à très bon prix. J'achète régulièrement sur ce site et en suis très satisfait. Je le recommande totalement"</p>
               </div>
@@ -938,9 +944,9 @@ export default function CheckoutLayout({
                 <p className="text-[14px] font-[600]">Nicolas D. - Paris</p>
                 <img src="../images/star.webp" alt="star" className="object-contain" />
               </div>
-            </div>
+            </div> */}
             {/* Second Review */}
-            <div className="nr-review-outer-wr border-b">
+            {/* <div className="nr-review-outer-wr border-b">
               <div className="nr-review-wr bg-[#f4f4f4] p-[15px] rounded-[12px] mt-[17px] relative before:absolute before:content-[''] before:w-[30px] before:h-[30px] before:bg-[#f4f4f4] before:left-[35px] before:bottom-[-5px] before:rotate-[45deg]">
                 <p className="text-[14px] text-center">"Très bonne boutique, large choix, on y trouve tout à tout petit prix. Je recommande totalement Nomade Horizon pour son sérieux."</p>
               </div>
@@ -948,13 +954,13 @@ export default function CheckoutLayout({
                 <p className="text-[14px] font-[600]">Marie P. - Marseille</p>
                 <img src="../images/star.webp" alt="star" className="object-contain" />
               </div>
-            </div>
-          </div>
+            </div> */}
+          {/* </div> */}
           <div className="nr-footer-links flex flex-col gap-[10px] items-center">
-            <a href="" className="liks text-[12px] text-[#656565]">Conditions Générales</a>
-            <a href="" className="liks text-[12px] text-[#656565]">Politiques et Tarifs D'expédition</a>
-            <a href="" className="liks text-[12px] text-[#656565]">Politique de confidentialité</a>
-            <a href="" className="liks text-[12px] text-[#656565]">Echange et Retour</a>
+            <a href="https://nomade-horizon.com/conditions-generales/" className="liks text-[12px] text-[#656565]">Conditions Générales</a>
+            <a href="https://nomade-horizon.com/politique-de-confidentialite/" className="liks text-[12px] text-[#656565]">Politique de confidentialité</a>
+            <a href="https://nomade-horizon.com/politique-d-expedition/" className="liks text-[12px] text-[#656565]">Politiques et Tarifs d'expédition</a>
+            <a href="https://nomade-horizon.com/politique-de-retour-et-de-remboursement/" className="liks text-[12px] text-[#656565]">Échange et Retour</a>
           </div>
         </aside>
       </main>

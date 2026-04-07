@@ -115,3 +115,5 @@
 [2026-04-07T09:27:39.957Z] ERROR: Cart fetch failed: 403 {"status":403,"title":"You don't have a required scope to access the endpoint","type":"https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes","errors":{}}
 [2026-04-07T09:27:40.041Z] api cart-data called
 [2026-04-07T09:27:40.410Z] ERROR: Cart fetch failed: 403 {"status":403,"title":"You don't have a required scope to access the endpoint","type":"https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes","errors":{}}
+[2026-04-07T09:28:14.279Z] MongoDB connected
+[2026-04-07T09:28:14.289Z] Server running on port 4000

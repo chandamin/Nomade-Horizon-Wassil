@@ -112,7 +112,7 @@ export default function ShippingStep({
                 required
               />
               <label htmlFor="firstname" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                First name *
+                Prénom *
               </label>
             </div>
             
@@ -129,7 +129,7 @@ export default function ShippingStep({
                 required
               />
               <label htmlFor="name" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                Name *
+                Nom *
               </label>
             </div>
             
@@ -146,7 +146,7 @@ export default function ShippingStep({
                 required
               />
               <label htmlFor="address" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                Address *
+                Adresse *
               </label>
             </div>
             
@@ -163,7 +163,7 @@ export default function ShippingStep({
                 required
               />
               <label htmlFor="city" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                City *
+                Ville *
               </label>
             </div>
             
@@ -180,7 +180,7 @@ export default function ShippingStep({
                 required
               />
               <label htmlFor="postal-code" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                Postal code *
+                Code postal *
               </label>
             </div>
             
@@ -196,7 +196,7 @@ export default function ShippingStep({
                 disabled={isLoading}
               />
               <label htmlFor="phone" className="nr-input-label text-[14px] text-[#666] top-[unset]">
-                Telephone (if the postman needs to contact you)
+                Téléphone (si le facteur a besoin de vous contacter)
               </label>
               {/* {customerData?.email && !form.phone && (
                 <div className="text-xs text-gray-500 mt-1">

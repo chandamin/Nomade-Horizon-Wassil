@@ -281,13 +281,13 @@ export default function OrderSummary({
 
         <div className="px-[19.5px] pb-[19.5px]">
           <label className="block text-xs text-gray-600 mb-2">
-            Promotional code
+            Code promotionnel
           </label>
 
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Enter your code"
+              placeholder="Entrez votre code"
               value={couponCode}
               onChange={(e) => setCouponCode(e.target.value)}
               className="flex-1 border rounded px-3 py-2 text-sm"
@@ -343,7 +343,7 @@ export default function OrderSummary({
 
         <div className="space-y-2 text-gray-700 p-[19.5px] border-t">
           <div className="flex justify-between">
-            <span>Subtotal</span>
+            <span>Sous-total</span>
             <span>{formatPrice(subtotal)}</span>
           </div>
 
@@ -384,12 +384,12 @@ export default function OrderSummary({
             ))}
 
           <div className="flex justify-between font-medium">
-            <span>Discount</span>
+            <span>Remise</span>
             <span>-{formatPrice(discount)}</span>
           </div>
 
           <div className="flex justify-between">
-            <span>Delivery</span>
+            <span>Livraison</span>
             <span>{formatPrice(deliveryPrice)}</span>
           </div>
 
