@@ -1,0 +1,8 @@
+[2026-04-07T04:47:48.285Z] MongoDB connected
+[2026-04-07T04:47:48.303Z] Server running on port 4000
+[2026-04-07T04:47:59.277Z] MongoDB connected
+[2026-04-07T04:47:59.294Z] Server running on port 4000
+[2026-04-07T04:48:48.274Z] ERROR: MongoDB connection error Error: querySrv ECONNREFUSED _mongodb._tcp.subscriptioncheckout.8wa7ndm.mongodb.net
+[2026-04-07T04:48:53.502Z] ERROR: MongoDB connection error Error: querySrv ECONNREFUSED _mongodb._tcp.subscriptioncheckout.8wa7ndm.mongodb.net
+[2026-04-07T04:49:04.522Z] MongoDB connected
+[2026-04-07T04:49:04.539Z] Server running on port 4000
