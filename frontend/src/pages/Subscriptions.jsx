@@ -336,9 +336,9 @@ export default function Subscriptions({ environment = 'sandbox' }) {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1.5">
-                          <ActionBtn color="blue" disabled={busy} onClick={() => syncSubscription(sub._id)}>
+                          {/* <ActionBtn color="blue" disabled={busy} onClick={() => syncSubscription(sub._id)}>
                             {busy ? '…' : 'Sync'}
-                          </ActionBtn>
+                          </ActionBtn> */}
 
                           {sub.status !== 'cancelled' && (
                             <ActionBtn
@@ -421,9 +421,9 @@ export default function Subscriptions({ environment = 'sandbox' }) {
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2">
-                  <ActionBtn color="blue" disabled={busy} onClick={() => syncSubscription(sub._id)}>
+                  {/* <ActionBtn color="blue" disabled={busy} onClick={() => syncSubscription(sub._id)}>
                     {busy ? 'Working…' : 'Sync'}
-                  </ActionBtn>
+                  </ActionBtn> */}
 
                   {sub.status !== 'cancelled' && (
                     <ActionBtn
