@@ -51,22 +51,27 @@ export default function CheckoutLayout({
   /**
    * activeStep controls which section is expanded.
    * Order: client → delivery → payment
-   * State is hydrated from sessionStorage on mount so it survives reloads.
    */
+
   const savedState = loadFromSession();
 
-  const [activeStep, setActiveStep] = useState(savedState?.activeStep || "client");
+  const [activeStep, setActiveStep] = useState("client");
   const [isMobileSummaryOpen, setIsMobileSummaryOpen] = useState(false);
-  const [clientData, setClientData] = useState(savedState?.clientData || {});
-  const [deliveryData, setDeliveryData] = useState(savedState?.deliveryData || {});
-  const [paymentData, setPaymentData] = useState(savedState?.paymentData || {});
-  const [customerId, setCustomerId] = useState(savedState?.customerId || null);
+
+  /**
+   * Static state holders for now
+   * (will be hydrated later via BigCommerce SDK)
+   */
+  const [clientData, setClientData] = useState({});
+  const [deliveryData, setDeliveryData] = useState({});
+  const [paymentData, setPaymentData] = useState({});
+  const [customerId, setCustomerId] = useState(null);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [bigcommerceCustomer, setBigcommerceCustomer] = useState(savedState?.bigcommerceCustomer || null);
-  const [airwallexCustomer, setAirwallexCustomer] = useState(savedState?.airwallexCustomer || null);
+  const [bigcommerceCustomer, setBigcommerceCustomer] = useState(null);
+  const [airwallexCustomer, setAirwallexCustomer] = useState(null);
   const navigate = useNavigate();
-  const [shippingOptions, setShippingOptions] = useState(savedState?.shippingOptions || []);
+  const [shippingOptions, setShippingOptions] = useState([]);
   const [orderComplete, setOrderComplete] = useState(false);
   const [createdOrder, setCreatedOrder] = useState(null);
   const [checkoutCart, setCheckoutCart] = useState(cart);
@@ -78,7 +83,7 @@ export default function CheckoutLayout({
   
 
   useEffect(() => {
-    setCheckoutCart(prev => prev ?? cart);
+    setCheckoutCart(cart);
   }, [cart]);
   const VIP_PRODUCT_ID = 268; // replace
   const fallbackSubscriptionProductIds = [...new Set([
@@ -141,18 +146,9 @@ export default function CheckoutLayout({
     }
   }, [vipSelected, cart?.lineItems]);
 
-  // Timer logic — persisted via a start timestamp so it survives reloads
+  // Timer logic from working version
   const DISCOUNT_DURATION = 10 * 60; // 10 minutes in seconds
-  const [timeLeft, setTimeLeft] = useState(() => {
-    const TIMER_KEY = "nh_checkout_timer_start";
-    let start = Number(sessionStorage.getItem(TIMER_KEY));
-    if (!start) {
-      start = Date.now();
-      sessionStorage.setItem(TIMER_KEY, String(start));
-    }
-    const elapsed = Math.floor((Date.now() - start) / 1000);
-    return Math.max(DISCOUNT_DURATION - elapsed, 0);
-  });
+  const [timeLeft, setTimeLeft] = useState(DISCOUNT_DURATION);
 
   useEffect(() => {
     let mounted = true;
@@ -325,9 +321,8 @@ export default function CheckoutLayout({
       customerId,
       bigcommerceCustomer,
       airwallexCustomer,
-      shippingOptions,
     });
-  }, [activeStep, clientData, deliveryData, paymentData, customerId, bigcommerceCustomer, airwallexCustomer, shippingOptions]);
+  }, [activeStep, clientData, deliveryData, paymentData, customerId, bigcommerceCustomer, airwallexCustomer]);
 
 
   useEffect(() => {
@@ -693,8 +688,6 @@ export default function CheckoutLayout({
             console.warn('⚠️ Failed to clear cart after order creation:', clearErr.message);
           }
 
-          clearCheckoutSession();
-          sessionStorage.removeItem("nh_checkout_timer_start");
           navigate("/thank-you", {
             state: {
               order: {

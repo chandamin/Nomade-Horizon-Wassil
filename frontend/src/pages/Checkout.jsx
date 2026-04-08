@@ -575,8 +575,11 @@ const removeVipFromCart = async (cartId) => {
           return;
         }
 
-        if (cartId) {
-          await fetchCartById(cartId);
+        const persistedCartId = sessionStorage.getItem("nh_cart_id");
+        const resolvedCartId = cartId || persistedCartId;
+
+        if (resolvedCartId) {
+          await fetchCartById(resolvedCartId);
         } else if (cartDataParam) {
           try {
             const decodedCartData = JSON.parse(decodeURIComponent(cartDataParam));
@@ -640,6 +643,7 @@ const removeVipFromCart = async (cartId) => {
     console.log('📦 Cart data:', data);
 
     setCart(data);
+    sessionStorage.setItem("nh_cart_id", cartId);
     setLoading(false);
   } catch (err) {
     console.error('❌ Cart fetch error:', err);

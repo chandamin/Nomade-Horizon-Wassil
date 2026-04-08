@@ -7,29 +7,6 @@ import ThankYouStep from "./ThankYouStep";
 import { useNavigate } from "react-router-dom";
 
 
-// Session storage utilities for checkout persistence
-const CHECKOUT_SESSION_KEY = "nh_checkout_state";
-const saveToSession = (data) => {
-  try {
-    sessionStorage.setItem(CHECKOUT_SESSION_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.warn("⚠️ Failed to save checkout state:", e);
-  }
-};
-const loadFromSession = () => {
-  try {
-    const raw = sessionStorage.getItem(CHECKOUT_SESSION_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) {
-    console.warn("⚠️ Failed to load checkout state:", e);
-    return null;
-  }
-};
-const clearCheckoutSession = () => {
-  try { sessionStorage.removeItem(CHECKOUT_SESSION_KEY); } catch(e) {}
-};
-
-
 export default function CheckoutLayout({
   cart,
   onCustomerCreate,
@@ -51,22 +28,24 @@ export default function CheckoutLayout({
   /**
    * activeStep controls which section is expanded.
    * Order: client → delivery → payment
-   * State is hydrated from sessionStorage on mount so it survives reloads.
    */
-  const savedState = loadFromSession();
-
-  const [activeStep, setActiveStep] = useState(savedState?.activeStep || "client");
+  const [activeStep, setActiveStep] = useState("client");
   const [isMobileSummaryOpen, setIsMobileSummaryOpen] = useState(false);
-  const [clientData, setClientData] = useState(savedState?.clientData || {});
-  const [deliveryData, setDeliveryData] = useState(savedState?.deliveryData || {});
-  const [paymentData, setPaymentData] = useState(savedState?.paymentData || {});
-  const [customerId, setCustomerId] = useState(savedState?.customerId || null);
+
+  /**
+   * Static state holders for now
+   * (will be hydrated later via BigCommerce SDK)
+   */
+  const [clientData, setClientData] = useState({});
+  const [deliveryData, setDeliveryData] = useState({});
+  const [paymentData, setPaymentData] = useState({});
+  const [customerId, setCustomerId] = useState(null);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [bigcommerceCustomer, setBigcommerceCustomer] = useState(savedState?.bigcommerceCustomer || null);
-  const [airwallexCustomer, setAirwallexCustomer] = useState(savedState?.airwallexCustomer || null);
+  const [bigcommerceCustomer, setBigcommerceCustomer] = useState(null);
+  const [airwallexCustomer, setAirwallexCustomer] = useState(null);
   const navigate = useNavigate();
-  const [shippingOptions, setShippingOptions] = useState(savedState?.shippingOptions || []);
+  const [shippingOptions, setShippingOptions] = useState([]);
   const [orderComplete, setOrderComplete] = useState(false);
   const [createdOrder, setCreatedOrder] = useState(null);
   const [checkoutCart, setCheckoutCart] = useState(cart);
@@ -75,10 +54,8 @@ export default function CheckoutLayout({
   const [isVipUiChecked, setIsVipUiChecked] = useState(false);
   const hasInitializedVipUiRef = useRef(false);
 
-  
-
   useEffect(() => {
-    setCheckoutCart(prev => prev ?? cart);
+    setCheckoutCart(cart);
   }, [cart]);
   const VIP_PRODUCT_ID = 268; // replace
   const fallbackSubscriptionProductIds = [...new Set([
@@ -141,18 +118,9 @@ export default function CheckoutLayout({
     }
   }, [vipSelected, cart?.lineItems]);
 
-  // Timer logic — persisted via a start timestamp so it survives reloads
-  const DISCOUNT_DURATION = 10 * 60; // 10 minutes in seconds
-  const [timeLeft, setTimeLeft] = useState(() => {
-    const TIMER_KEY = "nh_checkout_timer_start";
-    let start = Number(sessionStorage.getItem(TIMER_KEY));
-    if (!start) {
-      start = Date.now();
-      sessionStorage.setItem(TIMER_KEY, String(start));
-    }
-    const elapsed = Math.floor((Date.now() - start) / 1000);
-    return Math.max(DISCOUNT_DURATION - elapsed, 0);
-  });
+  // Timer logic from working version
+  const DISCOUNT_DURATION = 1 * 60; // 10 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(DISCOUNT_DURATION);
 
   useEffect(() => {
     let mounted = true;
@@ -315,21 +283,6 @@ export default function CheckoutLayout({
     }
   };
 
-
-  useEffect(() => {
-    saveToSession({
-      activeStep,
-      clientData,
-      deliveryData,
-      paymentData,
-      customerId,
-      bigcommerceCustomer,
-      airwallexCustomer,
-      shippingOptions,
-    });
-  }, [activeStep, clientData, deliveryData, paymentData, customerId, bigcommerceCustomer, airwallexCustomer, shippingOptions]);
-
-
   useEffect(() => {
     if (activeStep === 'payment') {
       // First time entering payment step with cart data ready
@@ -345,9 +298,6 @@ export default function CheckoutLayout({
     } else {
       // Reset initialization flag when leaving payment step (for navigation back/forth)
       hasInitializedVipUiRef.current = false;
-      if (cart?.lineItems !== undefined) {
-       setIsVipUiChecked(vipSelected);
-      }
     }
   }, [activeStep, vipSelected, cart?.lineItems]);
 
@@ -693,8 +643,6 @@ export default function CheckoutLayout({
             console.warn('⚠️ Failed to clear cart after order creation:', clearErr.message);
           }
 
-          clearCheckoutSession();
-          sessionStorage.removeItem("nh_checkout_timer_start");
           navigate("/thank-you", {
             state: {
               order: {
@@ -891,7 +839,7 @@ export default function CheckoutLayout({
                 {/* Warrantly Subscription section */}
 
 
-                <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc] hidden md:block">
+                <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc]">
                   <div className="nr-checkbox-wr bg-[#3b4450] gap-[10px] p-[10px] rounded-[4px] flex items-center my-[10px]">
                     <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="26px" height="auto" viewBox="0 0 1200.000000 1100.000000" preserveAspectRatio="xMidYMid meet">
                       <g transform="translate(0.000000,1280.000000) scale(0.100000,-0.100000)" fill="#FFF" stroke="none">
@@ -917,7 +865,7 @@ export default function CheckoutLayout({
                     </div>
                   </div>
 
-                  <div className="nr-wrranty-text pt-[15px] relative">
+                  <div className="nr-wrranty-text pt-[15px]">
                     <p className="text-[13px]">
                       By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Nomade-Horizon. After the trial, the subscription renews automatically at £12.99/month. This membership is non-binding and can be cancelled at any time by contacting support. Consult the {" "}
                       {/* <a
@@ -926,16 +874,10 @@ export default function CheckoutLayout({
                         rel="noopener noreferrer"
                         style={{ color: "#007bff", textDecoration: "underline" }}
                       > */}
-                        <span>vip-club </span>
+                        vip-club 
                       {/* </a>  */}
                       policy for more information.
                     </p>
-
-                    {isVipLoading && (
-                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-[4px] z-10">
-                        <div className="w-8 h-8 border-4 border-gray-300 border-t-[#3b4450] rounded-full animate-spin"></div>
-                      </div>
-                    )}
                   </div>
                 </div>
                 {/* <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc]">
@@ -961,7 +903,7 @@ export default function CheckoutLayout({
         {/* ================= RIGHT COLUMN ================= */}
         <aside className="nr-rght-prt w-100 lg:w-[33.3333333333%] md:w-[41.6666666667%] mt-[38px] md:pl-[15px] pl-0">
           {/* cart prop to OrderSummary (hidden on mobile, visible on desktop) */}
-          <div className="nr-desktop-order-summary hidden md:block">
+          <div className="nr-desktop-order-summary">
             <OrderSummary
               deliveryPrice={deliveryData?.price ?? 0}
               cart={checkoutCart}
@@ -1006,8 +948,6 @@ export default function CheckoutLayout({
             </div>
             <p className="text-[15px] text-[#747474]">Bénéficiez du suivi de votre commande en temps réel.</p>
           </div>
-
-       
           {/* <div className="nr-review-prt py-[30px]">
             <h2 className="text-[18px] font-[600]">Ce que disent nos clients</h2> */}
             {/* First Review */}
@@ -1031,57 +971,14 @@ export default function CheckoutLayout({
               </div>
             </div> */}
           {/* </div> */}
-
-          <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc] md:hidden">
-            <div className="nr-checkbox-wr bg-[#3b4450] gap-[10px] p-[10px] rounded-[4px] flex items-center my-[10px]">
-              <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="26px" height="auto" viewBox="0 0 1200.000000 1100.000000" preserveAspectRatio="xMidYMid meet">
-                <g transform="translate(0.000000,1280.000000) scale(0.100000,-0.100000)" fill="#FFF" stroke="none">
-                  <path d="M7318 10295 l-3 -1090 -2817 -3 -2818 -2 0 -2430 0 -2430 2820 0 2820 0 2 -1088 3 -1088 2175 2303 c1196 1266 2174 2305 2173 2308 -1 4 -107 117 -235 253 -129 136 -1081 1145 -2117 2242 -1036 1097 -1910 2022 -1942 2055 l-59 60 -2 -1090z"></path>
-                </g>
-              </svg>
-
-              <div className="nr-checkbox-wr-cntnt flex gap-[10px] items-center">
-                <div className="nr-checkbox-outer">
-                  <input
-                    type="checkbox"
-                    id="vip-club-mobile"
-                    name="vip-club"
-                    // className="nr-checkbox relative h-[16px] w-[16px] before:absolute before:content-[''] before:w-[14px] before:h-[14px] before:left-[1px] before:top-[1px] before:bg-[url('/loading.png')] before:bg-no-repeat before:bg-contain before:bg-center before:animate-spin"
-                    className="nr-checkbox"
-                    checked={isVipUiChecked}
-                    disabled={isVipLoading}
-                    onChange={(e) => handleVipToggle(e.target.checked)}
-                  />
-                </div>
-                <label htmlFor="vip-club-mobile" className="text-[16px] text-white">
-                  VIP CLUB ACCESS
-                </label>
-              </div>
-            </div>
-
-            <div className="nr-wrranty-text pt-[15px] relative">
-              <p className="text-[13px]">
-                By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Nomade-Horizon. After the trial, the subscription renews automatically at £12.99/month. This membership is non-binding and can be cancelled at any time by contacting support. Consult the {" "}
-                vip-club 
-                policy for more information.
-              </p>
-
-              {/* Overlay Loader - Shows when isVipLoading is true */}
-              {isVipLoading && (
-  <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-[4px] z-10">
-    <div className="w-8 h-8 border-4 border-gray-300 border-t-[#3b4450] rounded-full animate-spin"></div>
-  </div>
-)}
-            </div>
-          </div>
           <footer className="nr-foote w-[100%] border-t pt-[32px]">
             {/* <div className="nr-footer-hed pt-[10px] pb-[20px]">
               <h2 className="text-center font-[600]">Policies</h2>
             </div> */}
             <div className="nr-footer-links flex flex-col gap-[10px] items-center justify-between">
               <a href="https://nomade-horizon.com/conditions-generales/" className="liks text-[12px] text-[#656565]">Conditions Générales</a>
-              <a href="https://nomade-horizon.com/politique-d-expedition/" className="liks text-[12px] text-[#656565]">Politiques et Tarifs D'expédition</a>
               <a href="https://nomade-horizon.com/politique-de-confidentialite/" className="liks text-[12px] text-[#656565]">Politique de confidentialité</a>
+              <a href="https://nomade-horizon.com/politique-d-expedition/" className="liks text-[12px] text-[#656565]">Politiques et Tarifs d'expédition</a>
               <a href="https://nomade-horizon.com/politique-de-retour-et-de-remboursement/" className="liks text-[12px] text-[#656565]">Échange et Retour</a>
             </div>
           </footer>
@@ -1089,10 +986,9 @@ export default function CheckoutLayout({
       </main>
 
       {/* ================= MOBILE STICKY ORDER BAR ================= */}
-      
-      <div className="nr-mobile-order-bar md:hidden fixed w-[90%] left-[50%] translate-x-[-50%] bottom-[20px] rounded-[5px] h-[max-content] bg-white shadow-[0_4px_8px_rgba(221,221,221,0.5)] border p-[10px] border-[#ddd]" onClick={() => setIsMobileSummaryOpen(true)}>
+      <div className="nr-mobile-order-bar" onClick={() => setIsMobileSummaryOpen(true)}>
         <div className="nr-mobile-order-bar-inner">
-          <div className="nr-mobile-order-bar-left flex justify-between items-center">
+          <div className="nr-mobile-order-bar-left">
             {(() => {
               const allBarItems = [
                 ...(checkoutCart?.lineItems?.physicalItems || []),
@@ -1103,20 +999,18 @@ export default function CheckoutLayout({
               const barTotal = Number(checkoutCart?.cartAmount || 0);
               return (
                 <>
-                  <div className="nr-fixed-bar-flx-inner-wr flex gap-[10px]">
-                    {firstItem?.imageUrl && (
-                      <img
-                        src={firstItem.imageUrl}
-                        alt=""
-                        className="nr-mobile-order-bar-thumb h-[48px] w-[48px] object-cover"
-                      />
-                    )}
-                    <div className="nr-mobile-order-bar-info">
-                      <span className="nr-mobile-order-bar-count block text-[18px] font-[600]">{totalQty} article{totalQty > 1 ? 's' : ''}</span>
-                      <span className="nr-mobile-order-bar-link block text-[#476bef] text-[13px]">Afficher les détails</span>
-                    </div>
+                  {firstItem?.imageUrl && (
+                    <img
+                      src={firstItem.imageUrl}
+                      alt=""
+                      className="nr-mobile-order-bar-thumb"
+                    />
+                  )}
+                  <div className="nr-mobile-order-bar-info">
+                    <span className="nr-mobile-order-bar-count">{totalQty} article{totalQty > 1 ? 's' : ''}</span>
+                    <span className="nr-mobile-order-bar-link">Afficher les détails</span>
                   </div>
-                  <span className="nr-mobile-order-bar-total text-[25px] font-[600]">€{barTotal.toFixed(2)}</span>
+                  <span className="nr-mobile-order-bar-total">€{barTotal.toFixed(2)}</span>
                 </>
               );
             })()}
@@ -1126,10 +1020,8 @@ export default function CheckoutLayout({
 
       {/* ================= MOBILE ORDER SUMMARY POPUP ================= */}
       {isMobileSummaryOpen && (
-        <>
-        <div className="overlay fixed top-0 left-0 w-[100%] h-[100%] bg-[hsla(0,0%,100%,.9)]"></div>
-        <div className="nr-mobile-summary-overlay fixed top-[50%] left-[50%] h-[95%] w-[95%] translate-x-[-50%] translate-y-[-50%]" onClick={() => setIsMobileSummaryOpen(false)}>
-          <div className="nr-mobile-summary-popup h-[100%]" onClick={(e) => e.stopPropagation()}>
+        <div className="nr-mobile-summary-overlay" onClick={() => setIsMobileSummaryOpen(false)}>
+          <div className="nr-mobile-summary-popup" onClick={(e) => e.stopPropagation()}>
             <OrderSummary
               deliveryPrice={deliveryData?.price ?? 0}
               cart={checkoutCart}
@@ -1143,7 +1035,6 @@ export default function CheckoutLayout({
             />
           </div>
         </div>
-        </>
       )}
 
       {/* ================= FOOTER ================= */}

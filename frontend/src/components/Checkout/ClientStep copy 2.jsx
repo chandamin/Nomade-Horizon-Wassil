@@ -8,7 +8,7 @@ export default function ClientStep({
   isDisabled,
   cart,
 }) {
-  const [form, setForm] = useState(() => data ?? {
+  const [form, setForm] = useState({
     firstName: "",
     lastName: "",
     email: "",

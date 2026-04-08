@@ -676,3 +676,91 @@ header.header {
         gap: 0;
     }
 }
+
+/* ========== MOBILE ORDER SUMMARY BAR & POPUP ========== */
+
+/* Desktop order summary: visible by default */
+.nr-desktop-order-summary {
+    display: block;
+}
+
+/* Mobile sticky bar: hidden by default */
+.nr-mobile-order-bar {
+    display: none;
+}
+
+/* Mobile popup overlay & popup: always styled, toggled via React
+.nr-mobile-summary-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 9998;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    animation: nr-fadeIn 0.2s ease;
+}
+
+.nr-mobile-summary-popup {
+    background: #fff;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+    animation: nr-slideUp 0.3s ease;
+}
+
+@keyframes nr-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes nr-slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+} */
+
+/* Mobile breakpoint: show bar, hide sidebar summary */
+/* 📱 FULL-SCREEN MOBILE POPUP OVERLAY */
+.nr-mobile-summary-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 99999;
+  display: flex;
+  align-items: flex-end; /* Bottom sheet style */
+  justify-content: center;
+  animation: nr-modalFadeIn 0.25s ease-out;
+  backdrop-filter: blur(2px);
+}
+
+.nr-mobile-summary-popup {
+  background: #fff;
+  width: 100%;
+  max-height: 95vh; /* Covers most of screen */
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.25);
+  animation: nr-modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@keyframes nr-modalFadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(2px); }
+}
+
+@keyframes nr-modalSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Prevent body scroll when modal is open */
+body.nr-modal-open {
+  overflow: hidden;
+  touch-action: none;
+}
+ 

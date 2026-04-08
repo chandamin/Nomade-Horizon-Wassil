@@ -220,14 +220,14 @@ export default function OrderSummary({
                 console.log("[OrderSummary] Redirecting user to cart");
                 window.location.href = "https://nomade-horizon.com/cart.php";
               }}
-              className="text-[#476bef] hover:text-[#002fe1] text-sm w-[33.3%] text-start"
+              className="text-[#476bef] hover:text-[#002fe1] text-sm"
             >
               Modifier le panier
             </button>
-            <h3 className="font-semibold text-gray-900 w-[33.3%] text-center text-[14px]">Récapitulatif de la commande</h3>
+            <h3 className="font-semibold text-gray-900">Récapitulatif de la commande</h3>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-800 text-xl font-bold leading-none w-[33.3%] flex justify-end"
+              className="text-gray-500 hover:text-gray-800 text-xl font-bold leading-none"
               aria-label="Fermer"
             >
               ✕

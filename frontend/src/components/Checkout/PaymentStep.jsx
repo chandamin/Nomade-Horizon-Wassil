@@ -417,7 +417,7 @@ export default function PaymentStep({
         <div className="border rounded p-4 bg-[#f5f5f5] pb-[35px]">
           <label className="flex items-center gap-2 text-sm font-medium mb-4">
             <input type="radio" checked readOnly />
-            Paiement par carte
+            Carte
           </label>
 
           {/* {loading && (

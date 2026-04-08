@@ -15,7 +15,7 @@ export default function ShippingStep({
   shippingOptions = [],
   setShippingOptions,
 }) {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => data ?? {
     country: "France",
     firstName: "",
     lastName: "",
