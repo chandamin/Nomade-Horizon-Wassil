@@ -3693,3 +3693,162 @@
   "original_amount": 2,
   "original_currency": "EUR"
 }
+[2026-04-08T13:50:53.625Z] api cart-data called
+[2026-04-08T13:50:55.123Z] api cart-data called
+[2026-04-08T13:51:15.348Z] api cart-data called
+[2026-04-08T13:51:17.017Z] api cart-data called
+[2026-04-08T13:51:53.154Z] api cart-data called
+[2026-04-08T13:51:54.237Z] api cart-data called
+[2026-04-08T13:51:57.139Z] Search Customer by Email [object Object]
+[2026-04-08T13:51:57.139Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-08T13:51:57.546Z] Customer found: 1
+[2026-04-08T13:51:57.552Z] Email Search result: {"data":[{"id":1,"authentication":{"force_password_reset":false},"company":"","customer_group_id":0,"email":"test111@gmail.com","first_name":"test","last_name":"test","notes":"","phone":"","registration_ip_address":"","tax_exempt_category":"","date_created":"2026-04-01T04:15:58Z","date_modified":"2026-04-01T04:15:58Z","accepts_product_review_abandoned_cart_emails":false,"origin_channel_id":1,"channel_ids":null}],"meta":{"pagination":{"total":1,"count":1,"per_page":50,"current_page":1,"total_pages":1},"cursor_pagination":{"count":1,"per_page":50,"start_cursor":"eyJpZCI6MX0","end_cursor":"eyJpZCI6MX0","links":{}}}}
+[2026-04-08T13:51:58.384Z] Customer search results: [object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]
+[2026-04-08T13:51:58.385Z]  Found existing Airwallex customer: bcus_hkdmh4dffhgrjyz9b10
+[2026-04-08T13:51:58.561Z] Search Customer by Email [object Object]
+[2026-04-08T13:51:58.561Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-08T13:51:58.969Z] Customer found: 1
+[2026-04-08T13:51:58.970Z] Email Search result: {"data":[{"id":1,"authentication":{"force_password_reset":false},"company":"","customer_group_id":0,"email":"test111@gmail.com","first_name":"test","last_name":"test","notes":"","phone":"","registration_ip_address":"","tax_exempt_category":"","date_created":"2026-04-01T04:15:58Z","date_modified":"2026-04-01T04:15:58Z","accepts_product_review_abandoned_cart_emails":false,"origin_channel_id":1,"channel_ids":null}],"meta":{"pagination":{"total":1,"count":1,"per_page":50,"current_page":1,"total_pages":1},"cursor_pagination":{"count":1,"per_page":50,"start_cursor":"eyJpZCI6MX0","end_cursor":"eyJpZCI6MX0","links":{}}}}
+[2026-04-08T13:52:03.395Z] ================================================================================
+[2026-04-08T13:52:03.395Z] 🚚 SHIPPING QUOTES API HIT
+[2026-04-08T13:52:03.395Z] 🕒 Timestamp: 2026-04-08T13:52:03.395Z
+[2026-04-08T13:52:03.397Z] 📥 Incoming body: {
+  "cartId": "ac030d3a-d7c3-4504-9753-7d63846cd14b",
+  "address": {
+    "firstName": "test",
+    "lastName": "test test",
+    "address1": "560 Mission Street",
+    "city": "San Francisco",
+    "postalCode": "94105",
+    "countryCode": "FR",
+    "stateOrProvince": "San Francisco",
+    "phone": ""
+  }
+}
+[2026-04-08T13:52:03.397Z] 🔎 Extracted inputs: [object Object]
+[2026-04-08T13:52:03.397Z] ✅ Validation passed
+[2026-04-08T13:52:03.398Z] 📤 Fetching checkout from BigCommerce: https://api.bigcommerce.com/stores/9feeyc5orh/v3/checkouts/ac030d3a-d7c3-4504-9753-7d63846cd14b
+[2026-04-08T13:52:04.961Z] 📡 Checkout response status: 200
+[2026-04-08T13:52:04.963Z] 📡 Checkout raw response: {"data":{"id":"ac030d3a-d7c3-4504-9753-7d63846cd14b","cart":{"id":"ac030d3a-d7c3-4504-9753-7d63846cd14b","customer_id":0,"channel_id":1,"email":"","currency":{"code":"EUR"},"tax_included":false,"base_amount":61.9,"discount_amount":0,"manual_discount_amount":0,"cart_amount_inc_tax":61.9,"cart_amount_ex_tax":61.9,"coupons":[],"discounts":[{"id":"2e36ca3e-eaf5-45d7-8f78-a91390697f7a","discounted_amount":0},{"id":"b02d1bb2-d1b3-4003-935a-61c05ff7eea7","discounted_amount":0},{"id":"f8e670ce-4cd1-4a0f-a37b-84b1cd98de57","discounted_amount":0}],"line_items":{"physical_items":[{"id":"2e36ca3e-eaf5-45d7-8f78-a91390697f7a","parent_id":null,"variant_id":1612,"product_id":220,"sku":"221-GR","name":"Chapeau Randonn\u00e9e - Homme | Respirant & Protection UV","url":"https:\/\/nomade-horizon.com\/chapeau-randonnee-homme-respirant-protection-uv\/","quantity":2,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1424_thumb_1764685476.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":1,"list_price":1,"sale_price":1,"extended_list_price":2,"extended_sale_price":2,"comparison_price":1,"extended_comparison_price":2,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"f8e670ce-4cd1-4a0f-a37b-84b1cd98de57","parent_id":null,"variant_id":1742,"product_id":264,"sku":"265-WH-XL","name":"Ensemble de Randonn\u00e9e - Homme | Softshell & D\u00e9perlant","url":"https:\/\/nomade-horizon.com\/ensemble-de-randonnee-homme-softshell-deperlant\/","quantity":1,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1520_thumb_1764685681.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":59.9,"list_price":59.9,"sale_price":59.9,"extended_list_price":59.9,"extended_sale_price":59.9,"comparison_price":59.9,"extended_comparison_price":59.9
+[2026-04-08T13:52:04.964Z] ✅ Checkout JSON parsed successfully
+[2026-04-08T13:52:04.964Z] 🧾 Checkout summary: [object Object]
+[2026-04-08T13:52:04.965Z] 🛒 Checkout line items summary: [object Object]
+[2026-04-08T13:52:04.968Z] 📦 Consignment payload to BigCommerce: [
+  {
+    "shipping_address": {
+      "first_name": "test",
+      "last_name": "test test",
+      "address1": "560 Mission Street",
+      "city": "San Francisco",
+      "state_or_province": "San Francisco",
+      "postal_code": "94105",
+      "country_code": "FR",
+      "phone": ""
+    },
+    "line_items": [
+      {
+        "item_id": "2e36ca3e-eaf5-45d7-8f78-a91390697f7a",
+        "quantity": 2
+      },
+      {
+        "item_id": "f8e670ce-4cd1-4a0f-a37b-84b1cd98de57",
+        "quantity": 1
+      },
+      {
+        "item_id": "b02d1bb2-d1b3-4003-935a-61c05ff7eea7",
+        "quantity": 1
+      }
+    ]
+  }
+]
+[2026-04-08T13:52:04.969Z] 📤 Posting consignments to BigCommerce: https://api.bigcommerce.com/stores/9feeyc5orh/v3/checkouts/ac030d3a-d7c3-4504-9753-7d63846cd14b/consignments?include=consignments.available_shipping_options
+[2026-04-08T13:52:06.371Z] 📡 Consignments response status: 200
+[2026-04-08T13:52:06.374Z] 📡 Consignments raw response: {"data":{"id":"ac030d3a-d7c3-4504-9753-7d63846cd14b","cart":{"id":"ac030d3a-d7c3-4504-9753-7d63846cd14b","customer_id":0,"channel_id":1,"email":"","currency":{"code":"EUR"},"tax_included":false,"base_amount":61.9,"discount_amount":0,"manual_discount_amount":0,"cart_amount_inc_tax":61.9,"cart_amount_ex_tax":61.9,"coupons":[],"discounts":[{"id":"2e36ca3e-eaf5-45d7-8f78-a91390697f7a","discounted_amount":0},{"id":"b02d1bb2-d1b3-4003-935a-61c05ff7eea7","discounted_amount":0},{"id":"f8e670ce-4cd1-4a0f-a37b-84b1cd98de57","discounted_amount":0}],"line_items":{"physical_items":[{"id":"2e36ca3e-eaf5-45d7-8f78-a91390697f7a","parent_id":null,"variant_id":1612,"product_id":220,"sku":"221-GR","name":"Chapeau Randonn\u00e9e - Homme | Respirant & Protection UV","url":"https:\/\/nomade-horizon.com\/chapeau-randonnee-homme-respirant-protection-uv\/","quantity":2,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1424_thumb_1764685476.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":1,"list_price":1,"sale_price":1,"extended_list_price":2,"extended_sale_price":2,"comparison_price":1,"extended_comparison_price":2,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false},{"id":"f8e670ce-4cd1-4a0f-a37b-84b1cd98de57","parent_id":null,"variant_id":1742,"product_id":264,"sku":"265-WH-XL","name":"Ensemble de Randonn\u00e9e - Homme | Softshell & D\u00e9perlant","url":"https:\/\/nomade-horizon.com\/ensemble-de-randonnee-homme-softshell-deperlant\/","quantity":1,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1520_thumb_1764685681.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":59.9,"list_price":59.9,"sale_price":59.9,"extended_list_price":59.9,"extended_sale_price":59.9,"comparison_price":59.9,"extended_comparison_price":59.9,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false}],"digital_items":[{"id":"b02d1bb2-d1b3-4003-935a-61c05ff7eea7","parent_id":null,"variant_id":1770,"product_id":268,"sku":"","name":"VIP CLUB","url":"https:\/\/nomade-horizon.com\/vip-club\/","quantity":1,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/stencil\/9a5def30-fbb5-013e-f180-6ed2645732dc\/img\/CavioDefault.gif","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":0,"list_price":0,"sale_price":0,"extended_list_price":0,"extended_sale_price":0,"comparison_price":0,"extended_comparison_price":0,"is_require_shipping":false,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false}],"gift_certificates":[],"custom_items":[]},"created_time":"2026-04-08T11:09:44+00:00","updated_time":"2026-04-08T13:52:05+00:00"},"billing_address":{},"consignments":[{"id":"69d65d858c5e3","shipping_cost_inc_tax":0,"shipping_cost_ex_tax":0,"handling_cost_inc_tax":0,"handling_cost_ex_tax":0,"coupon_discounts":[],"discounts":[],"line_item_ids":["2e36ca3e-eaf5-45d7-8f78-a91390697f7a","f8e670ce-4cd1-4a0f-a37b-84b1cd98de57"],"shipping_address":{"first_name":"test","last_name":"test test","email":"","company":"","address1":"560 Mission Street","address2":"","city":"San Francisco","state_or_province":"San Francisco","state_or_province_code":"","country":"France","country_code":"FR","postal_code":"94105","phone":"","custom_fields":[]},"address":{"first_name":"test","last_name":"test test","email":"","company":"","address1":"560 Mission Street","address2":"","city":"San Francisco","state_or_province":"San Francisco","state_or_province_code":"","country":"France","country_code":"FR","postal_code":"94105","phone":"","custom_fields":[]},"available_shipping_options":[{"id":"4dcbf24f457dd67d5f89bcf374e0bc9b","type":"freeshipping","description":"Free Shipping","image_url":"","cost":0,"transit_time":"","additional
+[2026-04-08T13:52:06.375Z] ✅ Consignments JSON parsed successfully
+[2026-04-08T13:52:06.375Z] 📋 Consignments summary: [object Object]
+[2026-04-08T13:52:06.376Z] 🚚 Raw available shipping options from BigCommerce: [
+  {
+    "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+    "type": "freeshipping",
+    "description": "Free Shipping",
+    "image_url": "",
+    "cost": 0,
+    "transit_time": "",
+    "additional_description": "",
+    "cost_after_discount": 0
+  }
+]
+[2026-04-08T13:52:06.377Z] ✅ Final mapped shipping options: [
+  {
+    "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+    "description": "Free Shipping",
+    "cost": 0,
+    "type": "freeshipping",
+    "isRecommended": false,
+    "raw": {
+      "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+      "type": "freeshipping",
+      "description": "Free Shipping",
+      "image_url": "",
+      "cost": 0,
+      "transit_time": "",
+      "additional_description": "",
+      "cost_after_discount": 0
+    }
+  }
+]
+[2026-04-08T13:52:06.378Z] 📤 Responding to frontend with: {
+  "success": true,
+  "checkoutId": "ac030d3a-d7c3-4504-9753-7d63846cd14b",
+  "consignmentsCount": 1,
+  "shippingOptionsCount": 1
+}
+[2026-04-08T13:52:06.378Z] ================================================================================
+[2026-04-08T13:52:07.219Z] Saving customer address - START
+[2026-04-08T13:52:07.219Z] Saving address for customer: 1
+[2026-04-08T13:52:07.220Z] Address data received: [object Object]
+[2026-04-08T13:52:07.676Z] Get addresses response status: 200
+[2026-04-08T13:52:07.679Z] Get addresses raw response: [{"id":1,"customer_id":1,"first_name":"test","last_name":"test","company":"","street_1":"560 Mission Street","street_2":"","city":"San Francisco","state":"San Francisco","zip":"94105","country":"Franc
+[2026-04-08T13:52:07.680Z] Parsed existing addresses: 1
+[2026-04-08T13:52:07.680Z] Updating existing address: 1
+[2026-04-08T13:52:07.681Z] Address data to save to BigCommerce: [object Object]
+[2026-04-08T13:52:07.682Z] Making request to BigCommerce API: [object Object]
+[2026-04-08T13:52:08.201Z] BigCommerce response status: 200
+[2026-04-08T13:52:08.206Z] BigCommerce raw response: {"id":1,"customer_id":1,"first_name":"test","last_name":"test test","company":"","street_1":"560 Mission Street","street_2":"","city":"San Francisco","state":"San Francisco","zip":"94105","country":"France","country_iso2":"FR","phone":"","address_type":"residential","form_fields":null}
+[2026-04-08T13:52:08.206Z] Address saved successfully: 1
+[2026-04-08T13:52:08.207Z] Saving customer address - SUCCESS
+[2026-04-08T13:52:08.966Z] Reusing existing payment customer: cus_hkdmx5xjchgzvb82y1w
+[2026-04-08T13:52:09.123Z] 📥 [payment-intents/create] Incoming request: {
+  "amount": 61.9,
+  "currency": "EUR",
+  "merchant_order_id": "ac030d3a-d7c3-4504-9753-7d63846cd14b",
+  "payment_customer_id": "cus_hkdmx5xjchgzvb82y1w"
+}
+[2026-04-08T13:52:09.429Z] 📤 [payment-intents/create] Payload: {
+  "request_id": "b0879f9a-34ae-4300-8b55-6888a60d1d37",
+  "amount": 61.9,
+  "currency": "EUR",
+  "merchant_order_id": "ac030d3a-d7c3-4504-9753-7d63846cd14b",
+  "return_url": "http://localhost:5173",
+  "customer_id": "cus_hkdmx5xjchgzvb82y1w"
+}
+[2026-04-08T13:52:09.617Z] ✅ PaymentIntent created: {
+  "id": "int_hkdmlmrhxhhf198mh4u"
+}
+[2026-04-08T13:52:09.622Z] 📥 Airwallex payment intent response: {
+  "id": "int_hkdmlmrhxhhf198mh4u",
+  "request_id": "b0879f9a-34ae-4300-8b55-6888a60d1d37",
+  "amount": 61.9,
+  "currency": "EUR",
+  "merchant_order_id": "ac030d3a-d7c3-4504-9753-7d63846cd14b",
+  "customer_id": "cus_hkdmx5xjchgzvb82y1w",
+  "descriptor": "test_store",
+  "status": "REQUIRES_PAYMENT_METHOD",
+  "captured_amount": 0,
+  "created_at": "2026-04-08T13:52:09+0000",
+  "updated_at": "2026-04-08T13:52:09+0000",
+  "client_secret": "eyJraWQiOiJjNDRjODVkMDliMDc0NmNlYTIwZmI4NjZlYzI4YWY3ZSIsImFsZyI6IkhTMjU2In0.eyJ0eXBlIjoiY2xpZW50LXNlY3JldCIsImFjY291bnRfaWQiOiIwMjU1ZjAzZi02NDM0LTQxNTgtODZhNi1hNGVlMjc5Mjc2OGYiLCJpbnRlbnRfaWQiOiJpbnRfaGtkbWxtcmh4aGhmMTk4bWg0dSIsImN1c3RvbWVyX2lkIjoiY3VzX2hrZG14NXhqY2hnenZiODJ5MXciLCJidXNpbmVzc19uYW1lIjoiQ1JNIEhvbGRpbmdzIExpbWl0ZWQgKEhLKSIsImFwaV92ZXJzaW9uIjoiMjAyNS0wMi0xNCIsInBhZGMiOiJISyIsImV4cCI6MTc3NTY1OTkyOSwiaWF0IjoxNzc1NjU2MzI5fQ.R58tTsgI42YCZabFmcAhNHt4crUheodMJYVa856lKMM",
+  "return_url": "http://localhost:5173",
+  "original_amount": 61.9,
+  "original_currency": "EUR"
+}
