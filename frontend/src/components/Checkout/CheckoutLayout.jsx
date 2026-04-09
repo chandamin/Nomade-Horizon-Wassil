@@ -912,23 +912,29 @@ export default function CheckoutLayout({
                         />
                       </div>
                       <label htmlFor="vip-club" className="text-[16px] text-white">
-                        VIP CLUB ACCESS
+                        ACCÈS AU CLUB VIP
                       </label>
                     </div>
                   </div>
 
                   <div className="nr-wrranty-text pt-[15px] relative">
-                    <p className="text-[13px]">
+                    {/* <p className="text-[13px]">
                       By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Nomade-Horizon. After the trial, the subscription renews automatically at £12.99/month. This membership is non-binding and can be cancelled at any time by contacting support. Consult the {" "}
-                      {/* <a
+                      <a
                         href="https://nomade-horizon.com/vip-club/"
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ color: "#007bff", textDecoration: "underline" }}
-                      > */}
+                      >
                         <span>vip-club </span>
-                      {/* </a>  */}
+                      </a> 
                       policy for more information.
+                    </p> */}
+
+                    <p className="text-[13px]">
+                      En cochant cette case, j'active mon essai gratuit de 30 jours au CLUB VIP, ce qui me donne accès à des avantages exclusifs sur Nomade-Horizon. À l'issue de la période d'essai, l'abonnement se renouvelle automatiquement au tarif de 12,99€ par mois. Cet abonnement est sans engagement et peut être résilié à tout moment en contactant le service client. Consultez les conditions générales du {" "}
+                      /club-vip
+                      {" "}pour plus d'informations.
                     </p>
 
                     {isVipLoading && (
@@ -1014,17 +1020,22 @@ export default function CheckoutLayout({
                     />
                   </div>
                   <label htmlFor="vip-club-mobile" className="text-[16px] text-white">
-                    VIP CLUB ACCESS
+                    ACCÈS AU CLUB VIP
                   </label>
                 </div>
               </div>
 
               <div className="nr-wrranty-text pt-[15px] relative">
-                <p className="text-[13px]">
+                {/* <p className="text-[13px]">
                   By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Nomade-Horizon. After the trial, the subscription renews automatically at £12.99/month. This membership is non-binding and can be cancelled at any time by contacting support. Consult the {" "}
                   vip-club 
                   policy for more information.
-                </p>
+                </p> */}
+                <p className="text-[13px]">
+                En cochant cette case, j'active mon essai gratuit de 30 jours au CLUB VIP, ce qui me donne accès à des avantages exclusifs sur Nomade-Horizon. À l'issue de la période d'essai, l'abonnement se renouvelle automatiquement au tarif de 12,99€ par mois. Cet abonnement est sans engagement et peut être résilié à tout moment en contactant le service client. Consultez les conditions générales du {" "}
+                /club-vip
+                {" "}pour plus d'informations.
+              </p>
 
                 {/* Overlay Loader - Shows when isVipLoading is true */}
                 {isVipLoading && (
