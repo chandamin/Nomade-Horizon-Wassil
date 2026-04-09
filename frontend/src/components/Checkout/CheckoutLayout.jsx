@@ -330,26 +330,26 @@ export default function CheckoutLayout({
   }, [activeStep, clientData, deliveryData, paymentData, customerId, bigcommerceCustomer, airwallexCustomer, shippingOptions]);
 
 
-  useEffect(() => {
-    if (activeStep === 'payment') {
-      // First time entering payment step with cart data ready
-      if (!hasInitializedVipUiRef.current && cart?.lineItems !== undefined) {
-        hasInitializedVipUiRef.current = true;
-        // Pre-select checkbox by default, unless cart explicitly shows VIP is NOT selected
-        setIsVipUiChecked(vipSelected || true);
-      } 
-      // After initialization, always sync with actual cart state
-      else if (hasInitializedVipUiRef.current) {
-        setIsVipUiChecked(vipSelected);
-      }
-    } else {
-      // Reset initialization flag when leaving payment step (for navigation back/forth)
-      hasInitializedVipUiRef.current = false;
-      if (cart?.lineItems !== undefined) {
-       setIsVipUiChecked(vipSelected);
-      }
-    }
-  }, [activeStep, vipSelected, cart?.lineItems]);
+  // useEffect(() => {
+  //   if (activeStep === 'payment') {
+  //     // First time entering payment step with cart data ready
+  //     if (!hasInitializedVipUiRef.current && cart?.lineItems !== undefined) {
+  //       hasInitializedVipUiRef.current = true;
+  //       // Pre-select checkbox by default, unless cart explicitly shows VIP is NOT selected
+  //       setIsVipUiChecked(vipSelected || true);
+  //     } 
+  //     // After initialization, always sync with actual cart state
+  //     else if (hasInitializedVipUiRef.current) {
+  //       setIsVipUiChecked(vipSelected);
+  //     }
+  //   } else {
+  //     // Reset initialization flag when leaving payment step (for navigation back/forth)
+  //     hasInitializedVipUiRef.current = false;
+  //     if (cart?.lineItems !== undefined) {
+  //      setIsVipUiChecked(vipSelected);
+  //     }
+  //   }
+  // }, [activeStep, vipSelected, cart?.lineItems]);
 
   // Delivery completion check from working version
   const isDeliveryComplete = !!(
@@ -891,7 +891,7 @@ export default function CheckoutLayout({
                 {/* Warrantly Subscription section */}
 
 
-                <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc] hidden md:block">
+                {/* <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc] hidden md:block">
                   <div className="nr-checkbox-wr bg-[#3b4450] gap-[10px] p-[10px] rounded-[4px] flex items-center my-[10px]">
                     <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="26px" height="auto" viewBox="0 0 1200.000000 1100.000000" preserveAspectRatio="xMidYMid meet">
                       <g transform="translate(0.000000,1280.000000) scale(0.100000,-0.100000)" fill="#FFF" stroke="none">
@@ -918,18 +918,7 @@ export default function CheckoutLayout({
                   </div>
 
                   <div className="nr-wrranty-text pt-[15px] relative">
-                    {/* <p className="text-[13px]">
-                      By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Nomade-Horizon. After the trial, the subscription renews automatically at £12.99/month. This membership is non-binding and can be cancelled at any time by contacting support. Consult the {" "}
-                      <a
-                        href="https://nomade-horizon.com/vip-club/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: "#007bff", textDecoration: "underline" }}
-                      >
-                        <span>vip-club </span>
-                      </a> 
-                      policy for more information.
-                    </p> */}
+                   
 
                     <p className="text-[13px]">
                       En cochant cette case, j'active mon essai gratuit de 30 jours au CLUB VIP, ce qui me donne accès à des avantages exclusifs sur Nomade-Horizon. À l'issue de la période d'essai, l'abonnement se renouvelle automatiquement au tarif de 12,99€ par mois. Cet abonnement est sans engagement et peut être résilié à tout moment en contactant le service client. Consultez les conditions générales du {" "}
@@ -943,22 +932,8 @@ export default function CheckoutLayout({
                       </div>
                     )}
                   </div>
-                </div>
-                {/* <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc]">
-                  <div className="nr-wrranty-img-outer w-100 flex justify-center">
-                    <img className="h-[100px]" src="../images/one-yr-warranty.webp" alt="wrranty-img" />
-                  </div>
-                  <div className="nr-checkbox-wr bg-[#3b4450] gap-[10px] p-[10px] rounded-[4px] flex items-center my-[10px]">
-                    <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="26px" height="auto" viewBox="0 0 1200.000000 1100.000000" preserveAspectRatio="xMidYMid meet"><g transform="translate(0.000000,1280.000000) scale(0.100000,-0.100000)" fill="#FFF" stroke="none"><path d="M7318 10295 l-3 -1090 -2817 -3 -2818 -2 0 -2430 0 -2430 2820 0 2820 0 2 -1088 3 -1088 2175 2303 c1196 1266 2174 2305 2173 2308 -1 4 -107 117 -235 253 -129 136 -1081 1145 -2117 2242 -1036 1097 -1910 2022 -1942 2055 l-59 60 -2 -1090z"></path></g></svg>
-                    <div className="nr-checkbox-wr-cntnt flex gap-[10px] items-center">
-                      <input type="checkbox" id="warranty" name="warranty" className="nr-checkbox" />
-                      <label htmlFor="warranty" className="text-[16px] text-white">OUI ! JE SOUHAITE EN BÉNÉFICIER !</label>
-                    </div>
-                  </div>
-                  <div className="nr-wrranty-text pt-[15px]">
-                    <p className="text-[13px]">EXTENSION GARANTIE 1 AN ! Si cette case est cochée, le montant de 3.97€ sera chargé dans les 24h en tant que transaction additionnelle. Vous bénéficierez d'une extension de garantie de 1 an via notre partenaire AssurPremium. Vous avez 24h pour changer d'avis si vous ne souhaitez plus en bénéficier. Après chargement de la transaction, vous pouvez obtenir un remboursement intégral dans les 90 jours en nous contactant à support@flashventes.com</p>
-                  </div>
                 </div> */}
+               
               </>
             )}
           </div>
@@ -997,7 +972,8 @@ export default function CheckoutLayout({
             </div>
           </div>
 
-          {activeStep === "payment" && (
+          
+          {activeStep === "payment" && false &&(
             <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc] md:hidden">
               <div className="nr-checkbox-wr bg-[#3b4450] gap-[10px] p-[10px] rounded-[4px] flex items-center my-[10px]">
                 <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="26px" height="auto" viewBox="0 0 1200.000000 1100.000000" preserveAspectRatio="xMidYMid meet">
@@ -1026,11 +1002,7 @@ export default function CheckoutLayout({
               </div>
 
               <div className="nr-wrranty-text pt-[15px] relative">
-                {/* <p className="text-[13px]">
-                  By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Nomade-Horizon. After the trial, the subscription renews automatically at £12.99/month. This membership is non-binding and can be cancelled at any time by contacting support. Consult the {" "}
-                  vip-club 
-                  policy for more information.
-                </p> */}
+                
                 <p className="text-[13px]">
                 En cochant cette case, j'active mon essai gratuit de 30 jours au CLUB VIP, ce qui me donne accès à des avantages exclusifs sur Nomade-Horizon. À l'issue de la période d'essai, l'abonnement se renouvelle automatiquement au tarif de 12,99€ par mois. Cet abonnement est sans engagement et peut être résilié à tout moment en contactant le service client. Consultez les conditions générales du {" "}
                 /club-vip
@@ -1046,6 +1018,7 @@ export default function CheckoutLayout({
               </div>
             </div>
           )}
+          
           {/* second-part */}
           <div className="nr-rght-bottom-info-cntnt py-[30px] border-b">
             <div className="nr-info-hed-prt flex gap-[8px] items-center text-[18px] font-[600] pb-[8px]">
