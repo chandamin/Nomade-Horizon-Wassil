@@ -991,6 +991,7 @@ export default function CheckoutLayout({
             </div>
           </div>
 
+          {activeStep === "payment" && (
           <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc] md:hidden">
             <div className="nr-checkbox-wr bg-[#3b4450] gap-[10px] p-[10px] rounded-[4px] flex items-center my-[10px]">
               <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="26px" height="auto" viewBox="0 0 1200.000000 1100.000000" preserveAspectRatio="xMidYMid meet">
@@ -1033,6 +1034,8 @@ export default function CheckoutLayout({
               )}
             </div>
           </div>
+
+          )}
           {/* second-part */}
           <div className="nr-rght-bottom-info-cntnt py-[30px] border-b">
             <div className="nr-info-hed-prt flex gap-[8px] items-center text-[18px] font-[600] pb-[8px]">
@@ -1049,6 +1052,8 @@ export default function CheckoutLayout({
             </div>
             <p className="text-[15px] text-[#747474]">Bénéficiez du suivi de votre commande en temps réel.</p>
           </div>
+
+            
 
        
           {/* <div className="nr-review-prt py-[30px]">
