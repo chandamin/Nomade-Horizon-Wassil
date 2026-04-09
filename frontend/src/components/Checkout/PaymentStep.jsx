@@ -127,6 +127,7 @@ export default function PaymentStep({
         await init({
           env: "prod",
           enabledElements: ["payments"],
+          locale: "fr",
         });
 
         const element = await createElement("dropIn", {

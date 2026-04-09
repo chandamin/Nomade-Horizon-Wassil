@@ -992,49 +992,48 @@ export default function CheckoutLayout({
           </div>
 
           {activeStep === "payment" && (
-          <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc] md:hidden">
-            <div className="nr-checkbox-wr bg-[#3b4450] gap-[10px] p-[10px] rounded-[4px] flex items-center my-[10px]">
-              <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="26px" height="auto" viewBox="0 0 1200.000000 1100.000000" preserveAspectRatio="xMidYMid meet">
-                <g transform="translate(0.000000,1280.000000) scale(0.100000,-0.100000)" fill="#FFF" stroke="none">
-                  <path d="M7318 10295 l-3 -1090 -2817 -3 -2818 -2 0 -2430 0 -2430 2820 0 2820 0 2 -1088 3 -1088 2175 2303 c1196 1266 2174 2305 2173 2308 -1 4 -107 117 -235 253 -129 136 -1081 1145 -2117 2242 -1036 1097 -1910 2022 -1942 2055 l-59 60 -2 -1090z"></path>
-                </g>
-              </svg>
+            <div className="nr-wrranty-wr py-[10px] px-[12px] border border-[#ccc] md:hidden">
+              <div className="nr-checkbox-wr bg-[#3b4450] gap-[10px] p-[10px] rounded-[4px] flex items-center my-[10px]">
+                <svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="26px" height="auto" viewBox="0 0 1200.000000 1100.000000" preserveAspectRatio="xMidYMid meet">
+                  <g transform="translate(0.000000,1280.000000) scale(0.100000,-0.100000)" fill="#FFF" stroke="none">
+                    <path d="M7318 10295 l-3 -1090 -2817 -3 -2818 -2 0 -2430 0 -2430 2820 0 2820 0 2 -1088 3 -1088 2175 2303 c1196 1266 2174 2305 2173 2308 -1 4 -107 117 -235 253 -129 136 -1081 1145 -2117 2242 -1036 1097 -1910 2022 -1942 2055 l-59 60 -2 -1090z"></path>
+                  </g>
+                </svg>
 
-              <div className="nr-checkbox-wr-cntnt flex gap-[10px] items-center">
-                <div className="nr-checkbox-outer">
-                  <input
-                    type="checkbox"
-                    id="vip-club-mobile"
-                    name="vip-club"
-                    // className="nr-checkbox relative h-[16px] w-[16px] before:absolute before:content-[''] before:w-[14px] before:h-[14px] before:left-[1px] before:top-[1px] before:bg-[url('/loading.png')] before:bg-no-repeat before:bg-contain before:bg-center before:animate-spin"
-                    className="nr-checkbox"
-                    checked={isVipUiChecked}
-                    disabled={isVipLoading}
-                    onChange={(e) => handleVipToggle(e.target.checked)}
-                  />
+                <div className="nr-checkbox-wr-cntnt flex gap-[10px] items-center">
+                  <div className="nr-checkbox-outer">
+                    <input
+                      type="checkbox"
+                      id="vip-club-mobile"
+                      name="vip-club"
+                      // className="nr-checkbox relative h-[16px] w-[16px] before:absolute before:content-[''] before:w-[14px] before:h-[14px] before:left-[1px] before:top-[1px] before:bg-[url('/loading.png')] before:bg-no-repeat before:bg-contain before:bg-center before:animate-spin"
+                      className="nr-checkbox"
+                      checked={isVipUiChecked}
+                      disabled={isVipLoading}
+                      onChange={(e) => handleVipToggle(e.target.checked)}
+                    />
+                  </div>
+                  <label htmlFor="vip-club-mobile" className="text-[16px] text-white">
+                    VIP CLUB ACCESS
+                  </label>
                 </div>
-                <label htmlFor="vip-club-mobile" className="text-[16px] text-white">
-                  VIP CLUB ACCESS
-                </label>
+              </div>
+
+              <div className="nr-wrranty-text pt-[15px] relative">
+                <p className="text-[13px]">
+                  By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Nomade-Horizon. After the trial, the subscription renews automatically at £12.99/month. This membership is non-binding and can be cancelled at any time by contacting support. Consult the {" "}
+                  vip-club 
+                  policy for more information.
+                </p>
+
+                {/* Overlay Loader - Shows when isVipLoading is true */}
+                {isVipLoading && (
+                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-[4px] z-10">
+                    <div className="w-8 h-8 border-4 border-gray-300 border-t-[#3b4450] rounded-full animate-spin"></div>
+                  </div>
+                )}
               </div>
             </div>
-
-            <div className="nr-wrranty-text pt-[15px] relative">
-              <p className="text-[13px]">
-                By checking this box, I activate my 30-day free trial to the VIP CLUB, giving me access to exclusive benefits on Nomade-Horizon. After the trial, the subscription renews automatically at £12.99/month. This membership is non-binding and can be cancelled at any time by contacting support. Consult the {" "}
-                vip-club 
-                policy for more information.
-              </p>
-
-              {/* Overlay Loader - Shows when isVipLoading is true */}
-              {isVipLoading && (
-                <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-[4px] z-10">
-                  <div className="w-8 h-8 border-4 border-gray-300 border-t-[#3b4450] rounded-full animate-spin"></div>
-                </div>
-              )}
-            </div>
-          </div>
-
           )}
           {/* second-part */}
           <div className="nr-rght-bottom-info-cntnt py-[30px] border-b">
