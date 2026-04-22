@@ -1221,10 +1221,10 @@ router.post('/subscriptions/provision', async (req, res) => {
               quantity: 1,
             },
           ],
-          duration: {
-            period_unit: plan.interval,
-            period: 1,
-          },
+          // duration: {
+          //   period_unit: plan.interval,
+          //   period: 1,
+          // },
           ...(trialEndsAt && { trial_ends_at: trialEndsAt }),
           legal_entity_id: process.env.AIRWALLEX_LEGAL_ENTITY_ID,
           linked_payment_account_id: process.env.AIRWALLEX_LINKED_PAYMENT_ACCOUNT_ID,
