@@ -1241,7 +1241,7 @@ router.post('/subscriptions/provision', async (req, res) => {
           collection_method: subscriptionPayload.collection_method,
           currency: subscriptionPayload.currency,
           items: subscriptionPayload.items,
-          duration: subscriptionPayload.duration,
+          // duration: subscriptionPayload.duration,
           trial_ends_at: subscriptionPayload.trial_ends_at || null,
           legal_entity_id: subscriptionPayload.legal_entity_id,
           linked_payment_account_id: subscriptionPayload.linked_payment_account_id,
