@@ -5,6 +5,8 @@ import PaymentStep from "./PaymentStep";
 import OrderSummary from "./OrderSummary";
 import ThankYouStep from "./ThankYouStep";
 import { useNavigate } from "react-router-dom";
+// import ConsentBanner from "../ConsentBanner";
+import { buildGAPayload, fireGAEvent} from '../../utils/gaUtils';
 
 
 // Session storage utilities for checkout persistence
@@ -487,6 +489,9 @@ export default function CheckoutLayout({
       console.warn('⚠️ Failed to fetch latest cart before order:', cartErr.message);
     }
 
+    const utmParams = JSON.parse(sessionStorage.getItem('nh_utm_params') || '{}');
+    console.log('🎯 UTM params for order attribution:', utmParams);
+
     let awCustomer = airwallexCustomer;
 
     const subscriptionProducts = getMappedSubscriptionProducts(latestCart);
@@ -565,6 +570,18 @@ export default function CheckoutLayout({
       const orderData = {
         customerId: customerId || 0, // Use 0 if no customer ID (guest checkout)
         statusId: 1, // Pending status
+        source: 'custom_react_checkout',
+        ...(Object.keys(utmParams).length > 0 && {
+          comments: `UTM: ${JSON.stringify(utmParams)}`,
+          order_source: {
+            name: utmParams.utm_source || 'custom_react_checkout',
+            url: utmParams.referrer || window.location.href,
+            campaign: utmParams.utm_campaign || '',
+            medium: utmParams.utm_medium || '',
+            content: utmParams.utm_content || '',
+            term: utmParams.utm_term || '',
+          }
+        }),
         billingAddress: {
           first_name: clientData.firstName || deliveryData.firstName || '',
           last_name: clientData.lastName || deliveryData.lastName || '',
@@ -651,6 +668,24 @@ export default function CheckoutLayout({
         if (result.success) {
           console.log(' Order created:', result);
 
+          // === [GOOGLE ANALYTICS] Fire purchase event ===
+          try {
+            const gaPayload = buildGAPayload({
+              order: result.order,
+              orderId: result.orderId,
+              cart: latestCart,
+              clientData,
+              deliveryData,
+              bigcommerceCustomer,
+              customerId
+            });
+            
+            fireGAEvent(gaPayload);
+          } catch (gaErr) {
+            console.warn("⚠️ GA event failed (non-blocking):", gaErr.message);
+          }
+          // === [END GOOGLE ANALYTICS] ===
+
           if (subscriptionProducts.length > 0 && awCustomer && bigcommerceCustomer) {
             try {
               console.log('📤 [CHECKOUTLAYOUT] Calling provision with:', {
@@ -700,6 +735,9 @@ export default function CheckoutLayout({
               order: {
                 orderId: result.orderId,
                 id: result.orderId,
+
+                total_inc_tax: result.order?.total_inc_tax,
+                total: result.order?.total,
               },
               customer: {
                 firstName: clientData?.firstName || clientData?.first_name || '',
@@ -1135,6 +1173,8 @@ export default function CheckoutLayout({
         </div>
         </>
       )}
+
+      {/* <ConsentBanner /> */}
 
       {/* ================= FOOTER ================= */}
       {/* <footer className="text-xs text-gray-500 text-center py-6 space-y-2">

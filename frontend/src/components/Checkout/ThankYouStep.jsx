@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect } from "react";
 
 const formatPrice = (value, currency = "EUR") => {
   try {
@@ -68,6 +68,44 @@ const ThankYouStep = ({
     Number(cart?.cartAmount || 0) ||
     Number(order?.total_inc_tax || 0) ||
     0;
+
+
+
+  useEffect(() => {
+    // Only fire tracking on client-side, with verified order data
+    if (typeof window !== 'undefined' && order?.orderId) {
+      const orderAmount = Number(
+        cart?.cartAmount || 
+        order?.total_inc_tax || 
+        order?.total || 
+        0
+      ).toFixed(2);
+
+      // Inject tracking script with REAL values
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.innerHTML = `
+        window.__big = {
+          order_id: ${order.orderId},
+          order_amount: ${orderAmount}
+        };
+        if (!window.__goaffpro) {
+          (function(){     
+            const s = document.createElement('script');
+            s.src = "https://api.goaffpro.com/loader.js?shop=9feeyc5orh";
+            s.async = true;
+            document.head.appendChild(s);
+          })()
+        }
+      `;
+      document.head.appendChild(script);
+
+      // Cleanup: prevent duplicate injection if component re-renders
+      return () => {
+        document.head.removeChild(script);
+      };
+    }
+  }, [order?.orderId, cart?.cartAmount, order?.total_inc_tax]);
 
   return (
     <div className="nr-thanks min-h-screen bg-[#fff]">

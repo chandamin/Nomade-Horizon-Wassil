@@ -252,9 +252,17 @@ router.get('/cart', async (req, res) => {
 
     const transformedCart = transformCartResponse(cartData);
 
+    
+
     const reactUrl = new URL(FRONTEND_CHECKOUT_URL);
     reactUrl.searchParams.append('cartId', cartId);
     reactUrl.searchParams.append('cartData', encodeURIComponent(JSON.stringify(transformedCart)));
+
+    const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'referrer'];
+    utmKeys.forEach(k => {
+      if (req.query[k]) reactUrl.searchParams.append(k, req.query[k]);
+    });
+    
 
     console.log('Redirecting to React app:', reactUrl.toString());
     return res.redirect(reactUrl.toString());
@@ -1309,14 +1317,18 @@ router.post('/orders/create', async (req, res) => {
   console.log('Creating order - START');
   try {
     const {
+      utm = {}, 
       customerId,
       billingAddress,
       shippingAddress,
       products,
       shippingMethod,
       paymentMethod,
-      statusId = 1
+      statusId = 1,
+      source
     } = req.body;
+
+    console.log('🎯 UTM attribution received:', JSON.stringify(utm, null, 2));
 
     if (!customerId) {
       return res.status(400).json({ success: false, error: 'Customer ID is required' });
@@ -1356,6 +1368,8 @@ router.post('/orders/create', async (req, res) => {
     const orderData = {
       customer_id: parseInt(customerId, 10),
       status_id: statusId,
+      external_source: source || 'custom_react_checkout',
+      channel_id: 1, 
       billing_address: {
         first_name: billingAddress.firstName || billingAddress.first_name || '',
         last_name: billingAddress.lastName || billingAddress.last_name || '',
@@ -1369,6 +1383,17 @@ router.post('/orders/create', async (req, res) => {
         email: billingAddress.email || '',
         phone: billingAddress.phone || ''
       },
+      ...(Object.keys(utm).some(k => utm[k]) && {
+        comments: `UTM: ${JSON.stringify(utm)}`,
+        order_source: {
+          name: utm.utm_source || apiOrderSource?.name || 'custom_react_checkout',
+          url: utm.referrer || apiOrderSource?.url || '',
+          campaign: utm.utm_campaign || apiOrderSource?.campaign || '',
+          medium: utm.utm_medium || apiOrderSource?.medium || '',
+          content: utm.utm_content || '',
+          term: utm.utm_term || '',
+        }
+      }),
       products: verifiedProducts,
     };
 
@@ -1438,11 +1463,23 @@ router.post('/orders/create', async (req, res) => {
 
     const createdOrder = JSON.parse(responseText);
 
+    const fireAffiliatePixel = async (orderId, amount) => {
+      try {
+        const pixelUrl = `https://api.goaffpro.com/track?shop=9feeyc5orh&order_id=${orderId}&amount=${Number(amount).toFixed(2)}`;
+        // Fire-and-forget: don't await to avoid delaying response
+        fetch(pixelUrl, { method: 'GET', headers: { 'Accept': '*/*' } })
+          .catch(err => console.warn('Affiliate pixel fire failed:', err.message));
+      } catch (err) {
+        console.warn('Affiliate tracking setup failed:', err.message);
+      }
+    };
+
     if (paymentMethod && paymentMethod.paid && createdOrder.id) {
       console.log(
         `Airwallex payment already confirmed for order ${createdOrder.id}, updating order status in BigCommerce`
       );
-
+      const orderTotal = createdOrder.total_inc_tax || createdOrder.total || 0;
+      fireAffiliatePixel(createdOrder.id, orderTotal);
       const statusResult = await updateOrderStatus(
         createdOrder.id,
         11, // change this if your store uses a different status id for Awaiting Fulfillment
@@ -1838,6 +1875,27 @@ router.post('/subscription-customers/map', async (req, res) => {
       error: 'Failed to save subscription customer mapping',
     });
   }
+});
+
+router.post('/webhooks/bigcommerce/order-created', async (req, res) => {
+  const { hash, event, data } = req.body;
+  
+  // Verify webhook signature (critical for security)
+  // See: https://developer.bigcommerce.com/api-docs/store-management/webhooks/webhook-events#verifying-webhook-signatures
+  
+  if (event === 'order/created' && data?.id) {
+    // Fetch full order details to get total
+    const orderRes = await fetch(
+      `https://api.bigcommerce.com/stores/${STORE_HASH}/v2/orders/${data.id}`,
+      { headers: bcGetHeaders }
+    );
+    if (orderRes.ok) {
+      const order = await orderRes.json();
+      const pixelUrl = `https://api.goaffpro.com/track?shop=9feeyc5orh&order_id=${order.id}&amount=${Number(order.total_inc_tax || order.total).toFixed(2)}`;
+      fetch(pixelUrl, { method: 'GET' }).catch(console.warn);
+    }
+  }
+  res.status(200).send('OK');
 });
 
 module.exports = router;

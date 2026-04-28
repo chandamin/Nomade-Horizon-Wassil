@@ -575,6 +575,29 @@ const removeVipFromCart = async (cartId) => {
           return;
         }
 
+
+        const extractUtmFromUrl = () => {
+          const params = new URLSearchParams(window.location.search);
+          const utm = {};
+          ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'referrer'].forEach(key => {
+            const val = params.get(key);
+            if (val) utm[key] = val;
+          });
+          return utm;
+        };
+
+        // Try URL first, then sessionStorage fallback
+        const utmParams = Object.keys(extractUtmFromUrl()).length > 0 
+          ? extractUtmFromUrl() 
+          : JSON.parse(sessionStorage.getItem('nh_utm_params') || '{}');
+
+        console.log('🎯 UTM params captured:', utmParams);
+
+        // Persist to sessionStorage for cross-step reliability
+        if (Object.keys(utmParams).length > 0) {
+          sessionStorage.setItem('nh_utm_params', JSON.stringify(utmParams));
+        }
+
         const persistedCartId = sessionStorage.getItem("nh_cart_id");
         const resolvedCartId = cartId || persistedCartId;
 
