@@ -6,7 +6,7 @@ import OrderSummary from "./OrderSummary";
 import ThankYouStep from "./ThankYouStep";
 import { useNavigate } from "react-router-dom";
 // import ConsentBanner from "../ConsentBanner";
-import { buildGAPayload, fireGAEvent} from '../../utils/gaUtils';
+// import { buildGAPayload, fireGAEvent} from '../../utils/gaUtils';
 
 
 // Session storage utilities for checkout persistence
@@ -669,21 +669,21 @@ export default function CheckoutLayout({
           console.log(' Order created:', result);
 
           // === [GOOGLE ANALYTICS] Fire purchase event ===
-          try {
-            const gaPayload = buildGAPayload({
-              order: result.order,
-              orderId: result.orderId,
-              cart: latestCart,
-              clientData,
-              deliveryData,
-              bigcommerceCustomer,
-              customerId
-            });
+          // try {
+          //   const gaPayload = buildGAPayload({
+          //     order: result.order,
+          //     orderId: result.orderId,
+          //     cart: latestCart,
+          //     clientData,
+          //     deliveryData,
+          //     bigcommerceCustomer,
+          //     customerId
+          //   });
             
-            fireGAEvent(gaPayload);
-          } catch (gaErr) {
-            console.warn("⚠️ GA event failed (non-blocking):", gaErr.message);
-          }
+          //   fireGAEvent(gaPayload);
+          // } catch (gaErr) {
+          //   console.warn("⚠️ GA event failed (non-blocking):", gaErr.message);
+          // }
           // === [END GOOGLE ANALYTICS] ===
 
           if (subscriptionProducts.length > 0 && awCustomer && bigcommerceCustomer) {

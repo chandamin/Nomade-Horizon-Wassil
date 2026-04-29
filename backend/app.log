@@ -1,0 +1,363 @@
+[2026-04-29T04:57:29.152Z] MongoDB connected
+[2026-04-29T04:57:29.162Z] Server running on port 4000
+[2026-04-29T04:59:24.630Z] api cart-data called
+[2026-04-29T04:59:25.662Z] api cart-data called
+[2026-04-29T04:59:46.713Z] Search Customer by Email [object Object]
+[2026-04-29T04:59:46.714Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-29T04:59:48.152Z] Customer found: 1
+[2026-04-29T04:59:48.154Z] Email Search result: {"data":[{"id":1,"authentication":{"force_password_reset":false},"company":"","customer_group_id":0,"email":"test111@gmail.com","first_name":"test","last_name":"test","notes":"","phone":"","registration_ip_address":"","tax_exempt_category":"","date_created":"2026-04-01T04:15:58Z","date_modified":"2026-04-01T04:15:58Z","accepts_product_review_abandoned_cart_emails":false,"origin_channel_id":1,"channel_ids":null}],"meta":{"pagination":{"total":1,"count":1,"per_page":50,"current_page":1,"total_pages":1},"cursor_pagination":{"count":1,"per_page":50,"start_cursor":"eyJpZCI6MX0","end_cursor":"eyJpZCI6MX0","links":{}}}}
+[2026-04-29T04:59:49.235Z] Customer search results: [object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]
+[2026-04-29T04:59:49.237Z]  Found existing Airwallex customer: bcus_hkdmh4dffhgrjyz9b10
+[2026-04-29T04:59:49.393Z] Search Customer by Email [object Object]
+[2026-04-29T04:59:49.393Z] Searching customer by email (decoded): test111@gmail.com
+[2026-04-29T04:59:49.845Z] Customer found: 1
+[2026-04-29T04:59:49.845Z] Email Search result: {"data":[{"id":1,"authentication":{"force_password_reset":false},"company":"","customer_group_id":0,"email":"test111@gmail.com","first_name":"test","last_name":"test","notes":"","phone":"","registration_ip_address":"","tax_exempt_category":"","date_created":"2026-04-01T04:15:58Z","date_modified":"2026-04-01T04:15:58Z","accepts_product_review_abandoned_cart_emails":false,"origin_channel_id":1,"channel_ids":null}],"meta":{"pagination":{"total":1,"count":1,"per_page":50,"current_page":1,"total_pages":1},"cursor_pagination":{"count":1,"per_page":50,"start_cursor":"eyJpZCI6MX0","end_cursor":"eyJpZCI6MX0","links":{}}}}
+[2026-04-29T04:59:58.386Z] ================================================================================
+[2026-04-29T04:59:58.386Z] 🚚 SHIPPING QUOTES API HIT
+[2026-04-29T04:59:58.387Z] 🕒 Timestamp: 2026-04-29T04:59:58.386Z
+[2026-04-29T04:59:58.387Z] 📥 Incoming body: {
+  "cartId": "3ab717a9-89f1-4512-9c7c-b4d87395e331",
+  "address": {
+    "firstName": "test",
+    "lastName": "test test",
+    "address1": "560 Mission Street",
+    "city": "San Francisco",
+    "postalCode": "94105",
+    "countryCode": "FR",
+    "stateOrProvince": "San Francisco",
+    "phone": ""
+  }
+}
+[2026-04-29T04:59:58.387Z] 🔎 Extracted inputs: [object Object]
+[2026-04-29T04:59:58.388Z] ✅ Validation passed
+[2026-04-29T04:59:58.388Z] 📤 Fetching checkout from BigCommerce: https://api.bigcommerce.com/stores/9feeyc5orh/v3/checkouts/3ab717a9-89f1-4512-9c7c-b4d87395e331
+[2026-04-29T04:59:59.952Z] 📡 Checkout response status: 200
+[2026-04-29T04:59:59.953Z] 📡 Checkout raw response: {"data":{"id":"3ab717a9-89f1-4512-9c7c-b4d87395e331","cart":{"id":"3ab717a9-89f1-4512-9c7c-b4d87395e331","customer_id":0,"channel_id":1,"email":"","currency":{"code":"EUR"},"tax_included":false,"base_amount":1,"discount_amount":0,"manual_discount_amount":0,"cart_amount_inc_tax":1,"cart_amount_ex_tax":1,"coupons":[],"discounts":[{"id":"b38817c3-41d1-4bbf-9558-a8742811d8f3","discounted_amount":0}],"line_items":{"physical_items":[{"id":"b38817c3-41d1-4bbf-9558-a8742811d8f3","parent_id":null,"variant_id":1611,"product_id":220,"sku":"221-BL","name":"Chapeau Randonn\u00e9e - Homme | Respirant & Protection UV","url":"https:\/\/nomade-horizon.com\/chapeau-randonnee-homme-respirant-protection-uv\/","quantity":1,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1425_thumb_1764685477.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":1,"list_price":1,"sale_price":1,"extended_list_price":1,"extended_sale_price":1,"comparison_price":1,"extended_comparison_price":1,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false}],"digital_items":[],"gift_certificates":[],"custom_items":[]},"created_time":"2026-04-29T04:58:58+00:00","updated_time":"2026-04-29T04:58:58+00:00"},"billing_address":{},"consignments":[],"taxes":[{"name":"Tax","amount":0}],"coupons":[],"order_id":null,"shipping_cost_total_inc_tax":0,"shipping_cost_total_ex_tax":0,"handling_cost_total_inc_tax":0,"handling_cost_total_ex_tax":0,"tax_total":0,"subtotal_inc_tax":1,"subtotal_ex_tax":1,"grand_total":1,"created_time":"2026-04-29T04:58:58+00:00","updated_time":"2026-04-29T04:58:58+00:00","customer_message":"","staff_note":"","version":2,"total_discount":0,"fees":[]},"meta":{}}
+[2026-04-29T04:59:59.954Z] ✅ Checkout JSON parsed successfully
+[2026-04-29T04:59:59.955Z] 🧾 Checkout summary: [object Object]
+[2026-04-29T04:59:59.956Z] 🛒 Checkout line items summary: [object Object]
+[2026-04-29T04:59:59.957Z] 📦 Consignment payload to BigCommerce: [
+  {
+    "shipping_address": {
+      "first_name": "test",
+      "last_name": "test test",
+      "address1": "560 Mission Street",
+      "city": "San Francisco",
+      "state_or_province": "San Francisco",
+      "postal_code": "94105",
+      "country_code": "FR",
+      "phone": ""
+    },
+    "line_items": [
+      {
+        "item_id": "b38817c3-41d1-4bbf-9558-a8742811d8f3",
+        "quantity": 1
+      }
+    ]
+  }
+]
+[2026-04-29T04:59:59.957Z] 📤 Posting consignments to BigCommerce: https://api.bigcommerce.com/stores/9feeyc5orh/v3/checkouts/3ab717a9-89f1-4512-9c7c-b4d87395e331/consignments?include=consignments.available_shipping_options
+[2026-04-29T05:00:01.893Z] 📡 Consignments response status: 200
+[2026-04-29T05:00:01.893Z] 📡 Consignments raw response: {"data":{"id":"3ab717a9-89f1-4512-9c7c-b4d87395e331","cart":{"id":"3ab717a9-89f1-4512-9c7c-b4d87395e331","customer_id":0,"channel_id":1,"email":"","currency":{"code":"EUR"},"tax_included":false,"base_amount":1,"discount_amount":0,"manual_discount_amount":0,"cart_amount_inc_tax":1,"cart_amount_ex_tax":1,"coupons":[],"discounts":[{"id":"b38817c3-41d1-4bbf-9558-a8742811d8f3","discounted_amount":0}],"line_items":{"physical_items":[{"id":"b38817c3-41d1-4bbf-9558-a8742811d8f3","parent_id":null,"variant_id":1611,"product_id":220,"sku":"221-BL","name":"Chapeau Randonn\u00e9e - Homme | Respirant & Protection UV","url":"https:\/\/nomade-horizon.com\/chapeau-randonnee-homme-respirant-protection-uv\/","quantity":1,"is_taxable":true,"image_url":"https:\/\/cdn11.bigcommerce.com\/s-9feeyc5orh\/product_images\/attribute_rule_images\/1425_thumb_1764685477.jpg","discounts":[],"coupons":[],"discount_amount":0,"coupon_amount":0,"original_price":1,"list_price":1,"sale_price":1,"extended_list_price":1,"extended_sale_price":1,"comparison_price":1,"extended_comparison_price":1,"is_require_shipping":true,"gift_wrapping":null,"added_by_promotion":false,"is_mutable":true,"is_custom_price":false}],"digital_items":[],"gift_certificates":[],"custom_items":[]},"created_time":"2026-04-29T04:58:58+00:00","updated_time":"2026-04-29T05:00:00+00:00"},"billing_address":{},"consignments":[{"id":"69f1905043c6f","shipping_cost_inc_tax":0,"shipping_cost_ex_tax":0,"handling_cost_inc_tax":0,"handling_cost_ex_tax":0,"coupon_discounts":[],"discounts":[],"line_item_ids":["b38817c3-41d1-4bbf-9558-a8742811d8f3"],"shipping_address":{"first_name":"test","last_name":"test test","email":"","company":"","address1":"560 Mission Street","address2":"","city":"San Francisco","state_or_province":"San Francisco","state_or_province_code":"","country":"France","country_code":"FR","postal_code":"94105","phone":"","custom_fields":[]},"address":{"first_name":"test","last_name":"test test","email":"","company":"","address1":"560 Mission Street","address2":"","city":"San Francisco","state_or_province":"San Francisco","state_or_province_code":"","country":"France","country_code":"FR","postal_code":"94105","phone":"","custom_fields":[]},"available_shipping_options":[{"id":"4dcbf24f457dd67d5f89bcf374e0bc9b","type":"freeshipping","description":"Free Shipping","image_url":"","cost":0,"transit_time":"","additional_description":"","cost_after_discount":0}]}],"taxes":[{"name":"Tax","amount":0}],"coupons":[],"order_id":null,"shipping_cost_total_inc_tax":0,"shipping_cost_total_ex_tax":0,"handling_cost_total_inc_tax":0,"handling_cost_total_ex_tax":0,"tax_total":0,"subtotal_inc_tax":1,"subtotal_ex_tax":1,"grand_total":1,"created_time":"2026-04-29T04:58:58+00:00","updated_time":"2026-04-29T05:00:00+00:00","customer_message":"","staff_note":"","version":3,"total_discount":0,"fees":[]},"meta":{}}
+[2026-04-29T05:00:01.893Z] ✅ Consignments JSON parsed successfully
+[2026-04-29T05:00:01.894Z] 📋 Consignments summary: [object Object]
+[2026-04-29T05:00:01.894Z] 🚚 Raw available shipping options from BigCommerce: [
+  {
+    "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+    "type": "freeshipping",
+    "description": "Free Shipping",
+    "image_url": "",
+    "cost": 0,
+    "transit_time": "",
+    "additional_description": "",
+    "cost_after_discount": 0
+  }
+]
+[2026-04-29T05:00:01.895Z] ✅ Final mapped shipping options: [
+  {
+    "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+    "description": "Free Shipping",
+    "cost": 0,
+    "type": "freeshipping",
+    "isRecommended": false,
+    "raw": {
+      "id": "4dcbf24f457dd67d5f89bcf374e0bc9b",
+      "type": "freeshipping",
+      "description": "Free Shipping",
+      "image_url": "",
+      "cost": 0,
+      "transit_time": "",
+      "additional_description": "",
+      "cost_after_discount": 0
+    }
+  }
+]
+[2026-04-29T05:00:01.895Z] 📤 Responding to frontend with: {
+  "success": true,
+  "checkoutId": "3ab717a9-89f1-4512-9c7c-b4d87395e331",
+  "consignmentsCount": 1,
+  "shippingOptionsCount": 1
+}
+[2026-04-29T05:00:01.896Z] ================================================================================
+[2026-04-29T05:00:03.554Z] Saving customer address - START
+[2026-04-29T05:00:03.554Z] Saving address for customer: 1
+[2026-04-29T05:00:03.554Z] Address data received: [object Object]
+[2026-04-29T05:00:04.034Z] Get addresses response status: 200
+[2026-04-29T05:00:04.035Z] Get addresses raw response: [{"id":1,"customer_id":1,"first_name":"test","last_name":"AMIN CHAND","company":"","street_1":"H366 NEAR PHC DISPENCERY PHASE 1 MOHALI DIST- MOHALI PUNJAB","street_2":"","city":"MOHALI","state":"MOHAL
+[2026-04-29T05:00:04.037Z] Parsed existing addresses: 1
+[2026-04-29T05:00:04.037Z] Updating existing address: 1
+[2026-04-29T05:00:04.038Z] Address data to save to BigCommerce: [object Object]
+[2026-04-29T05:00:04.038Z] Making request to BigCommerce API: [object Object]
+[2026-04-29T05:00:04.517Z] BigCommerce response status: 200
+[2026-04-29T05:00:04.518Z] BigCommerce raw response: {"id":1,"customer_id":1,"first_name":"test","last_name":"test test","company":"","street_1":"560 Mission Street","street_2":"","city":"San Francisco","state":"San Francisco","zip":"94105","country":"France","country_iso2":"FR","phone":"","address_type":"residential","form_fields":null}
+[2026-04-29T05:00:04.519Z] Address saved successfully: 1
+[2026-04-29T05:00:04.519Z] Saving customer address - SUCCESS
+[2026-04-29T05:00:05.431Z] Reusing existing payment customer: cus_hkdmx5xjchgzvb82y1w
+[2026-04-29T05:00:05.609Z] 📥 [payment-intents/create] Incoming request: {
+  "amount": 1,
+  "currency": "EUR",
+  "merchant_order_id": "3ab717a9-89f1-4512-9c7c-b4d87395e331",
+  "payment_customer_id": "cus_hkdmx5xjchgzvb82y1w"
+}
+[2026-04-29T05:00:05.992Z] 📤 [payment-intents/create] Payload: {
+  "request_id": "390885c4-7e87-40e6-aa2b-32f49f4d350b",
+  "amount": 1,
+  "currency": "EUR",
+  "merchant_order_id": "3ab717a9-89f1-4512-9c7c-b4d87395e331",
+  "return_url": "http://localhost:5173",
+  "auto_capture": true,
+  "customer_id": "cus_hkdmx5xjchgzvb82y1w"
+}
+[2026-04-29T05:00:06.481Z] ✅ PaymentIntent created: {
+  "id": "int_hkdmcgv9bhi1s4518p3"
+}
+[2026-04-29T05:00:06.482Z] 📥 Airwallex payment intent response: {
+  "id": "int_hkdmcgv9bhi1s4518p3",
+  "request_id": "390885c4-7e87-40e6-aa2b-32f49f4d350b",
+  "amount": 1,
+  "currency": "EUR",
+  "merchant_order_id": "3ab717a9-89f1-4512-9c7c-b4d87395e331",
+  "customer_id": "cus_hkdmx5xjchgzvb82y1w",
+  "descriptor": "test_store",
+  "status": "REQUIRES_PAYMENT_METHOD",
+  "captured_amount": 0,
+  "created_at": "2026-04-29T05:00:06+0000",
+  "updated_at": "2026-04-29T05:00:06+0000",
+  "client_secret": "eyJraWQiOiJjNDRjODVkMDliMDc0NmNlYTIwZmI4NjZlYzI4YWY3ZSIsImFsZyI6IkhTMjU2In0.eyJ0eXBlIjoiY2xpZW50LXNlY3JldCIsImFjY291bnRfaWQiOiIwMjU1ZjAzZi02NDM0LTQxNTgtODZhNi1hNGVlMjc5Mjc2OGYiLCJpbnRlbnRfaWQiOiJpbnRfaGtkbWNndjliaGkxczQ1MThwMyIsImN1c3RvbWVyX2lkIjoiY3VzX2hrZG14NXhqY2hnenZiODJ5MXciLCJidXNpbmVzc19uYW1lIjoiQ1JNIEhvbGRpbmdzIExpbWl0ZWQgKEhLKSIsImFwaV92ZXJzaW9uIjoiMjAyNS0wMi0xNCIsInBhZGMiOiJISyIsImV4cCI6MTc3NzQ0MjQwNiwiaWF0IjoxNzc3NDM4ODA2fQ.V6DIkGX7XfDtkY74hGeYYF6-t2tHwPZBnzvCpncqXmg",
+  "return_url": "http://localhost:5173",
+  "original_amount": 1,
+  "original_currency": "EUR"
+}
+[2026-04-29T05:01:02.344Z] [payment-sources] attempt 1: consents for cus_hkdmx5xjchgzvb82y1w: [
+  {
+    "id": "cst_hkdmcgv9bhi1s4vdxhk",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdmzwmn5hi102qtcx2",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdm9vwdwhi0yh8zoze",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdm9vwdwhi0y8k553e",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdmzwmn5hi0y2ujwln",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdm9jrd5hhviefmklp",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdm54t8qhhvi602g3u",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdm9jrd5hhvgr21k0q",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdm54t8qhhvgg7j3fk",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdm54t8qhhvd5gc87m",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdm9jrd5hhvcw1ra1c",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdm54t8qhhvcuko9o3",
+    "status": "REQUIRES_PAYMENT_METHOD",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdmbg8f2hhnrm6l46m",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdmjljtvhhnrhfv481",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdmlmrhxhhewpkirpt",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdmgqvxchh95ircai3",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdmgqvxchh8czu6qm3",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdmgqvxchh8ctg9dr0",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdmlmrhxhh8cqfa5zs",
+    "status": "VERIFIED",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdm8lsx4hgzvbq5tgm"
+  },
+  {
+    "id": "cst_hkdmvdf5whh88zag0mi",
+    "status": "REQUIRES_PAYMENT_METHOD",
+    "next_triggered_by": "merchant",
+    "merchant_trigger_reason": "unscheduled",
+    "pm": "mtd_hkdmvdf5whh88zafyb5"
+  }
+]
+[2026-04-29T05:01:02.345Z] [payment-sources] verified merchant consent found on attempt 1: cst_hkdmcgv9bhi1s4vdxhk mtd: mtd_hkdm8lsx4hgzvbq5tgm
+[2026-04-29T05:01:02.675Z] [payment-sources] 🔍 Attempting with external_id: cst_hkdmcgv9bhi1s4vdxhk (consent)
+[2026-04-29T05:01:03.068Z] [payment-sources] 🔁 Demo environment quirk detected – retrying with method ID
+[2026-04-29T05:01:03.068Z] [payment-sources] 🔍 Attempting with external_id: mtd_hkdm8lsx4hgzvbq5tgm (method)
+[2026-04-29T05:01:03.209Z] [payment-sources] ♻️ Existing payment source found for mtd_hkdm8lsx4hgzvbq5tgm: psrc_hkdmd568rhh0vwslwmd
+[2026-04-29T05:01:03.360Z] api cart-data called
+[2026-04-29T05:01:05.861Z] Creating order - START
+[2026-04-29T05:01:05.861Z] 🎯 UTM attribution received: {}
+[2026-04-29T05:01:06.348Z] Incoming paymentMethod: [object Object]
+[2026-04-29T05:01:06.348Z] Order data to create: {
+  "customer_id": 1,
+  "status_id": 1,
+  "external_source": "custom_react_checkout",
+  "channel_id": 1,
+  "billing_address": {
+    "first_name": "test",
+    "last_name": "test",
+    "street_1": "560 Mission Street",
+    "street_2": "",
+    "city": "San Francisco",
+    "state": "San Francisco",
+    "zip": "94105",
+    "country": "France",
+    "country_iso2": "FR",
+    "email": "test111@gmail.com",
+    "phone": ""
+  },
+  "products": [
+    {
+      "product_id": 220,
+      "quantity": 1,
+      "price_inc_tax": 1,
+      "price_ex_tax": 1,
+      "product_options": [
+        {
+          "id": 293,
+          "value": "892"
+        }
+      ]
+    }
+  ],
+  "shipping_addresses": [
+    {
+      "first_name": "test",
+      "last_name": "test test",
+      "street_1": "560 Mission Street",
+      "street_2": "",
+      "city": "San Francisco",
+      "state": "San Francisco",
+      "zip": "94105",
+      "country": "France",
+      "country_iso2": "FR",
+      "email": "test111@gmail.com",
+      "phone": ""
+    }
+  ],
+  "payment_method": "Airwallex Credit Card"
+}
+[2026-04-29T05:01:07.262Z] BigCommerce Orders response status: 201
+[2026-04-29T05:01:07.262Z] BigCommerce Orders raw response: {"id":15689,"customer_id":1,"date_created":"Wed, 29 Apr 2026 05:01:06 +0000","is_tax_inclusive_pricing":false,"date_modified":"Wed, 29 Apr 2026 05:01:06 +0000","date_shipped":"","status_id":1,"status":"Pending","subtotal_ex_tax":"1.0000","subtotal_inc_tax":"1.0000","subtotal_tax":"0.0000","base_shipping_cost":"0.0000","shipping_cost_ex_tax":"0.0000","shipping_cost_inc_tax":"0.0000","shipping_cost_tax":"0.0000","shipping_cost_tax_class_id":0,"base_handling_cost":"0.0000","handling_cost_ex_tax":"0.0000","handling_cost_inc_tax":"0.0000","handling_cost_tax":"0.0000","handling_cost_tax_class_id":0,"base_wrapping_cost":"0.0000","wrapping_cost_ex_tax":"0.0000","wrapping_cost_inc_tax":"0.0000","wrapping_cost_tax":"0.0000","wrapping_cost_tax_class_id":0,"total_ex_tax":"1.0000","total_inc_tax":"1.0000","total_tax":"0.0000","items_total":1,"items_shipped":0,"payment_method":"Airwallex Credit Card","payment_provider_id":null,"payment_status":"","refunded_amount":"0.0000","order_is_digital":false,"
+[2026-04-29T05:01:07.267Z] Airwallex payment already confirmed for order 15689, updating order status in BigCommerce
+[2026-04-29T05:01:08.139Z] Order 15689 status updated to 11
+[2026-04-29T05:01:08.139Z] Order status update result: [object Object]
+[2026-04-29T05:01:08.140Z] Updating inventory levels
+[2026-04-29T05:01:08.587Z] Sending order confirmation email to: test111@gmail.com
+[2026-04-29T05:01:08.587Z] Order confirmation email sent
+[2026-04-29T05:01:08.829Z] Clearing cart - START
+[2026-04-29T05:01:09.348Z] BigCommerce Clear Cart response status: 204
+[2026-04-29T05:01:09.348Z] BigCommerce Clear Cart raw response: 
+[2026-04-29T11:02:56.248Z] MongoDB connected
+[2026-04-29T11:02:56.283Z] Server running on port 4000

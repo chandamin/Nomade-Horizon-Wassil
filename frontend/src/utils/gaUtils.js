@@ -2,7 +2,7 @@
 
 export const formatVariant = (options = []) => {
   const values = options.filter(opt => opt?.value).map(opt => opt.value);
-  return values.length > 0 ? values.join(", ") : "Defaut";
+  return values.length > 0 ? values.join(", ") : "Default";
 };
 
 export const normalizeAddress = (addressData) => {
